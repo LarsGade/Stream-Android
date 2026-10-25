@@ -75,4 +75,5 @@
  <plurals name="update_failures"><item quantity="one">%1$d opdatering mislykkedes</item><item quantity="other">%1$d opdateringer mislykkedes</item></plurals>
  <string name="epg_fetch_failed">Kunne ikke hente %1$s. Tidligere programoplysninger beholdes, hvis de findes.</string>
  <string name="developer_credit">Udviklet af Lars Gade</string>
+ <string name="remove_from_favorites">Fjern fra favoritter</string>
 </resources>

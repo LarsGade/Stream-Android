@@ -67,4 +67,16 @@ public class LibraryTest {
   library.refreshFavorites(source.id,java.util.Arrays.asList(new Playlist.Channel("DR1","https://example.com/new-stream","DK")));
   assertEquals(1,library.sources.size());assertEquals("New name",library.findSource(source.id).name);assertEquals("https://example.com/new-stream",library.favorites.get(0).channel.url);
  }
+ @Test public void manualFavoriteOrderSurvivesReloadAndRemovalDoesNotToggleBackOn() throws Exception {
+  Library library=new Library();var source=library.addSource(Library.Source.m3u("TV","https://example.com/list"));
+  Library.Entry first=new Library.Entry(source.id,channel("A","https://example.com/a")),second=new Library.Entry(source.id,channel("B","https://example.com/b"));
+  library.toggleFavorite(first);library.toggleFavorite(second);library.reorderFavorites(java.util.Arrays.asList(second,first));
+  Library restored=Library.fromJson(library.toJson());assertEquals("B",restored.favorites.get(0).channel.name);assertEquals("A",restored.favorites.get(1).channel.name);
+  restored.removeFavorite(second);restored.removeFavorite(second);assertEquals(1,restored.favorites.size());assertEquals("A",restored.favorites.get(0).channel.name);
+ }
+ @Test public void invalidReorderDoesNotLoseFavorites() {
+  Library library=new Library();Library.Entry one=new Library.Entry("s",channel("A","https://example.com/a")),two=new Library.Entry("s",channel("B","https://example.com/b"));library.toggleFavorite(one);library.toggleFavorite(two);
+  try {library.reorderFavorites(java.util.Arrays.asList(one,one));fail("Expected invalid favorite set");} catch(IllegalArgumentException expected) { }
+  assertEquals(2,library.favorites.size());assertTrue(library.isFavorite(two));
+ }
 }

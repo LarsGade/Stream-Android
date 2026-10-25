@@ -76,6 +76,13 @@ public final class Library {
   for(int i=0;i<favorites.size();i++) if(favorites.get(i).same(entry)) {favorites.remove(i);return;}
   favorites.add(entry);
  }
+ public void removeFavorite(Entry entry) {for(int i=favorites.size()-1;i>=0;i--) if(favorites.get(i).same(entry)) favorites.remove(i);}
+ public void reorderFavorites(List<Entry> ordered) {
+  if(ordered.size()!=favorites.size()) throw new IllegalArgumentException("Favorite set changed");
+  List<Entry> remaining=new ArrayList<>(favorites);
+  for(Entry entry:ordered) {int found=-1;for(int i=0;i<remaining.size();i++) if(remaining.get(i).same(entry)) {found=i;break;}if(found<0) throw new IllegalArgumentException("Favorite set changed");remaining.remove(found);}
+  favorites.clear();favorites.addAll(ordered);
+ }
  public List<Entry> favoriteItems(Playlist.Kind kind,String group,String query) {
   List<Entry> result=new ArrayList<>();String q=query.toLowerCase(Locale.ROOT);
   for(Entry entry:favorites) {

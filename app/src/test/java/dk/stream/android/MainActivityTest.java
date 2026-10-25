@@ -257,4 +257,39 @@ public class MainActivityTest {
   assertEquals("Udviklet af Lars Gade",footer.getText().toString());assertEquals(android.view.Gravity.CENTER,footer.getGravity());
   clickText(activity.getWindow().getDecorView(),R.string.favorites);assertEquals(View.GONE,status.getVisibility());
  }
+ private FavoriteListView sampleFavorites() {
+  Library library=ReflectionHelpers.getField(activity,"library");var source=library.addSource(Library.Source.m3u("TV","https://example.com/list"));
+  for(String name:new String[]{"One","Two","Three"}) library.toggleFavorite(new Library.Entry(source.id,new Playlist.Channel(name,"https://example.com/"+name,"DK")));
+  clickText(activity.getWindow().getDecorView(),R.string.favorites);
+  FavoriteListView list=ReflectionHelpers.getField(activity,"list");list.measure(View.MeasureSpec.makeMeasureSpec(600,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(900,View.MeasureSpec.EXACTLY));list.layout(0,0,600,900);return list;
+ }
+ private void listTouch(FavoriteListView list,int action,float y) {
+  long now=android.os.SystemClock.uptimeMillis();android.view.MotionEvent event=android.view.MotionEvent.obtain(now,now,action,40,y,0);list.onTouchEvent(event);event.recycle();
+ }
+ @Test public void favoritesHaveNoStarOrHeadingAndLongPressOffersRemoval() {
+  FavoriteListView list=sampleFavorites();TextView title=ReflectionHelpers.getField(activity,"pageTitle");assertEquals(View.GONE,title.getVisibility());assertEquals("",title.getText().toString());
+  View row=list.getAdapter().getView(0,null,list);assertEquals(View.GONE,views(row,ImageButton.class).get(0).getVisibility());
+  list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);
+  PopupMenu menu=org.robolectric.shadows.ShadowPopupMenu.getLatestPopupMenu();assertNotNull(menu);assertEquals("Fjern fra favoritter",menu.getMenu().getItem(0).getTitle().toString());menu.getMenu().performIdentifierAction(menu.getMenu().getItem(0).getItemId(),0);
+  assertEquals(2,storage.saved.favorites.size());assertEquals("Two",storage.saved.favorites.get(0).channel.name);
+ }
+ @Test public void holdingThenDraggingReordersFavoritesAndPersistsOnRelease() throws Exception {
+  FavoriteListView list=sampleFavorites();float first=list.getChildAt(0).getTop()+list.getChildAt(0).getHeight()/2f,last=list.getChildAt(2).getTop()+list.getChildAt(2).getHeight()/2f;
+  listTouch(list,android.view.MotionEvent.ACTION_DOWN,first);list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);listTouch(list,android.view.MotionEvent.ACTION_MOVE,last);
+  assertTrue(storage.saved.favorites.isEmpty());
+  listTouch(list,android.view.MotionEvent.ACTION_UP,last);
+  assertEquals("Two",storage.saved.favorites.get(0).channel.name);assertEquals("Three",storage.saved.favorites.get(1).channel.name);assertEquals("One",storage.saved.favorites.get(2).channel.name);
+  assertEquals("One",Library.fromJson(storage.saved.toJson()).favorites.get(2).channel.name);assertNull(ReflectionHelpers.getField(activity,"player"));
+ }
+ @Test public void cancelledDragKeepsOriginalFavoriteOrder() {
+  FavoriteListView list=sampleFavorites();float first=list.getChildAt(0).getHeight()/2f,last=list.getChildAt(2).getTop()+list.getChildAt(2).getHeight()/2f;
+  listTouch(list,android.view.MotionEvent.ACTION_DOWN,first);list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);listTouch(list,android.view.MotionEvent.ACTION_MOVE,last);listTouch(list,android.view.MotionEvent.ACTION_CANCEL,last);
+  Library library=ReflectionHelpers.getField(activity,"library");assertEquals("One",library.favorites.get(0).channel.name);
+  java.util.List<Library.Entry> visible=ReflectionHelpers.getField(activity,"visible");assertEquals("One",visible.get(0).channel.name);
+ }
+ @Test public void stationaryHoldAndReleaseOpensActionsWithoutStartingPlayback() {
+  FavoriteListView list=sampleFavorites();float y=list.getChildAt(0).getTop()+list.getChildAt(0).getHeight()/2f;
+  listTouch(list,android.view.MotionEvent.ACTION_DOWN,y);list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);listTouch(list,android.view.MotionEvent.ACTION_UP,y);
+  PopupMenu menu=org.robolectric.shadows.ShadowPopupMenu.getLatestPopupMenu();assertNotNull(menu);assertEquals("Fjern fra favoritter",menu.getMenu().getItem(0).getTitle().toString());assertNull(ReflectionHelpers.getField(activity,"player"));
+ }
 }

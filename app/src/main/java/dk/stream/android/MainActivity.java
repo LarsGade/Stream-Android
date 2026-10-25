@@ -48,7 +48,7 @@ public final class MainActivity extends AppCompatActivity {
  private RadioGroup sections;
  private EditText search;
  private TextView status,pageTitle;
- private ListView list;
+ private FavoriteListView list;
  private ChannelAdapter adapter;
  private DrawerLayout drawer;
  private ExoPlayer player;
@@ -137,9 +137,20 @@ public final class MainActivity extends AppCompatActivity {
   kindButtons[0].setChecked(true);
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
-  list=new ListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
+  list=new FavoriteListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(6),0,dp(4));root.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
+  list.setFavoriteListener(new FavoriteListView.Listener() {
+   public boolean enabled() {return favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
+   public void showActions(int position,View anchor) {
+    if(!favoritesMode||position<0||position>=visible.size()) return;
+    Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
+    menu.getMenu().add(R.string.remove_from_favorites).setOnMenuItemClickListener(item->{if(changeLibrary(()->library.removeFavorite(entry))) filter();return true;});menu.show();
+   }
+   public void move(int from,int to) {if(from>=0&&from<visible.size()&&to>=0&&to<visible.size()) {Library.Entry entry=visible.remove(from);visible.add(to,entry);adapter.notifyDataSetChanged();}}
+   public void commit() {List<Library.Entry> ordered=new ArrayList<>(visible);changeLibrary(()->library.reorderFavorites(ordered));filter();}
+   public void cancel() {filter();}
+  });
   list.setOnItemClickListener((parent,view,position,id)->open(visible.get(position)));
   sections.setOnCheckedChangeListener((group,id)->{ for(int i=0;i<kindButtons.length;i++) if(kindButtons[i].getId()==id) currentKind=Playlist.Kind.values()[i];rebuildGroups(); });
   groups.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -184,7 +195,7 @@ public final class MainActivity extends AppCompatActivity {
   DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(menu,params);
  }
  private void navigate(boolean favorites) {
-  drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
+  list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
   if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last!=null) loadSource(last);}
  }
  private void chooseFirstKind() {
@@ -201,7 +212,8 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void filter() {
   if(adapter==null) return;
-  pageTitle.setText(favoritesMode?getString(R.string.favorites):activeSource==null?getString(R.string.library):activeSource.name);
+  pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+  pageTitle.setText(favoritesMode?"":activeSource==null?getString(R.string.library):activeSource.name);
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
   sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
@@ -438,8 +450,9 @@ public final class MainActivity extends AppCompatActivity {
    String bundled=localLogos.find(channel.name);
    Object logoModel=bundled==null?LogoRequests.model(channel.logoUrl,source==null?null:source.server):bundled;
    Glide.with(MainActivity.this).load(logoModel).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
+   recycled.setAlpha(list.isPicked(position)?0.6f:1f);row.star.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
    boolean favorite=library.isFavorite(entry);row.star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);row.star.setContentDescription(getString(favorite?R.string.remove_favorite:R.string.add_favorite,channel.name));
-   row.star.setOnClickListener(v->{if(changeLibrary(()->library.toggleFavorite(entry))) {if(favoritesMode) rebuildGroups();else notifyDataSetChanged();}});
+   row.star.setOnClickListener(v->{if(!favoritesMode&&changeLibrary(()->library.toggleFavorite(entry))) {if(favoritesMode) rebuildGroups();else notifyDataSetChanged();}});
    return recycled;
   }
  }
