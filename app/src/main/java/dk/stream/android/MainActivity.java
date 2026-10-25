@@ -97,8 +97,7 @@ public final class MainActivity extends AppCompatActivity {
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(56)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
-  ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_icon);brand.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);header.addView(brand,new LinearLayout.LayoutParams(dp(36),dp(40)));
-  TextView title=text(getString(R.string.app_name),26,Color.WHITE);title.setPadding(dp(10),0,0,0);header.addView(title,new LinearLayout.LayoutParams(0,dp(56),1));title.setGravity(Gravity.CENTER_VERTICAL);
+  ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.header_banner);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));header.addView(brand,new LinearLayout.LayoutParams(0,dp(64),1));
   MediaRouteButton castButton=new MediaRouteButton(this);header.addView(castButton,new LinearLayout.LayoutParams(dp(48),dp(56)));
   createDrawer();
   androidx.activity.OnBackPressedCallback closeDrawer=new androidx.activity.OnBackPressedCallback(false) {

@@ -39,6 +39,8 @@ Version 1.4.0 genopbygger afspilleren med én samlet tryk-for-at-vise-overlay i 
 
 Version 1.4.1 fjerner lydstyrkeskyderen og bruger FIT i både almindelig visning og fuldskærm, så hele videoen vises uden beskæring.
 
+Version 1.4.2 bruger det blå Stream-banner fra `banner.zip` i topbjælken. Kun tomme, gennemsigtige margener er fjernet; hele logoet skaleres med bevaret billedformat.
+
 ## Udvikling
 
 Brug JDK 17 eller 21, Android SDK Platform 35 og Build Tools 34.0.0.
