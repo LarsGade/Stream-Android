@@ -171,8 +171,17 @@ public final class MainActivity extends AppCompatActivity {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
   navigation.addView(text(getString(R.string.app_name),28,Color.WHITE));
   button(R.string.library,navigation,()->navigate(false));button(R.string.favorites,navigation,()->navigate(true));
-  button(R.string.settings,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettings();});
-  DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(navigation,params);
+  SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
+  boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
+   if(restoring[0]) return;
+   if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
+  });
+  button(R.string.sources,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
+  button(R.string.tv_guide,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
+  button(R.string.update_all,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
+  button(R.string.reset_app,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
+  ScrollView menu=new ScrollView(this);menu.addView(navigation);
+  DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(menu,params);
  }
  private void navigate(boolean favorites) {
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
@@ -225,28 +234,15 @@ public final class MainActivity extends AppCompatActivity {
    status.setText(R.string.storage_failed);Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return false;
   }
  }
- private void showSettings() {
-  LinearLayout content=column();content.setPadding(dp(20),dp(8),dp(20),dp(12));
-  SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));content.addView(start);
-  boolean[] restoring={false};
-  start.setOnCheckedChangeListener((button,checked)->{
-   if(restoring[0]) return;
-   if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
-  });
-  content.addView(text(getString(R.string.storage_note),13,Color.LTGRAY));
-  AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.settings).setView(content).setPositiveButton(android.R.string.ok,null).create();
-  button(R.string.sources,content,()->{dialog.dismiss();showSources();});
-  button(R.string.tv_guide,content,()->{dialog.dismiss();showGuides();});
-  button(R.string.update_all,content,()->{dialog.dismiss();updateAll();});
-  button(R.string.reset_app,content,()->{dialog.dismiss();confirmReset();});dialog.show();
- }
  private void showSources() {
   if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
   List<Library.Source> sources=new ArrayList<>(library.sources);
+  LinearLayout actions=column();actions.setPadding(dp(16),dp(8),dp(16),dp(12));
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.sources)
-   .setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(d,position)->loadSource(sources.get(position)))
-   .setPositiveButton(R.string.add_m3u,(d,which)->showAddSource(false))
-   .setNeutralButton(R.string.xtream_login,(d,which)->showAddSource(true)).setNegativeButton(android.R.string.cancel,null).create();
+   .setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(d,position)->loadSource(sources.get(position))).setView(actions).create();
+  button(R.string.add_m3u,actions,()->{dialog.dismiss();showAddSource(false);});
+  button(R.string.xtream_login,actions,()->{dialog.dismiss();showAddSource(true);});
+  button(android.R.string.cancel,actions,dialog::dismiss);
   dialog.setOnShowListener(d->dialog.getListView().setOnItemLongClickListener((parent,view,position,id)->{
    Library.Source source=sources.get(position);
    new AlertDialog.Builder(this).setTitle(source.name).setItems(new String[]{getString(R.string.edit_source),getString(R.string.remove_source)},(choice,which)->{

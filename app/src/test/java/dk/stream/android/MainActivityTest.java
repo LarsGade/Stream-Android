@@ -46,9 +46,8 @@ public class MainActivityTest {
  }
  private AlertDialog dialog() {Shadows.shadowOf(Looper.getMainLooper()).idle();return (AlertDialog)ShadowDialog.getLatestDialog();}
  private void sourceDialog(boolean xtream) {
-  clickText(activity.getWindow().getDecorView(),R.string.settings);
-  clickText(dialog().getWindow().getDecorView(),R.string.sources);
-  dialog().getButton(xtream?AlertDialog.BUTTON_NEUTRAL:AlertDialog.BUTTON_POSITIVE).performClick();
+  clickText(activity.getWindow().getDecorView(),R.string.sources);
+  clickText(dialog().getWindow().getDecorView(),xtream?R.string.xtream_login:R.string.add_m3u);
   Shadows.shadowOf(Looper.getMainLooper()).idle();
  }
  private void awaitLoadAndRender() throws Exception {
@@ -80,7 +79,7 @@ public class MainActivityTest {
  @Test public void loadedChannelCanBeFavoritedAndSelectedAsStartupList() throws Exception {
   loadM3u();ListView list=ReflectionHelpers.getField(activity,"list");View row=list.getAdapter().getView(0,null,list);
   views(row,ImageButton.class).get(0).performClick();assertEquals(1,storage.saved.favorites.size());
-  clickText(activity.getWindow().getDecorView(),R.string.settings);views(dialog().getWindow().getDecorView(),SwitchCompat.class).get(0).setChecked(true);assertTrue(storage.saved.favoritesOnStart);
+  views(activity.getWindow().getDecorView(),SwitchCompat.class).get(0).setChecked(true);assertTrue(storage.saved.favoritesOnStart);
  }
  @Test public void favoritesHideFiltersAndCountAndShowEveryContentType() throws Exception {
   loadM3u();Library library=ReflectionHelpers.getField(activity,"library");String sourceId=library.sources.get(0).id;
@@ -206,7 +205,7 @@ public class MainActivityTest {
   ExecutorService executor=ReflectionHelpers.getField(activity,"epgWorker");executor.submit(()->{}).get(30,TimeUnit.SECONDS);Shadows.shadowOf(Looper.getMainLooper()).idle();
  }
  @Test public void namedGuideCanBeAssignedAndCurrentProgrammeAppearsInGrayOnFavorite() throws Exception {
-  useGuideDispatcher();clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.tv_guide);
+  useGuideDispatcher();clickText(activity.getWindow().getDecorView(),R.string.tv_guide);
   dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();List<EditText> guideFields=views(dialog().getWindow().getDecorView(),EditText.class);guideFields.get(0).setText("Dansk guide");guideFields.get(1).setText(server.url("/epg.xml").toString());dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitGuides();
   assertEquals("Dansk guide",storage.saved.guides.get(0).name);
   sourceDialog(false);List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);fields.get(0).setText("Dansk TV");fields.get(1).setText(server.url("/list.m3u").toString());views(dialog().getWindow().getDecorView(),Spinner.class).get(0).setSelection(1);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();awaitGuides();
@@ -218,28 +217,38 @@ public class MainActivityTest {
   useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");
   library.addSource(Library.Source.m3u("Good source",server.url("/list.m3u").toString()));library.addSource(Library.Source.m3u("Bad source",server.url("/bad-source").toString()));
   Library.Guide good=Library.Guide.create("Good guide",server.url("/epg.xml").toString());library.putGuide(good);library.putGuide(Library.Guide.create("Bad guide",server.url("/bad-epg").toString()));
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.update_all);awaitLoadAndRender();
+  clickText(activity.getWindow().getDecorView(),R.string.update_all);awaitLoadAndRender();
   assertEquals(4,server.getRequestCount());Map<String,EpgData> schedules=ReflectionHelpers.getField(activity,"epgData");assertNotNull(schedules.get(good.id));
   TextView result=dialog().findViewById(android.R.id.message);assertTrue(result.getText().toString().contains("Bad source"));assertTrue(result.getText().toString().contains("Bad guide"));assertEquals(2,storage.saved.sources.size());
  }
  @Test public void resetRequiresYesAndNoLeavesDataUntouched() {
   android.app.ActivityManager manager=(android.app.ActivityManager)activity.getSystemService(android.content.Context.ACTIVITY_SERVICE);
   org.robolectric.shadows.ShadowActivityManager shadow=Shadows.shadowOf(manager);
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.reset_app);assertFalse(shadow.isApplicationUserDataCleared());
+  clickText(activity.getWindow().getDecorView(),R.string.reset_app);assertFalse(shadow.isApplicationUserDataCleared());
   assertEquals(activity.getString(R.string.no),dialog().getButton(AlertDialog.BUTTON_NEGATIVE).getText().toString());dialog().getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertFalse(shadow.isApplicationUserDataCleared());
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.reset_app);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(shadow.isApplicationUserDataCleared());
+  clickText(activity.getWindow().getDecorView(),R.string.reset_app);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(shadow.isApplicationUserDataCleared());
  }
  @Test public void sourceCanBeEditedAndDeletedFromSourceMenu() throws Exception {
   useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");Library.Source source=library.addSource(Library.Source.m3u("Old name",server.url("/list.m3u").toString()));
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.sources);
+  clickText(activity.getWindow().getDecorView(),R.string.sources);
   ListView list=dialog().getListView();list.getOnItemLongClickListener().onItemLongClick(list,null,0,0);dialog().getListView().performItemClick(null,0,0);
   List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);fields.get(0).setText("Updated name");dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();assertEquals("Updated name",storage.saved.findSource(source.id).name);assertEquals(1,storage.saved.sources.size());
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.sources);list=dialog().getListView();list.getOnItemLongClickListener().onItemLongClick(list,null,0,0);dialog().getListView().performItemClick(null,1,1);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(storage.saved.sources.isEmpty());
+  clickText(activity.getWindow().getDecorView(),R.string.sources);list=dialog().getListView();list.getOnItemLongClickListener().onItemLongClick(list,null,0,0);dialog().getListView().performItemClick(null,1,1);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(storage.saved.sources.isEmpty());
  }
  @Test public void guideCanBeRenamedAndDeletedWithoutDeletingItsSource() throws Exception {
   useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");Library.Guide guide=Library.Guide.create("Old guide",server.url("/epg.xml").toString());library.putGuide(guide);Library.Source source=library.addSource(Library.Source.m3u("TV",server.url("/list.m3u").toString()).withEpg(guide.id));
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);
+  clickText(activity.getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);
   views(dialog().getWindow().getDecorView(),EditText.class).get(0).setText("New guide");dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitGuides();assertEquals("New guide",storage.saved.findGuide(guide.id).name);
-  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);dialog().getButton(AlertDialog.BUTTON_NEUTRAL).performClick();dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertNull(storage.saved.findGuide(guide.id));assertNotNull(storage.saved.findSource(source.id));assertEquals("",storage.saved.findSource(source.id).epgId);
+  clickText(activity.getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);dialog().getButton(AlertDialog.BUTTON_NEUTRAL).performClick();dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertNull(storage.saved.findGuide(guide.id));assertNotNull(storage.saved.findSource(source.id));assertEquals("",storage.saved.findSource(source.id).epgId);
+ }
+ @Test public void drawerContainsAllFormerSettingsAndSourceCancelIsBelowXtream() {
+  View root=activity.getWindow().getDecorView();
+  for(int label:new int[]{R.string.sources,R.string.tv_guide,R.string.update_all,R.string.reset_app}) assertTrue(views(root,Button.class).stream().anyMatch(button->button.getText().toString().equals(activity.getString(label))));
+  assertTrue(views(root,SwitchCompat.class).get(0).getText().toString().equals(activity.getString(R.string.start_favorites)));
+  clickText(root,R.string.sources);View dialogRoot=dialog().getWindow().getDecorView();
+  List<Button> actions=new ArrayList<>();for(Button button:views(dialogRoot,Button.class)) if(button.getVisibility()==View.VISIBLE && !button.getText().toString().isEmpty()) actions.add(button);
+  assertEquals(3,actions.size());assertEquals(activity.getString(R.string.add_m3u),actions.get(0).getText().toString());assertEquals(activity.getString(R.string.xtream_login),actions.get(1).getText().toString());assertEquals(activity.getString(android.R.string.cancel),actions.get(2).getText().toString());
+  assertSame(actions.get(1).getParent(),actions.get(2).getParent());assertEquals(LinearLayout.VERTICAL,((LinearLayout)actions.get(2).getParent()).getOrientation());
+  actions.get(2).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertFalse(dialog().isShowing());
  }
 }

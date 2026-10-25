@@ -5,12 +5,12 @@ Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
 ## Brug
 
 1. Installér debug-APK'en på Android 6 eller nyere. Appen hedder **Stream** og bruger det vedhæftede blå ikon i et sort, gråt og blåt tema.
-2. Åbn **☰ → Indstillinger → Kilder**. Vælg **Tilføj M3U** eller **Tilføj Xtream-login**, og angiv eventuelt et navn til kilden. Tryk **Gem og indlæs**.
-3. Tilføj navngivne XMLTV- eller XMLTV.gz-links under **☰ → Indstillinger → TV-Guide**. Tryk på en guide for at redigere navn/link eller slette den. Vælg den ønskede TV-guide i formularen, når en kilde tilføjes eller redigeres. Vælg **Ingen TV-Guide** for at fjerne tilknytningen.
+2. Åbn **☰ → Kilder**. Vælg **Tilføj M3U** eller **Tilføj Xtream-login**, og angiv eventuelt et navn til kilden. Tryk **Gem og indlæs**.
+3. Tilføj navngivne XMLTV- eller XMLTV.gz-links under **☰ → TV-Guide**. Tryk på en guide for at redigere navn/link eller slette den. Vælg den ønskede TV-guide i formularen, når en kilde tilføjes eller redigeres. Vælg **Ingen TV-Guide** for at fjerne tilknytningen.
 4. Du kan tilføje flere kilder og skifte mellem dem under **Kilder**. Tryk længe på en kilde for at vælge **Redigér kilde** eller **Slet kilde**. Redigering bevarer kildens id og favoritter; opdatering fornyer kanaloplysninger og stream-links, når der findes et entydigt match. Sletning af en kilde sletter dens favoritter. Sletning af en TV-guide bevarer kilder og favoritter og fjerner kun deres EPG-tilknytning.
 5. Skift mellem **TV**, **Film** og **Serier**, vælg en gruppe eller søg efter titel. Serverens rækkefølge bevares. Xtream-serier åbner en afsnitsliste med sæson- og afsnitsnumre.
 6. Tryk på **stjernen** ved et element for at tilføje eller fjerne det fra **Favoritter**. Favoritter kan komme fra flere kilder og bevarer rækkefølgen, de blev tilføjet i.
-7. Åbn **☰ → Favoritter**. Her vises den aktuelle udsendelse med grå skrift under TV-kanalens navn, hvis dens kilde har en tilknyttet EPG. Kanal-id (M3U `tvg-id` / Xtream `epg_channel_id`) prioriteres; ellers bruges et entydigt XMLTV-kanalnavn eller M3U `tvg-name`. Ukendte/udløbne programmer vises ikke som aktuelle. Listen har ingen søgning, gruppevalg, TV/Film/Serier-valg, kildenavne eller antal. Under **☰ → Indstillinger** kan du slå **Vis favoritter, når appen åbner** til. Listen gemmes mellem genstarter og kan vises uden at hente hele kataloget igen. Afspilning og nye logoer kræver netværk.
+7. Åbn **☰ → Favoritter**. Her vises den aktuelle udsendelse med grå skrift under TV-kanalens navn, hvis dens kilde har en tilknyttet EPG. Kanal-id (M3U `tvg-id` / Xtream `epg_channel_id`) prioriteres; ellers bruges et entydigt XMLTV-kanalnavn eller M3U `tvg-name`. Ukendte/udløbne programmer vises ikke som aktuelle. Listen har ingen søgning, gruppevalg, TV/Film/Serier-valg, kildenavne eller antal. Direkte i **☰-menuen** kan du slå **Vis favoritter, når appen åbner** til. Listen gemmes mellem genstarter og kan vises uden at hente hele kataloget igen. Afspilning og nye logoer kræver netværk.
 8. Afspilleren er et rent videovindue uden synlige knapper, tidslinje eller afspilningsstatus ved åbning. Det gælder både almindelig visning og fuldskærm. Tryk på videoen for at vise kontrolpanelet; det skjules automatisk efter 2,5 sekunder eller ved et nyt tryk på billedet. Panelet indeholder afspil/pause, stop, spoling, lyd fra/til, tidslinje og fuldskærm. Under indstillingsikonet findes hastighed, undertekster og lydspor. Spoling og tidslinje er aktive, når streamen understøtter det. Fuldskærm skifter til liggende visning og udfylder skærmen med hele billedet og bevaret billedformat; sorte kanter bruges ved behov. Kontrollerne ligger oven på videoen i begge visninger og optager ingen ekstra plads. Tryk tilbage for at afslutte fuldskærm uden at genstarte videoen. Telefonens statuslinje skjules under afspilning; navigationslinjen skjules også i fuldskærm. Lydstyrken styres med enhedens fysiske lydstyrkeknapper; der er ingen lydstyrkeskyder i appen.
 9. Tryk på Cast-ikonet for at forbinde til en Google Cast-enhed, og vælg indhold.
 
@@ -30,7 +30,7 @@ Version 1.2.2 gør ikonmotivet yderligere 10 % mindre end i 1.2.1 (81 % af origi
 
 Bibliotek er omdøbt til Streamingtjeneste. Favoritter viser logo, kanalnavn og stjerne uden kilde- eller gruppenavn; fra version 1.5.0 vises også det aktuelle program ved tilknyttet EPG.
 
-Version 1.2.3 forbedrer M3U-logoindlæsning og SVG-understøttelse og forenkler Favoritter til en samlet liste uden filtre eller antal. Vælg din M3U-kilde igen under Indstillinger → Kilder for også at opdatere logo-adresser i allerede gemte favoritter.
+Version 1.2.3 forbedrer M3U-logoindlæsning og SVG-understøttelse og forenkler Favoritter til en samlet liste uden filtre eller antal. Vælg din M3U-kilde igen under ☰ → Kilder for også at opdatere logo-adresser i allerede gemte favoritter.
 
 Version 1.3.0 tilføjer synlige afspillerkontroller, fuldskærm og lydstyrke samt de 47 indbyggede kanallogoer.
 
@@ -44,13 +44,15 @@ Version 1.4.2 bruger det blå Stream-banner fra `banner.zip` i topbjælken. Kun 
 
 ## Opdatering og nulstilling
 
-**Indstillinger → Opdatér alt** genindlæser alle gemte kilder og alle TV-guides, også guides der endnu ikke er knyttet til en kilde. Opdateringen fortsætter efter individuelle fejl og viser en samlet rapport. Mislykkede opdateringer overskriver ikke eksisterende kanal- eller programdata.
+**☰ → Opdatér alt** genindlæser alle gemte kilder og alle TV-guides, også guides der endnu ikke er knyttet til en kilde. Opdateringen fortsætter efter individuelle fejl og viser en samlet rapport. Mislykkede opdateringer overskriver ikke eksisterende kanal- eller programdata.
 
 EPG parses i baggrunden med XMLTV-tidszoner og understøttelse af gzip samt HTTP-redirects. Aktuelle og kommende programmer caches i appens private lager uden rå EPG-links. Link-fingerprints forhindrer brug af en gammel cache til et ændret link. Tilknyttede guides indlæses ved start, og favoritternes aktuelle programlinje opdateres mindst hvert minut i forgrunden. Aktuelle data kan vises offline fra cachen; gamle udsendelser vises ikke efter deres sluttid. Guiden genhentes normalt efter cirka 30 minutter. Standardgrænser: 256 MB udpakket XML og 250.000 relevante programmer.
 
-**Indstillinger → Nulstil app** kræver **Ja** i en særskilt bekræftelse. **Nej** bevarer data. Ja stopper afspilning/casting og kalder Androids rydning af denne apps egne brugerdata. Appen lukker, og ved næste åbning er kilder, login, favoritter, TV-guides, indstillinger og cache væk. De indbyggede logoer og appens programfiler følger stadig installationen.
+**☰ → Nulstil app** kræver **Ja** i en særskilt bekræftelse. **Nej** bevarer data. Ja stopper afspilning/casting og kalder Androids rydning af denne apps egne brugerdata. Appen lukker, og ved næste åbning er kilder, login, favoritter, TV-guides, indstillinger og cache væk. De indbyggede logoer og appens programfiler følger stadig installationen.
 
 Version 1.5.0 tilføjer TV-Guide med navngivne EPG-links, EPG-valg pr. kilde, aktuelle programmer på Favoritter, redigering/sletning, Opdatér alt og Nulstil app med Ja/Nej.
+
+Version 1.5.1 flytter alle indstillingspunkter og start-på-favoritter-kontakten direkte til en scrollbar burgermenu. Kildevælgerens knapper står lodret i rækkefølgen Tilføj M3U, Tilføj Xtream-login og Annuller nederst.
 
 ## Udvikling
 
