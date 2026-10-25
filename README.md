@@ -22,6 +22,8 @@ Cast kræver Google Play-tjenester og normalt samme Wi-Fi som modtageren. Modtag
 
 Version 1.2.1 gør ikonmotivet 10 % mindre med ekstra gennemsigtig kant for at undgå beskæring i launcherens maske. Versionen retter også et crash ved indlæsning af kilder: billedbibliotekets logningsværdi var ugyldig, så visning af den første kanal udløste en undtagelse.
 
+Version 1.2.2 gør ikonmotivet yderligere 10 % mindre end i 1.2.1 (81 % af originalens størrelse).
+
 ## Udvikling
 
 Brug JDK 17 eller 21, Android SDK Platform 35 og Build Tools 34.0.0.
