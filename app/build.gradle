@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
  namespace 'dk.stream.android'
  compileSdk 35
- defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 35; versionCode 7; versionName '1.3.0' }
+ defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 35; versionCode 8; versionName '1.3.1' }
  testOptions {
   unitTests.includeAndroidResources = true
   unitTests.all {

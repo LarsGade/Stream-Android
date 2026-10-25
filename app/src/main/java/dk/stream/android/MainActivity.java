@@ -48,7 +48,7 @@ public final class MainActivity extends AppCompatActivity {
  private LinearLayout content;
  private FrameLayout fullscreenHost;
  private boolean fullscreen;
- private int panelIndex,previousOrientation;
+ private int panelIndex,previousOrientation,previousCutoutMode;
  private long resumePosition;
  private LocalChannelLogos localLogos;
  private androidx.activity.OnBackPressedCallback fullscreenBack;
@@ -89,10 +89,6 @@ public final class MainActivity extends AppCompatActivity {
   content=root;drawer.addView(root,new DrawerLayout.LayoutParams(-1,-1));
   FrameLayout screen=new FrameLayout(this);screen.addView(drawer,new FrameLayout.LayoutParams(-1,-1));
   fullscreenHost=new FrameLayout(this);fullscreenHost.setBackgroundColor(Color.BLACK);fullscreenHost.setVisibility(View.GONE);screen.addView(fullscreenHost,new FrameLayout.LayoutParams(-1,-1));setContentView(screen);
-  androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(fullscreenHost,(view,insets)->{
-   androidx.core.graphics.Insets cutout=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout());
-   view.setPadding(cutout.left,cutout.top,cutout.right,cutout.bottom);return insets;
-  });
   fullscreenBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {exitFullscreen();}};
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{
@@ -394,19 +390,35 @@ public final class MainActivity extends AppCompatActivity {
  private void enterFullscreen() {
   if(fullscreen || connectedCast()!=null || playbackPanel.getVisibility()!=View.VISIBLE) return;
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);fullscreen=true;previousOrientation=getRequestedOrientation();
+  if(android.os.Build.VERSION.SDK_INT>=28) previousCutoutMode=getWindow().getAttributes().layoutInDisplayCutoutMode;
   content.removeView(playbackPanel);fullscreenHost.addView(playbackPanel,new FrameLayout.LayoutParams(-1,-1));fullscreenHost.setVisibility(View.VISIBLE);drawer.setVisibility(View.GONE);
   playbackPanel.fullscreenLayout(true);fullscreenBack.setEnabled(true);androidx.core.view.ViewCompat.requestApplyInsets(fullscreenHost);
   androidx.core.view.WindowInsetsControllerCompat bars=androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView());
   bars.setSystemBarsBehavior(androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);bars.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+  hideFullscreenSystemBars();
   setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
  }
  private void exitFullscreen() {
   if(!fullscreen) return;
   fullscreen=false;fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);
-  playbackPanel.fullscreenLayout(false);fullscreenBack.setEnabled(false);
+  playbackPanel.fullscreenLayout(false);fullscreenBack.setEnabled(false);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+  if(android.os.Build.VERSION.SDK_INT>=28) {android.view.WindowManager.LayoutParams params=getWindow().getAttributes();params.layoutInDisplayCutoutMode=previousCutoutMode;getWindow().setAttributes(params);}
   androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.systemBars());setRequestedOrientation(previousOrientation);
  }
- @Override protected void onResume() {super.onResume();if(playbackPanel!=null) playbackPanel.refresh();}
+ private void hideFullscreenSystemBars() {
+  if(!fullscreen) return;
+  androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
+  getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+  if(android.os.Build.VERSION.SDK_INT>=28) {
+   android.view.WindowManager.LayoutParams params=getWindow().getAttributes();
+   params.layoutInDisplayCutoutMode=android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;getWindow().setAttributes(params);
+  }
+  androidx.core.view.WindowInsetsControllerCompat bars=androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView());
+  bars.setSystemBarsBehavior(androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);bars.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+ }
+ @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
+ @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
+ @Override protected void onResume() {super.onResume();if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);
   if(keyCode==android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_MUTE) getWindow().getDecorView().post(()->{if(playbackPanel!=null) playbackPanel.refresh();});

@@ -10,7 +10,7 @@ Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
 4. Skift mellem **TV**, **Film** og **Serier**, vælg en gruppe eller søg efter titel. Serverens rækkefølge bevares. Xtream-serier åbner en afsnitsliste med sæson- og afsnitsnumre.
 5. Tryk på **stjernen** ved et element for at tilføje eller fjerne det fra **Favoritter**. Favoritter kan komme fra flere kilder og bevarer rækkefølgen, de blev tilføjet i.
 6. Åbn **☰ → Favoritter**. Denne visning samler alle dine favoritter uden søgefelt, grupper, TV/Film/Serier-valg, gruppetekster eller antal. Under **☰ → Indstillinger** kan du slå **Vis favoritter, når appen åbner** til. Listen gemmes mellem genstarter og kan vises uden at hente hele kataloget igen. Afspilning og nye logoer kræver netværk.
-7. Afspilleren har en fast kontrolbjælke til afspil/pause, stop, lyd fra/til og fuldskærm samt en lydstyrkeskyder. Media3-kontrollerne viser tidslinje, spoling og undertekstvalg, når streamen understøtter det. Fuldskærm skifter til liggende visning; tryk tilbage eller på fuldskærmsknappen igen for at vende tilbage uden at genstarte afspilleren. Lydstyrkekontrollerne styrer telefonens medielyd eller Cast-modtagerens lyd ved casting.
+7. Afspilleren har en fast kontrolbjælke til afspil/pause, stop, lyd fra/til og fuldskærm samt en lydstyrkeskyder. Media3-kontrollerne viser tidslinje, spoling og undertekstvalg, når streamen understøtter det. Fuldskærm skifter til liggende visning og udfylder hele skærmen med bevaret billedformat og beskæring ved behov. Kontrollerne ligger oven på videoen, er skjult ved åbning og forsvinder automatisk efter 2,5 sekunder; tryk på videoen for at vise dem igen. Status- og navigationslinjen skjules igen efter rotation og tilbagevenden til appen; tryk tilbage eller på fuldskærmsknappen igen for at vende tilbage uden at genstarte afspilleren. Lydstyrkekontrollerne styrer telefonens medielyd eller Cast-modtagerens lyd ved casting.
 8. Tryk på Cast-ikonet for at forbinde til en Google Cast-enhed, og vælg indhold.
 
 Kilder, login, favoritter og startindstillingen gemmes lokalt med AES-GCM og en nøgle fra Android Keystore. Eksisterende gemte M3U-links flyttes fra den gamle indstilling til den krypterede lagring ved opdatering. Android-backup er slået fra. Den seneste kilde indlæses automatisk, medmindre appen starter på Favoritter.
@@ -32,6 +32,8 @@ Bibliotek er omdøbt til Streamingtjeneste. Favoritter viser kun logo, kanalnavn
 Version 1.2.3 forbedrer M3U-logoindlæsning og SVG-understøttelse og forenkler Favoritter til en samlet liste uden filtre eller antal. Vælg din M3U-kilde igen under Indstillinger → Kilder for også at opdatere logo-adresser i allerede gemte favoritter.
 
 Version 1.3.0 tilføjer synlige afspillerkontroller, fuldskærm og lydstyrke samt de 47 indbyggede kanallogoer.
+
+Version 1.3.1 retter fuldskærm: videoen bruger hele skærmarealet, kontrolbjælker optager ikke videoplads, pauseknappen skjules automatisk, og systemlinjer holdes skjult i fuldskærm.
 
 ## Udvikling
 

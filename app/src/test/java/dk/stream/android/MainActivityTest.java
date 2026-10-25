@@ -136,4 +136,24 @@ public class MainActivityTest {
   control(panel,R.string.mute_action).performClick();assertEquals(0,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));
   control(panel,R.string.unmute_action).performClick();assertEquals(3,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));
  }
+ @Test public void fullscreenVideoUsesWholeViewportAndHidesControlsAutomatically() {
+  startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");
+  control(panel,R.string.fullscreen_action).performClick();
+  FrameLayout host=ReflectionHelpers.getField(activity,"fullscreenHost");
+  host.measure(View.MeasureSpec.makeMeasureSpec(1920,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1080,View.MeasureSpec.EXACTLY));host.layout(0,0,1920,1080);
+  assertEquals(1920,panel.video.getWidth());assertEquals(1080,panel.video.getHeight());
+  assertEquals(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,panel.video.getResizeMode());
+  LinearLayout overlay=ReflectionHelpers.getField(panel,"controls");assertEquals(View.GONE,overlay.getVisibility());
+  assertFalse(panel.video.isControllerFullyVisible());
+  panel.video.showController();Shadows.shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(500));assertEquals(View.VISIBLE,overlay.getVisibility());
+  Shadows.shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(3000));
+  assertEquals(View.GONE,overlay.getVisibility());assertFalse(panel.video.isControllerFullyVisible());
+  assertTrue((activity.getWindow().getAttributes().flags & android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)!=0);
+  int ui=activity.getWindow().getDecorView().getSystemUiVisibility();
+  assertTrue((ui & View.SYSTEM_UI_FLAG_FULLSCREEN)!=0);assertTrue((ui & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)!=0);
+  activity.onWindowFocusChanged(true);assertTrue((activity.getWindow().getDecorView().getSystemUiVisibility() & View.SYSTEM_UI_FLAG_FULLSCREEN)!=0);
+  activity.getOnBackPressedDispatcher().onBackPressed();
+  assertEquals(View.VISIBLE,overlay.getVisibility());assertEquals(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT,panel.video.getResizeMode());
+  assertEquals(0,activity.getWindow().getAttributes().flags & android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+ }
 }
