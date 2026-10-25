@@ -4,15 +4,21 @@ Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
 
 ## Brug
 
-1. Installér debug-APK'en på Android 6 eller nyere.
-2. Indsæt et HTTP/HTTPS-link til en M3U-liste, og tryk **Indlæs kanaler**.
-3. Alternativt: Tryk **Tilføj Xtream-login**, angiv server (med HTTP/HTTPS og eventuel port), brugernavn og adgangskode. Appen henter TV, film, serier og grupper via Xtreams `player_api.php`. Login gemmes ikke.
-4. Skift mellem **TV**, **Film** og **Serier**. Vælg en gruppe eller søg på titel. Serverens rækkefølge for grupper og indhold bevares. Tryk på indhold for at afspille; Xtream-serier åbner en afsnitsliste med sæson- og afsnitsnumre.
-5. Tryk på Cast-ikonet, forbind til en Google Cast-enhed, og vælg en kanal.
+1. Installér debug-APK'en på Android 6 eller nyere. Appen hedder **Stream** og bruger det vedhæftede blå ikon i et sort, gråt og blåt tema.
+2. Åbn **☰ → Indstillinger → Kilder**. Vælg **Tilføj M3U** eller **Tilføj Xtream-login**, og angiv eventuelt et navn til kilden. Tryk **Gem og indlæs**.
+3. Du kan tilføje flere kilder og skifte mellem dem under **Kilder**. Tryk længe på en kilde for at slette den og dens favoritter.
+4. Skift mellem **TV**, **Film** og **Serier**, vælg en gruppe eller søg efter titel. Serverens rækkefølge bevares. Xtream-serier åbner en afsnitsliste med sæson- og afsnitsnumre.
+5. Tryk på **stjernen** ved et element for at tilføje eller fjerne det fra **Favoritter**. Favoritter kan komme fra flere kilder og bevarer rækkefølgen, de blev tilføjet i.
+6. Åbn **☰ → Favoritter**. Under **☰ → Indstillinger** kan du slå **Vis favoritter, når appen åbner** til. Listen gemmes mellem genstarter og kan vises uden at hente hele kataloget igen. Afspilning og nye logoer kræver netværk.
+7. Tryk på Cast-ikonet for at forbinde til en Google Cast-enhed, og vælg indhold.
 
-Det senest indlæste link gemmes lokalt. Appen indeholder ingen kanaler eller abonnementer. HTTP understøttes af hensyn til eksisterende IPTV-udbydere; brug HTTPS til links med loginoplysninger.
+Kilder, login, favoritter og startindstillingen gemmes lokalt med AES-GCM og en nøgle fra Android Keystore. Eksisterende gemte M3U-links flyttes fra den gamle indstilling til den krypterede lagring ved opdatering. Android-backup er slået fra. Den seneste kilde indlæses automatisk, medmindre appen starter på Favoritter.
 
-Cast kræver Google Play-tjenester og normalt samme Wi-Fi som modtageren. Modtageren henter streamen direkte; format, codec og adgang skal understøttes på TV'et. DRM og udbyderspecifikke HTTP-headere understøttes ikke. Xtream-login bruger serverens API til TV, VOD, serier og afsnit. For M3U udledes indholdstypen af metadata, grupper og URL-stier (`/live/`, `/movie/`, `/series/`) eller filtypen; lister uden oplysninger om typen kan ikke altid inddeles sikkert og falder tilbage til TV. M3U-lister kan kun vise det indhold og de afsnit, der faktisk er inkluderet. Et M3U-link er en kanalliste; HLS-streams i listen kan være M3U8.
+Logoer læses fra M3U's `tvg-logo` eller Xtreams `stream_icon`/`cover`, hentes asynkront og caches. Ved manglende, ugyldige eller utilgængelige logoer vises et standardikon. Servernes logo-URL'er logges ikke af billedbiblioteket.
+
+Appen indeholder ingen kanaler eller abonnementer. HTTP understøttes af hensyn til eksisterende IPTV-udbydere; brug HTTPS til links med loginoplysninger.
+
+Cast kræver Google Play-tjenester og normalt samme Wi-Fi som modtageren. Modtageren henter streamen direkte; format, codec og adgang skal understøttes på TV'et. DRM og udbyderspecifikke HTTP-headere understøttes ikke. Xtream-login bruger serverens API til TV, VOD, serier og afsnit. For M3U udledes typen af metadata, grupper og URL-stier (`/live/`, `/movie/`, `/series/`) eller filtypen; lister uden typeoplysninger falder tilbage til TV. M3U kan kun vise indhold og afsnit, som er inkluderet i listen.
 
 ## Udvikling
 
@@ -32,4 +38,4 @@ cd /workspace/Stream-Android
 gradle assembleDebug testDebugUnitTest lintDebug
 ```
 
-Tests kontrollerer metadata, relative links, specialtegn i links og Xtream-login, HTTP-redirects, gzip, UTF-16, store lister, serverfejl, API-kataloger, rækkefølgen for sektioner og grupper samt sæsoner og afsnit. M3U-hentning accepterer op til 64 MB og viser konkrete fejl uden at vise loginoplysninger. Afspilning, brugergrænseflade og casting skal også afprøves på en Android-enhed. Cloudmiljøet har ingen fysisk Cast-modtager.
+Tests kontrollerer metadata, relative links, specialtegn i links og Xtream-login, HTTP-redirects, gzip, UTF-16, store lister, serverfejl, API-kataloger, rækkefølgen for sektioner og grupper samt sæsoner og afsnit. Der er også tests af logo-adresser, gemte kilder, favoritter, startindstilling og krypteringens integritet. M3U-hentning accepterer op til 64 MB og viser konkrete fejl uden at vise loginoplysninger. Afspilning, brugergrænseflade og casting skal også afprøves på en Android-enhed. Cloudmiljøet har ingen fysisk Cast-modtager.

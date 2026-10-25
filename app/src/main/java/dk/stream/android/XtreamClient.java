@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.*;
 import org.json.*;
 
-/** Xtream catalog order is retained; credentials stay in memory and are never logged. */
+/** Xtream catalog order is retained; credentials are never logged. */
 public final class XtreamClient {
  private final HttpUrl base;
  private final String username,password;
@@ -65,8 +65,13 @@ public final class XtreamClient {
    if(!id.matches("[0-9]+")) continue;
    String group=names.get(item.optString("category_id")); if(group==null) group="";
    String url=kind==Playlist.Kind.SERIES?"":streamUrl(kind,id,kind==Playlist.Kind.TV?liveExtension:item.optString("container_extension","mp4"));
-   catalog.add(new Playlist.Channel(item.optString("name",id),url,group,kind,kind==Playlist.Kind.SERIES?id:null));
+   String image=item.optString("stream_icon","");if(image.isEmpty()) image=item.optString("cover","");
+   catalog.add(new Playlist.Channel(item.optString("name",id),url,group,kind,kind==Playlist.Kind.SERIES?id:null,logo(image)));
   }
+ }
+ private String logo(String value) {
+  if(value.isEmpty()) return "";
+  HttpUrl url=base.resolve(value); return url==null?"":url.toString();
  }
  private String streamUrl(Playlist.Kind kind,String id,String extension) {
   if(!extension.matches("[a-zA-Z0-9]+")) extension="mp4";
@@ -89,7 +94,7 @@ public final class XtreamClient {
      JSONObject episode=entries.getJSONObject(i); String id=episode.optString("id",""); if(!id.matches("[0-9]+")) continue;
      String title=episode.optString("title",series.name);
      String label="S"+season+" · E"+episode.optString("episode_num",String.valueOf(i+1))+" · "+title;
-     result.add(new Playlist.Channel(label,streamUrl(Playlist.Kind.SERIES,id,episode.optString("container_extension","mp4")),series.group,Playlist.Kind.SERIES,null));
+     result.add(new Playlist.Channel(label,streamUrl(Playlist.Kind.SERIES,id,episode.optString("container_extension","mp4")),series.group,Playlist.Kind.SERIES,null,series.logoUrl));
     }
    }
    if(result.isEmpty()) throw new PlaylistLoader.Failure(0);

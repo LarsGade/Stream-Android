@@ -16,4 +16,14 @@ public class PlaylistTest {
   assertEquals("https://example.com/my%20channel.m3u8",list.get(0).url);
  }
  @Test public void emptyList(){assertTrue(Playlist.parse("#EXTM3U\n", "https://example.com").isEmpty());}
+ @Test public void readsAndResolvesChannelLogos() {
+  var items=Playlist.parse("#EXTM3U\n#EXTINF:-1 tvg-logo=\"../logos/dr.png?x=1&amp;y=2\",DR\nhttps://example.com/live\n", "https://example.com/lists/tv.m3u");
+  assertEquals("https://example.com/logos/dr.png?x=1&y=2",items.get(0).logoUrl);
+ }
+ @Test public void supportsSingleQuotedLogoAndRejectsUnsafeLogoUrls() {
+  var base=Playlist.httpUrl("https://example.com/list");
+  assertEquals("https://example.com/logo.png",Playlist.logo("tvg-logo='/logo.png'",base));
+  assertEquals("",Playlist.logo("tvg-logo=\"file:///secret\"",base));
+  assertEquals("",Playlist.logo("tvg-logo=\"\"",base));
+ }
 }

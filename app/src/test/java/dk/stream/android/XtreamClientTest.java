@@ -9,11 +9,11 @@ public class XtreamClientTest {
   for(String body:new String[]{
    "{\"user_info\":{\"auth\":1,\"status\":\"Active\"}}",
    "[{\"category_id\":\"20\",\"category_name\":\"Z TV\"},{\"category_id\":\"10\",\"category_name\":\"A TV\"}]",
-   "[{\"stream_id\":2,\"name\":\"Z channel\",\"category_id\":\"10\"},{\"stream_id\":1,\"name\":\"A channel\",\"category_id\":\"20\"}]",
+   "[{\"stream_id\":2,\"name\":\"Z channel\",\"stream_icon\":\"/logos/tv.png\",\"category_id\":\"10\"},{\"stream_id\":1,\"name\":\"A channel\",\"category_id\":\"20\"}]",
    "[{\"category_id\":\"30\",\"category_name\":\"Movies\"}]",
-   "[{\"stream_id\":3,\"name\":\"Movie\",\"category_id\":\"30\",\"container_extension\":\"mkv\"}]",
+   "[{\"stream_id\":3,\"name\":\"Movie\",\"stream_icon\":\"/logos/movie.jpg\",\"category_id\":\"30\",\"container_extension\":\"mkv\"}]",
    "[{\"category_id\":\"40\",\"category_name\":\"Shows\"}]",
-   "[{\"series_id\":4,\"name\":\"Series\",\"category_id\":\"40\"}]"}) server.enqueue(new MockResponse().setBody(body));
+   "[{\"series_id\":4,\"name\":\"Series\",\"cover\":\"/logos/series.jpg\",\"category_id\":\"40\"}]"}) server.enqueue(new MockResponse().setBody(body));
  }
  @Test public void fetchesAllSectionsAndPreservesCategoryAndStreamOrder() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
@@ -21,6 +21,9 @@ public class XtreamClientTest {
    XtreamClient client=new XtreamClient(server.url("/").toString(),"user+name","p& +");
    Catalog catalog=client.load();
    assertEquals(4,catalog.items.size());
+   assertEquals(server.url("/logos/tv.png").toString(),catalog.items.get(0).logoUrl);
+   assertEquals(server.url("/logos/movie.jpg").toString(),catalog.items.get(2).logoUrl);
+   assertEquals(server.url("/logos/series.jpg").toString(),catalog.items.get(3).logoUrl);
    assertEquals(Arrays.asList("Z TV","A TV"),catalog.groups(Playlist.Kind.TV));
    assertEquals("Z channel",catalog.filter(Playlist.Kind.TV,null,"").get(0).name);
    var movie=catalog.filter(Playlist.Kind.FILM,null,"").get(0);

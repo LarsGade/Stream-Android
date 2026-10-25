@@ -1,10 +1,8 @@
 <resources>
   <string name="cast_ended">Casting afsluttet. Vælg en kanal for at afspille her.</string>
   <string name="cast_failed">Kunne ikke forbinde til Cast-enheden</string>
-  <string name="app_name">STREAM</string>
-  <string name="load">Indlæs kanaler</string>
-  <string name="welcome">Tilføj M3U eller Xtream for at komme i gang</string>
-  <string name="cast_unavailable">Google Cast kræver Google Play-tjenester. Lokal afspilning er tilgængelig.</string>
+  <string name="app_name">Stream</string>
+  <string name="welcome">Tilføj en kilde via ☰ → Indstillinger → Kilder.</string>
   <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
   <string name="loading">Henter kanalliste …</string>
   <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
@@ -18,7 +16,6 @@
  <string name="xtream_server">Server, fx https://tv.eksempel.dk:8080</string>
  <string name="xtream_user">Brugernavn</string>
  <string name="xtream_password">Adgangskode</string>
- <string name="xtream_note">Login bruges til at hente TV, film og serier. Xtream-login gemmes ikke; indtast det igen, når appen genstartes.</string>
  <string name="xtream_invalid">Angiv en gyldig HTTP/HTTPS-server, brugernavn og adgangskode.</string>
  <string name="auth_failed">Serveren afviste adgangen (401/403). Kontrollér login, abonnement og udbyderens adgangskrav.</string>
  <string name="http_failed">Serveren svarede med HTTP %1$d. Kontrollér adressen eller prøv igen senere.</string>
@@ -30,10 +27,30 @@
  <string name="tv">TV</string>
  <string name="films">Film</string>
  <string name="series">Serier</string>
- <string name="change_source">Tilføj / skift kilde</string>
  <string name="all_groups">Alle grupper</string>
  <string name="no_section_items">Intet indhold i denne sektion eller søgning.</string>
  <string name="loading_catalog">Henter TV, film, serier og grupper …</string>
  <string name="loading_episodes">Henter seriens afsnit …</string>
  <string name="choose_episode">Vælg et afsnit i listen.</string>
+ <string name="open_menu">Åbn menu</string>
+ <string name="library">Bibliotek</string>
+ <string name="favorites">Favoritter</string>
+ <string name="settings">Indstillinger</string>
+ <string name="sources">Kilder</string>
+ <string name="start_favorites">Vis favoritter, når appen åbner</string>
+ <string name="storage_note">Kilder, login og favoritter gemmes krypteret på denne enhed.</string>
+ <string name="storage_failed">Kunne ikke læse eller gemme dine lokale indstillinger. Dine gemte data er ikke overskrevet.</string>
+ <string name="select_group">Vælg gruppe</string>
+ <string name="no_favorites">Din favoritliste er tom. Tryk på stjernen ud for en kanal i biblioteket.</string>
+ <string name="add_favorite">Tilføj %1$s til favoritter</string>
+ <string name="remove_favorite">Fjern %1$s fra favoritter</string>
+ <string name="logo_for">Logo for %1$s</string>
+ <string name="add_m3u">Tilføj M3U</string>
+ <string name="source_name">Kildens navn (valgfrit)</string>
+ <string name="save_source">Gem og indlæs</string>
+ <string name="wait_loading">Vent, til indlæsningen er færdig.</string>
+ <string name="remove_source">Slet kilde</string>
+ <string name="remove_source_note">Vil du slette %1$s og favoritterne fra denne kilde? Tryk længe på en kilde for at slette den.</string>
+ <string name="source_missing">Kilden findes ikke længere. Tilføj den igen under Indstillinger.</string>
+ <string name="group_source">%1$s · %2$s</string>
 </resources>

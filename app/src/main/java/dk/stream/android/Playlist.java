@@ -8,11 +8,12 @@ import java.util.regex.Pattern;
 public final class Playlist {
  public enum Kind { TV, FILM, SERIES }
  public static final class Channel {
-  public final String name, url, group, seriesId;
+  public final String name, url, group, seriesId, logoUrl;
   public final Kind kind;
   Channel(String name,String url,String group) { this(name,url,group,Kind.TV,null); }
-  Channel(String name,String url,String group,Kind kind,String seriesId) {
-   this.name=name; this.url=url; this.group=group; this.kind=kind; this.seriesId=seriesId;
+  Channel(String name,String url,String group,Kind kind,String seriesId) { this(name,url,group,kind,seriesId,""); }
+  Channel(String name,String url,String group,Kind kind,String seriesId,String logoUrl) {
+   this.name=name; this.url=url; this.group=group; this.kind=kind; this.seriesId=seriesId; this.logoUrl=logoUrl;
   }
   @Override public String toString() { return name + (group.isEmpty() ? "" : "\n" + group); }
  }
@@ -54,6 +55,13 @@ public final class Playlist {
    .addQueryParameter("username",username.trim()).addQueryParameter("password",password)
    .addQueryParameter("type","m3u_plus").addQueryParameter("output","m3u8").build().toString();
  }
+ public static String logo(String metadata,okhttp3.HttpUrl base) {
+  var matcher=Pattern.compile("tvg-logo\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')",Pattern.CASE_INSENSITIVE).matcher(metadata);
+  if(!matcher.find()) return "";
+  String value=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
+  if(value.isEmpty()) return "";
+  okhttp3.HttpUrl url=base.resolve(value.replace("&amp;","&")); return url==null?"":url.toString();
+ }
  public static List<Channel> parse(String text, String base) {
   List<Channel> result=new ArrayList<>(); String name=null, group="", metadata="";
   okhttp3.HttpUrl source=httpUrl(base);
@@ -71,7 +79,7 @@ public final class Playlist {
    } else if(!line.isEmpty() && !line.startsWith("#")) {
     if(name!=null || line.matches("(?i)^https?://.*")) {
      okhttp3.HttpUrl resolved=source.resolve(line.replace("&amp;","&"));
-     if(resolved!=null) result.add(new Channel(name==null || name.isEmpty()?"Kanal "+(result.size()+1):name,resolved.toString(),group,inferKind(metadata,group,resolved.toString()),null));
+     if(resolved!=null) result.add(new Channel(name==null || name.isEmpty()?"Kanal "+(result.size()+1):name,resolved.toString(),group,inferKind(metadata,group,resolved.toString()),null,logo(metadata,source)));
     }
     name=null; group=""; metadata="";
    }
