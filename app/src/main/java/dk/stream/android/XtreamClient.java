@@ -70,8 +70,7 @@ public final class XtreamClient {
   }
  }
  private String logo(String value) {
-  if(value.isEmpty()) return "";
-  HttpUrl url=base.resolve(value); return url==null?"":url.toString();
+  return LogoUrls.resolve(value,base);
  }
  private String streamUrl(Playlist.Kind kind,String id,String extension) {
   if(!extension.matches("[a-zA-Z0-9]+")) extension="mp4";

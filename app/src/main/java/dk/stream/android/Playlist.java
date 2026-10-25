@@ -56,11 +56,10 @@ public final class Playlist {
    .addQueryParameter("type","m3u_plus").addQueryParameter("output","m3u8").build().toString();
  }
  public static String logo(String metadata,okhttp3.HttpUrl base) {
-  var matcher=Pattern.compile("tvg-logo\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')",Pattern.CASE_INSENSITIVE).matcher(metadata);
+  var matcher=Pattern.compile("(?:^|\\s)(?:tvg-logo|logo|logo-url)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s,]+))",Pattern.CASE_INSENSITIVE).matcher(metadata);
   if(!matcher.find()) return "";
-  String value=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
-  if(value.isEmpty()) return "";
-  okhttp3.HttpUrl url=base.resolve(value.replace("&amp;","&")); return url==null?"":url.toString();
+  String value=matcher.group(1)!=null?matcher.group(1):matcher.group(2)!=null?matcher.group(2):matcher.group(3);
+  return LogoUrls.resolve(value,base);
  }
  public static List<Channel> parse(String text, String base) {
   List<Channel> result=new ArrayList<>(); String name=null, group="", metadata="";
@@ -68,8 +67,12 @@ public final class Playlist {
   for(String raw:text.replace("\uFEFF", "").split("\\r\\n|\\n|\\r")) {
    String line=raw.trim();
    if(line.startsWith("#EXTINF:")) {
-    boolean quoted=false; int comma=-1;
-    for(int i=0;i<line.length();i++) { if(line.charAt(i)=='"') quoted=!quoted; if(line.charAt(i)==',' && !quoted) { comma=i; break; } }
+    char quote=0; int comma=-1;
+    for(int i=0;i<line.length();i++) {
+     char c=line.charAt(i);
+     if(c==quote) quote=0; else if(quote==0 && (c=='"' || c=='\'')) quote=c;
+     if(c==',' && quote==0) {comma=i;break;}
+    }
     metadata=comma<0?line:line.substring(0,comma);
     name=comma<0?null:line.substring(comma+1).trim();
     var matcher=Pattern.compile("group-title=\"([^\"]*)\"").matcher(line);

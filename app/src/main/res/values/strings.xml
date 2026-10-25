@@ -33,7 +33,7 @@
  <string name="loading_episodes">Henter seriens afsnit …</string>
  <string name="choose_episode">Vælg et afsnit i listen.</string>
  <string name="open_menu">Åbn menu</string>
- <string name="library">Bibliotek</string>
+ <string name="library">Streamingtjeneste</string>
  <string name="favorites">Favoritter</string>
  <string name="settings">Indstillinger</string>
  <string name="sources">Kilder</string>
@@ -52,5 +52,4 @@
  <string name="remove_source">Slet kilde</string>
  <string name="remove_source_note">Vil du slette %1$s og favoritterne fra denne kilde? Tryk længe på en kilde for at slette den.</string>
  <string name="source_missing">Kilden findes ikke længere. Tilføj den igen under Indstillinger.</string>
- <string name="group_source">%1$s · %2$s</string>
 </resources>

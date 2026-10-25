@@ -36,6 +36,7 @@ public final class MainActivity extends AppCompatActivity {
  private Playlist.Kind currentKind=Playlist.Kind.TV;
  private final RadioButton[] kindButtons=new RadioButton[3];
  private Spinner groups;
+ private RadioGroup sections;
  private EditText search;
  private TextView status,pageTitle;
  private ListView list;
@@ -94,7 +95,7 @@ public final class MainActivity extends AppCompatActivity {
   pageTitle=text("",20,Color.WHITE);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
   status=text(getString(R.string.welcome),13,Color.LTGRAY);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   video=new PlayerView(this);root.addView(video,new LinearLayout.LayoutParams(-1,dp(180)));video.setVisibility(View.GONE);
-  RadioGroup sections=new RadioGroup(this);sections.setOrientation(RadioGroup.HORIZONTAL);root.addView(sections);
+  sections=new RadioGroup(this);sections.setOrientation(RadioGroup.HORIZONTAL);root.addView(sections);
   int[] labels={R.string.tv,R.string.films,R.string.series};
   for(int i=0;i<labels.length;i++) {
    RadioButton button=new RadioButton(this);button.setId(View.generateViewId());button.setText(labels[i]);kindButtons[i]=button;sections.addView(button,new RadioGroup.LayoutParams(0,-2,1));
@@ -159,15 +160,23 @@ public final class MainActivity extends AppCompatActivity {
   if(adapter==null) return;
   pageTitle.setText(favoritesMode?getString(R.string.favorites):activeSource==null?getString(R.string.library):activeSource.name);
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
-  if(favoritesMode) visible=library.favoriteItems(currentKind,group,search.getText().toString());
+  sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+  groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+  search.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+  if(favoritesMode) visible=new ArrayList<>(library.favorites);
   else {
    visible=new ArrayList<>();
    if(activeSource!=null) for(Playlist.Channel channel:catalog.filter(currentKind,group,search.getText().toString())) visible.add(new Library.Entry(activeSource.id,channel));
   }
   adapter.notifyDataSetChanged();
   if(!loading) {
-   if(favoritesMode && library.favorites.isEmpty()) status.setText(R.string.no_favorites);
-   else if(!favoritesMode && activeSource==null) status.setText(R.string.welcome);
+   if(favoritesMode) {
+    status.setText(library.favorites.isEmpty()?getString(R.string.no_favorites):"");
+    status.setVisibility(library.favorites.isEmpty()?View.VISIBLE:View.GONE);
+    return;
+   }
+   status.setVisibility(View.VISIBLE);
+   if(activeSource==null) status.setText(R.string.welcome);
    else status.setText(visible.isEmpty()?getString(R.string.no_section_items):getResources().getQuantityString(R.plurals.channel_count,visible.size(),visible.size()));
   }
  }
@@ -232,7 +241,7 @@ public final class MainActivity extends AppCompatActivity {
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
  private void loadSource(Library.Source source) {
   if(loading) return;
-  favoritesMode=false;busy(true);rebuildGroups();status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
+  favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
   worker.execute(()->{
    try {
     Catalog result=source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server));
@@ -248,6 +257,7 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void showError(Exception e) {
+  status.setVisibility(View.VISIBLE);
   String message;
   if(e instanceof PlaylistLoader.Failure) {
    int code=((PlaylistLoader.Failure)e).status;
@@ -265,7 +275,7 @@ public final class MainActivity extends AppCompatActivity {
   } else play(entry.channel);
  }
  private void showEpisodes(Playlist.Channel series,Library.Source source) {
-  busy(true);status.setText(R.string.loading_episodes);
+  busy(true);status.setVisibility(View.VISIBLE);status.setText(R.string.loading_episodes);
   worker.execute(()->{
    try {
     List<Playlist.Channel> episodes=new XtreamClient(source.server,source.username,source.password).episodes(series);
@@ -291,9 +301,9 @@ public final class MainActivity extends AppCompatActivity {
     row.star=iconButton(R.drawable.ic_favorite_outline,"");row.star.setFocusable(false);layout.addView(row.star,new LinearLayout.LayoutParams(dp(48),dp(48)));layout.setTag(row);recycled=layout;
    } else row=(Row)recycled.getTag();
    Library.Entry entry=getItem(position);Playlist.Channel channel=entry.channel;row.name.setText(channel.name);
-   Library.Source source=library.findSource(entry.sourceId);row.group.setText(favoritesMode && source!=null?(channel.group.isEmpty()?source.name:getString(R.string.group_source,channel.group,source.name)):channel.group);
+   Library.Source source=library.findSource(entry.sourceId);row.group.setText(channel.group);row.group.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
    row.logo.setContentDescription(getString(R.string.logo_for,channel.name));
-   Glide.with(MainActivity.this).load(channel.logoUrl.isEmpty()?null:channel.logoUrl).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
+   Glide.with(MainActivity.this).load(LogoRequests.model(channel.logoUrl,source==null?null:source.server)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
    boolean favorite=library.isFavorite(entry);row.star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);row.star.setContentDescription(getString(favorite?R.string.remove_favorite:R.string.add_favorite,channel.name));
    row.star.setOnClickListener(v->{if(changeLibrary(()->library.toggleFavorite(entry))) {if(favoritesMode) rebuildGroups();else notifyDataSetChanged();}});
    return recycled;
@@ -301,6 +311,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private static final class Row {ImageView logo;TextView name,group;ImageButton star;}
  private void play(Playlist.Channel channel) {
+  status.setVisibility(View.VISIBLE);
   selected=channel;CastSession session=cast==null?null:cast.getSessionManager().getCurrentCastSession();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
    video.setVisibility(View.GONE);if(player!=null) player.pause();

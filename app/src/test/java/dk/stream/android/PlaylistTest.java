@@ -26,4 +26,13 @@ public class PlaylistTest {
   assertEquals("",Playlist.logo("tvg-logo=\"file:///secret\"",base));
   assertEquals("",Playlist.logo("tvg-logo=\"\"",base));
  }
+ @Test public void readsUnquotedM3uLogoAndEncodedCdnAddress() {
+  var items=Playlist.parse("#EXTM3U\n#EXTINF:-1 tvg-logo=cdn.example.org/logo.png,DR\nhttps://example.com/live\n", "https://example.com/list");
+  assertEquals("https://cdn.example.org/logo.png",items.get(0).logoUrl);
+  assertEquals("https://cdn.example.org/a.png",LogoUrls.resolve("https%3A%2F%2Fcdn.example.org%2Fa.png",Playlist.httpUrl("https://example.com/list")));
+ }
+ @Test public void logoCommaInSingleQuotesDoesNotTruncateMetadata() {
+  var items=Playlist.parse("#EXTM3U\n#EXTINF:-1 tvg-logo='https://example.com/logo?size=64,64',DR\nhttps://example.com/live\n", "https://example.com/list");
+  assertEquals("https://example.com/logo?size=64,64",items.get(0).logoUrl);assertEquals("DR",items.get(0).name);
+ }
 }

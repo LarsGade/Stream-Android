@@ -82,4 +82,21 @@ public class MainActivityTest {
   views(row,ImageButton.class).get(0).performClick();assertEquals(1,storage.saved.favorites.size());
   clickText(activity.getWindow().getDecorView(),R.string.settings);views(dialog().getWindow().getDecorView(),SwitchCompat.class).get(0).setChecked(true);assertTrue(storage.saved.favoritesOnStart);
  }
+ @Test public void favoritesHideFiltersAndCountAndShowEveryContentType() throws Exception {
+  loadM3u();Library library=ReflectionHelpers.getField(activity,"library");String sourceId=library.sources.get(0).id;
+  library.toggleFavorite(new Library.Entry(sourceId,new Playlist.Channel("TV","https://example.com/live","DK")));
+  library.toggleFavorite(new Library.Entry(sourceId,new Playlist.Channel("Film","https://example.com/movie.mp4","Film",Playlist.Kind.FILM,null)));
+  library.toggleFavorite(new Library.Entry(sourceId,new Playlist.Channel("Serie","https://example.com/episode.mp4","Serier",Playlist.Kind.SERIES,null)));
+  clickText(activity.getWindow().getDecorView(),R.string.favorites);
+  ListView list=ReflectionHelpers.getField(activity,"list");assertEquals(3,list.getAdapter().getCount());
+  for(String name:new String[]{"search","groups","sections","status"}) {
+   View control=ReflectionHelpers.getField(activity,name);assertEquals(name,View.GONE,control.getVisibility());
+  }
+  TextView status=ReflectionHelpers.getField(activity,"status");assertEquals("",status.getText().toString());
+  View row=list.getAdapter().getView(0,null,list);
+  List<TextView> labels=views(row,TextView.class);assertEquals("TV",labels.get(0).getText().toString());
+  assertEquals(View.GONE,labels.get(1).getVisibility());
+  clickText(activity.getWindow().getDecorView(),R.string.library);
+  for(String name:new String[]{"search","groups","sections"}) {View control=ReflectionHelpers.getField(activity,name);assertEquals(name,View.VISIBLE,control.getVisibility());}
+ }
 }
