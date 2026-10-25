@@ -28,7 +28,7 @@ import java.util.concurrent.*;
 public final class MainActivity extends AppCompatActivity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private Library library=new Library();
- private LibraryStore store;
+ private LibraryPersistence store;
  private boolean storageReadable=true,loading,favoritesMode;
  private Catalog catalog=new Catalog();
  private Library.Source activeSource;

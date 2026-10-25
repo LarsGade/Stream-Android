@@ -10,7 +10,7 @@ import java.security.KeyStore;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
-public final class LibraryStore {
+public final class LibraryStore implements LibraryPersistence {
  private static final String ALIAS="StreamLibrary_v1";
  private final SharedPreferences preferences;
  public LibraryStore(Context context) { preferences=context.getSharedPreferences("stream_library",Context.MODE_PRIVATE); }

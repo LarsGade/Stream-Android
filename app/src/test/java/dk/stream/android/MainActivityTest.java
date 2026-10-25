@@ -1,0 +1,85 @@
+package dk.stream.android;
+
+import android.os.Looper;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.*;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SwitchCompat;
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.robolectric.*;
+import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowDialog;
+import org.robolectric.util.ReflectionHelpers;
+import java.util.*;
+import java.util.concurrent.*;
+import okhttp3.mockwebserver.*;
+import static org.junit.Assert.*;
+
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk=28)
+public class MainActivityTest {
+ private ActivityController<MainActivity> controller;
+ private MainActivity activity;
+ private MemoryStore storage;
+ private MockWebServer server;
+ private static final class MemoryStore implements LibraryPersistence {
+  Library saved=new Library();
+  public Library load() {return saved;}
+  public void save(Library value) throws Exception {saved=Library.fromJson(value.toJson());}
+ }
+ @Before public void start() throws Exception {
+  server=new MockWebServer();server.start();
+  controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();
+  storage=new MemoryStore();ReflectionHelpers.setField(activity,"store",storage);
+ }
+ @After public void stop() throws Exception {controller.pause().stop().destroy();server.shutdown();}
+ private <T extends View> List<T> views(View root,Class<T> type) {
+  List<T> found=new ArrayList<>();if(type.isInstance(root)) found.add(type.cast(root));
+  if(root instanceof ViewGroup) for(int i=0;i<((ViewGroup)root).getChildCount();i++) found.addAll(views(((ViewGroup)root).getChildAt(i),type));return found;
+ }
+ private void clickText(View root,int resource) {
+  for(TextView view:views(root,TextView.class)) if(view.getText().toString().equals(activity.getString(resource))) {view.performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();return;}
+  fail("Missing control "+resource);
+ }
+ private AlertDialog dialog() {return (AlertDialog)ShadowDialog.getLatestDialog();}
+ private void sourceDialog(boolean xtream) {
+  clickText(activity.getWindow().getDecorView(),R.string.settings);
+  clickText(dialog().getWindow().getDecorView(),R.string.sources);
+  dialog().getButton(xtream?AlertDialog.BUTTON_NEUTRAL:AlertDialog.BUTTON_POSITIVE).performClick();
+  Shadows.shadowOf(Looper.getMainLooper()).idle();
+ }
+ private void awaitLoadAndRender() throws Exception {
+  ExecutorService worker=ReflectionHelpers.getField(activity,"worker");worker.submit(()->{}).get(30,TimeUnit.SECONDS);
+  Shadows.shadowOf(Looper.getMainLooper()).idle();
+  View decor=activity.getWindow().getDecorView();decor.measure(View.MeasureSpec.makeMeasureSpec(1080,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1920,View.MeasureSpec.EXACTLY));decor.layout(0,0,1080,1920);
+  Shadows.shadowOf(Looper.getMainLooper()).idle();
+ }
+ private void loadM3u() throws Exception {
+  server.enqueue(new MockResponse().setBody("#EXTM3U\n#EXTINF:-1 group-title=\"DK\" tvg-logo=\"/logo.png\",DR 1\nhttps://example.com/live/1.m3u8\n"));
+  server.enqueue(new MockResponse().setResponseCode(404));
+  sourceDialog(false);List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);
+  fields.get(0).setText("Testkilde");fields.get(1).setText(server.url("/list.m3u").toString());dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();
+ }
+ @Test public void addingM3uSourceRendersChannelAndLogoWithoutCrashing() throws Exception {
+  loadM3u();ListView list=ReflectionHelpers.getField(activity,"list");
+  assertEquals(1,list.getAdapter().getCount());View row=list.getAdapter().getView(0,null,list);
+  assertEquals(1,storage.saved.sources.size());assertTrue(views(row,TextView.class).stream().anyMatch(view->view.getText().toString().equals("DR 1")));
+ }
+ @Test public void addingXtreamSourceRendersAllSections() throws Exception {
+  for(String body:new String[]{"{\"user_info\":{\"auth\":1}}","[]","[{\"stream_id\":1,\"name\":\"TV\"}]","[]","[{\"stream_id\":2,\"name\":\"Film\"}]","[]","[{\"series_id\":3,\"name\":\"Serie\"}]"}) server.enqueue(new MockResponse().setBody(body));
+  sourceDialog(true);List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);
+  fields.get(0).setText("Xtream");fields.get(1).setText(server.url("/").toString());fields.get(2).setText("user");fields.get(3).setText("password");
+  dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();
+  ListView list=ReflectionHelpers.getField(activity,"list");assertEquals(1,list.getAdapter().getCount());
+  clickText(activity.getWindow().getDecorView(),R.string.films);assertEquals(1,list.getAdapter().getCount());
+  clickText(activity.getWindow().getDecorView(),R.string.series);assertEquals(1,list.getAdapter().getCount());assertTrue(storage.saved.sources.get(0).xtream);
+ }
+ @Test public void loadedChannelCanBeFavoritedAndSelectedAsStartupList() throws Exception {
+  loadM3u();ListView list=ReflectionHelpers.getField(activity,"list");View row=list.getAdapter().getView(0,null,list);
+  views(row,ImageButton.class).get(0).performClick();assertEquals(1,storage.saved.favorites.size());
+  clickText(activity.getWindow().getDecorView(),R.string.settings);views(dialog().getWindow().getDecorView(),SwitchCompat.class).get(0).setChecked(true);assertTrue(storage.saved.favoritesOnStart);
+ }
+}

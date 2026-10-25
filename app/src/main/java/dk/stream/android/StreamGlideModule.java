@@ -6,7 +6,8 @@ import com.bumptech.glide.module.AppGlideModule;
 @GlideModule
 public final class StreamGlideModule extends AppGlideModule {
  @Override public void applyOptions(Context context,GlideBuilder builder) {
-  // Logo URLs may contain account tokens; never write them to logcat.
-  builder.setLogLevel(android.util.Log.ASSERT);
+  // Suppress normal request-failure warnings, which can include account URLs.
+  // Glide accepts VERBOSE through ERROR; ASSERT throws during first initialization.
+  builder.setLogLevel(android.util.Log.ERROR);
  }
 }
