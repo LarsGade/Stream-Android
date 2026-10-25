@@ -3,16 +3,37 @@
   <string name="cast_failed">Kunne ikke forbinde til Cast-enheden</string>
   <string name="app_name">STREAM</string>
   <string name="load">Indlæs kanaler</string>
-  <string name="welcome">Tilføj din M3U-liste for at komme i gang</string>
+  <string name="welcome">Tilføj M3U eller Xtream for at komme i gang</string>
   <string name="cast_unavailable">Google Cast kræver Google Play-tjenester. Lokal afspilning er tilgængelig.</string>
   <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
   <string name="loading">Henter kanalliste …</string>
-  <string name="load_failed">Kunne ikke indlæse listen. Kontrollér linket, netværket og M3U-formatet.</string>
   <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
   <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra TV\'et.</string>
   <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
-  <string name="search_hint">Søg efter kanal eller gruppe</string>
-  <plurals name="channel_count"><item quantity="one">%1$d kanal · vælg en kanal</item><item quantity="other">%1$d kanaler · vælg en kanal</item></plurals>
+  <string name="search_hint">Søg efter titel eller gruppe</string>
+  <plurals name="channel_count"><item quantity="one">%1$d element · vælg for at afspille</item><item quantity="other">%1$d elementer · vælg for at afspille</item></plurals>
   <string name="playing">Afspiller: %1$s</string>
   <string name="casting">Caster: %1$s</string>
+ <string name="xtream_login">Tilføj Xtream-login</string>
+ <string name="xtream_server">Server, fx https://tv.eksempel.dk:8080</string>
+ <string name="xtream_user">Brugernavn</string>
+ <string name="xtream_password">Adgangskode</string>
+ <string name="xtream_note">Login bruges til at hente TV, film og serier. Xtream-login gemmes ikke; indtast det igen, når appen genstartes.</string>
+ <string name="xtream_invalid">Angiv en gyldig HTTP/HTTPS-server, brugernavn og adgangskode.</string>
+ <string name="auth_failed">Serveren afviste adgangen (401/403). Kontrollér login, abonnement og udbyderens adgangskrav.</string>
+ <string name="http_failed">Serveren svarede med HTTP %1$d. Kontrollér adressen eller prøv igen senere.</string>
+ <string name="no_channels">Serverens svar indeholder intet understøttet indhold eller har et ugyldigt format.</string>
+ <string name="list_too_large">Kanallisten er større end 64 MB. Brug en mindre liste fra udbyderen.</string>
+ <string name="tls_failed">Serverens sikre forbindelse kunne ikke godkendes. Kontrollér serveradressen og certifikatet.</string>
+ <string name="timeout">Serveren svarede ikke i tide. Prøv igen.</string>
+ <string name="network_failed">Kunne ikke kontakte serveren. Kontrollér adressen og internetforbindelsen.</string>
+ <string name="tv">TV</string>
+ <string name="films">Film</string>
+ <string name="series">Serier</string>
+ <string name="change_source">Tilføj / skift kilde</string>
+ <string name="all_groups">Alle grupper</string>
+ <string name="no_section_items">Intet indhold i denne sektion eller søgning.</string>
+ <string name="loading_catalog">Henter TV, film, serier og grupper …</string>
+ <string name="loading_episodes">Henter seriens afsnit …</string>
+ <string name="choose_episode">Vælg et afsnit i listen.</string>
 </resources>

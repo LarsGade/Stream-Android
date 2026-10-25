@@ -11,5 +11,9 @@ public class PlaylistTest {
   assertEquals(1,list.size()); assertEquals("Kanal 1",list.get(0).name);
  }
  @Test(expected=IllegalArgumentException.class) public void rejectsInvalidSource(){Playlist.httpUri("javascript:bad");}
+ @Test public void acceptsSpacesInStreamUrls() {
+  var list=Playlist.parse("#EXTM3U\n#EXTINF:-1,Name\nhttps://example.com/my channel.m3u8\n", "https://example.com/list");
+  assertEquals("https://example.com/my%20channel.m3u8",list.get(0).url);
+ }
  @Test public void emptyList(){assertTrue(Playlist.parse("#EXTM3U\n", "https://example.com").isEmpty());}
 }
