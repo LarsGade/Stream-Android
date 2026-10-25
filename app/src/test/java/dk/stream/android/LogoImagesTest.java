@@ -55,4 +55,17 @@ public class LogoImagesTest {
   GlideUrl request=LogoRequests.model("https://cdn.example.org/logo.png","https://user:password@example.com/live/account/secret/1.ts?token=private");
   assertEquals("https://example.com/",request.getHeaders().get("Referer"));
  }
+ @Test public void bundledLogosLoadFromAssetsIncludingSpacesAndApostrophes() throws Exception {
+  LocalChannelLogos logos=LocalChannelLogos.load(RuntimeEnvironment.getApplication());assertEquals(47,logos.size());
+  assertNull(logos.find("Unknown channel"));
+  for(String name:new String[]{"DR 1","TV2 News","6’eren","TV3+"}) {
+   String model=logos.find(name);assertNotNull(name,model);
+   boolean decoded=executor.submit(()->{
+    FutureTarget<Bitmap> target=Glide.with(RuntimeEnvironment.getApplication()).asBitmap().load(model).submit(64,64);
+    try {Bitmap bitmap=target.get(20,TimeUnit.SECONDS);return bitmap.getWidth()>0 && bitmap.getHeight()>0;}
+    finally {Glide.with(RuntimeEnvironment.getApplication()).clear(target);}
+   }).get(25,TimeUnit.SECONDS);
+   assertTrue(name,decoded);
+  }
+ }
 }

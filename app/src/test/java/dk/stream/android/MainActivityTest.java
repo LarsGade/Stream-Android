@@ -99,4 +99,41 @@ public class MainActivityTest {
   clickText(activity.getWindow().getDecorView(),R.string.library);
   for(String name:new String[]{"search","groups","sections"}) {View control=ReflectionHelpers.getField(activity,name);assertEquals(name,View.VISIBLE,control.getVisibility());}
  }
+ private void startTestPlayback() {
+  server.enqueue(new MockResponse().setResponseCode(404));
+  Playlist.Channel channel=new Playlist.Channel("Test",server.url("/live.ts").toString(),"DK");
+  ReflectionHelpers.callInstanceMethod(activity,"play",ReflectionHelpers.ClassParameter.from(Playlist.Channel.class,channel));
+ }
+ private View control(View root,int description) {
+  String label=activity.getString(description);
+  for(View view:views(root,View.class)) if(label.contentEquals(view.getContentDescription()==null?"":view.getContentDescription())) return view;
+  throw new AssertionError("Missing control "+label);
+ }
+ @Test public void playerShowsVolumeTransportAndFullscreenControls() {
+  startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");
+  assertEquals(View.VISIBLE,panel.getVisibility());
+  assertEquals(0,panel.video.getControllerShowTimeoutMs());
+  for(int label:new int[]{R.string.pause_action,R.string.stop_action,R.string.fullscreen_action,R.string.volume}) assertEquals(View.VISIBLE,control(panel,label).getVisibility());
+  control(panel,R.string.pause_action).performClick();
+  androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");assertFalse(player.getPlayWhenReady());
+  control(panel,R.string.play_action).performClick();assertTrue(player.getPlayWhenReady());
+  control(panel,R.string.stop_action).performClick();assertEquals(View.GONE,panel.getVisibility());
+ }
+ @Test public void fullscreenAndBackKeepTheSamePlayer() {
+  startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");Object player=ReflectionHelpers.getField(activity,"player");
+  control(panel,R.string.fullscreen_action).performClick();
+  assertTrue(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));
+  FrameLayout host=ReflectionHelpers.getField(activity,"fullscreenHost");assertSame(host,panel.getParent());
+  assertEquals(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,activity.getRequestedOrientation());
+  activity.getOnBackPressedDispatcher().onBackPressed();
+  assertFalse(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));assertSame(player,ReflectionHelpers.getField(activity,"player"));
+  assertSame(ReflectionHelpers.getField(activity,"content"),panel.getParent());
+ }
+ @Test public void volumeSliderAndMuteChangeMusicVolume() {
+  startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");
+  android.media.AudioManager audio=(android.media.AudioManager)activity.getSystemService(android.content.Context.AUDIO_SERVICE);
+  panel.setVolume(3);assertEquals(3,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));assertEquals(3,panel.volume.getProgress());
+  control(panel,R.string.mute_action).performClick();assertEquals(0,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));
+  control(panel,R.string.unmute_action).performClick();assertEquals(3,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));
+ }
 }

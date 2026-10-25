@@ -52,4 +52,14 @@
  <string name="remove_source">Slet kilde</string>
  <string name="remove_source_note">Vil du slette %1$s og favoritterne fra denne kilde? Tryk længe på en kilde for at slette den.</string>
  <string name="source_missing">Kilden findes ikke længere. Tilføj den igen under Indstillinger.</string>
+ <string name="play_action">Afspil</string>
+ <string name="pause_action">Sæt på pause</string>
+ <string name="stop_action">Stop afspilning</string>
+ <string name="fullscreen_action">Fuldskærm</string>
+ <string name="exit_fullscreen">Afslut fuldskærm</string>
+ <string name="mute_action">Slå lyd fra</string>
+ <string name="unmute_action">Slå lyd til</string>
+ <string name="volume">Lydstyrke</string>
+ <string name="volume_failed">Lydstyrken kunne ikke ændres på denne enhed.</string>
+ <string name="playback_stopped">Afspilningen er stoppet.</string>
 </resources>
