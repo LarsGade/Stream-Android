@@ -8,12 +8,13 @@ import java.util.regex.Pattern;
 public final class Playlist {
  public enum Kind { TV, FILM, SERIES }
  public static final class Channel {
-  public final String name, url, group, seriesId, logoUrl;
+  public final String name, url, group, seriesId, logoUrl, epgId, epgName;
   public final Kind kind;
   Channel(String name,String url,String group) { this(name,url,group,Kind.TV,null); }
   Channel(String name,String url,String group,Kind kind,String seriesId) { this(name,url,group,kind,seriesId,""); }
-  Channel(String name,String url,String group,Kind kind,String seriesId,String logoUrl) {
-   this.name=name; this.url=url; this.group=group; this.kind=kind; this.seriesId=seriesId; this.logoUrl=logoUrl;
+  Channel(String name,String url,String group,Kind kind,String seriesId,String logoUrl) {this(name,url,group,kind,seriesId,logoUrl,"","");}
+  Channel(String name,String url,String group,Kind kind,String seriesId,String logoUrl,String epgId,String epgName) {
+   this.name=name; this.url=url; this.group=group; this.kind=kind; this.seriesId=seriesId; this.logoUrl=logoUrl;this.epgId=epgId;this.epgName=epgName;
   }
   @Override public String toString() { return name + (group.isEmpty() ? "" : "\n" + group); }
  }
@@ -55,6 +56,11 @@ public final class Playlist {
    .addQueryParameter("username",username.trim()).addQueryParameter("password",password)
    .addQueryParameter("type","m3u_plus").addQueryParameter("output","m3u8").build().toString();
  }
+ public static String attribute(String metadata,String key) {
+  var matcher=Pattern.compile("(?:^|\\s)"+Pattern.quote(key)+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s,]+))",Pattern.CASE_INSENSITIVE).matcher(metadata);
+  if(!matcher.find()) return "";
+  return matcher.group(1)!=null?matcher.group(1):matcher.group(2)!=null?matcher.group(2):matcher.group(3);
+ }
  public static String logo(String metadata,okhttp3.HttpUrl base) {
   var matcher=Pattern.compile("(?:^|\\s)(?:tvg-logo|logo|logo-url)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s,]+))",Pattern.CASE_INSENSITIVE).matcher(metadata);
   if(!matcher.find()) return "";
@@ -82,7 +88,7 @@ public final class Playlist {
    } else if(!line.isEmpty() && !line.startsWith("#")) {
     if(name!=null || line.matches("(?i)^https?://.*")) {
      okhttp3.HttpUrl resolved=source.resolve(line.replace("&amp;","&"));
-     if(resolved!=null) result.add(new Channel(name==null || name.isEmpty()?"Kanal "+(result.size()+1):name,resolved.toString(),group,inferKind(metadata,group,resolved.toString()),null,logo(metadata,source)));
+     if(resolved!=null) result.add(new Channel(name==null || name.isEmpty()?"Kanal "+(result.size()+1):name,resolved.toString(),group,inferKind(metadata,group,resolved.toString()),null,logo(metadata,source),attribute(metadata,"tvg-id"),attribute(metadata,"tvg-name")));
     }
     name=null; group=""; metadata="";
    }

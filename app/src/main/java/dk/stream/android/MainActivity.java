@@ -27,6 +27,15 @@ import java.util.concurrent.*;
 @androidx.media3.common.util.UnstableApi
 public final class MainActivity extends AppCompatActivity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
+ private final ExecutorService epgWorker=Executors.newSingleThreadExecutor();
+ private EpgRepository epgRepository;
+ private final Map<String,EpgData> epgData=new HashMap<>();
+ private final Set<String> epgPending=new HashSet<>();
+ private final Map<String,Long> epgAttempted=new HashMap<>();
+ private boolean updatingAll;
+ private final Runnable epgTick=new Runnable() {
+  public void run() {if(isDestroyed()) return;if(adapter!=null) adapter.notifyDataSetChanged();loadAssignedGuides(false);list.postDelayed(this,60000);}
+ };
  private Library library=new Library();
  private LibraryPersistence store;
  private boolean storageReadable=true,loading,favoritesMode;
@@ -74,7 +83,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
   super.onCreate(state);
-  store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
+  epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
    library=store.load();
    String legacy=getPreferences(0).getString("playlist","");
@@ -141,7 +150,7 @@ public final class MainActivity extends AppCompatActivity {
    public void onTextChanged(CharSequence s,int start,int before,int count) { filter(); }
    public void afterTextChanged(Editable value) { }
   });
-  chooseFirstKind();rebuildGroups();
+  chooseFirstKind();rebuildGroups();loadAssignedGuides(false);
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
   catch(Exception e) { castButton.setVisibility(View.GONE); }
   if(!storageReadable) status.setText(R.string.storage_failed);
@@ -226,10 +235,13 @@ public final class MainActivity extends AppCompatActivity {
   });
   content.addView(text(getString(R.string.storage_note),13,Color.LTGRAY));
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.settings).setView(content).setPositiveButton(android.R.string.ok,null).create();
-  button(R.string.sources,content,()->{dialog.dismiss();showSources();});dialog.show();
+  button(R.string.sources,content,()->{dialog.dismiss();showSources();});
+  button(R.string.tv_guide,content,()->{dialog.dismiss();showGuides();});
+  button(R.string.update_all,content,()->{dialog.dismiss();updateAll();});
+  button(R.string.reset_app,content,()->{dialog.dismiss();confirmReset();});dialog.show();
  }
  private void showSources() {
-  if(loading) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
+  if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
   List<Library.Source> sources=new ArrayList<>(library.sources);
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.sources)
    .setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(d,position)->loadSource(sources.get(position)))
@@ -237,32 +249,138 @@ public final class MainActivity extends AppCompatActivity {
    .setNeutralButton(R.string.xtream_login,(d,which)->showAddSource(true)).setNegativeButton(android.R.string.cancel,null).create();
   dialog.setOnShowListener(d->dialog.getListView().setOnItemLongClickListener((parent,view,position,id)->{
    Library.Source source=sources.get(position);
-   new AlertDialog.Builder(this).setTitle(R.string.remove_source).setMessage(getString(R.string.remove_source_note,source.name))
-    .setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.remove_source,(confirmation,which)->{
-     if(changeLibrary(()->library.removeSource(source.id))) {
-      if(activeSource!=null && activeSource.id.equals(source.id)) {activeSource=null;catalog=new Catalog();}
-      dialog.dismiss();rebuildGroups();showSources();
-     }
-    }).show();return true;
+   new AlertDialog.Builder(this).setTitle(source.name).setItems(new String[]{getString(R.string.edit_source),getString(R.string.remove_source)},(choice,which)->{
+    if(which==0) {dialog.dismiss();showSourceEditor(source,source.xtream);}
+    else new AlertDialog.Builder(this).setTitle(R.string.remove_source).setMessage(getString(R.string.remove_source_note,source.name))
+     .setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.remove_source,(confirmation,selected)->{
+      if(changeLibrary(()->library.removeSource(source.id))) {
+       if(activeSource!=null && activeSource.id.equals(source.id)) {activeSource=null;catalog=new Catalog();}
+       dialog.dismiss();rebuildGroups();showSources();
+      }
+     }).show();
+   }).show();return true;
   }));dialog.show();
  }
  private EditText input(LinearLayout form,int hint,int type) {EditText field=new EditText(this);field.setHint(hint);field.setSingleLine();field.setInputType(type);form.addView(field);return field;}
- private void showAddSource(boolean xtream) {
+ private void showAddSource(boolean xtream) {showSourceEditor(null,xtream);}
+ private void showSourceEditor(Library.Source existing,boolean xtream) {
   LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(12));
   EditText name=input(form,R.string.source_name,android.text.InputType.TYPE_CLASS_TEXT);
   EditText address=input(form,xtream?R.string.xtream_server:R.string.playlist_hint,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);
   EditText username=xtream?input(form,R.string.xtream_user,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS):null;
   EditText password=xtream?input(form,R.string.xtream_password,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD):null;
+  if(existing!=null) {name.setText(existing.name);address.setText(existing.server);if(username!=null) username.setText(existing.username);if(password!=null) password.setText(existing.password);}
   if(password!=null) password.setSaveEnabled(false);
+  form.addView(text(getString(R.string.select_epg),13,Color.LTGRAY));
+  List<Library.Guide> choices=new ArrayList<>(library.guides);List<String> labels=new ArrayList<>();labels.add(getString(R.string.no_epg));for(Library.Guide guide:choices) labels.add(guide.name);
+  Spinner epg=new Spinner(this);ArrayAdapter<String> epgChoices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);epgChoices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);epg.setAdapter(epgChoices);form.addView(epg);
+  if(existing!=null) for(int i=0;i<choices.size();i++) if(choices.get(i).id.equals(existing.epgId)) epg.setSelection(i+1);
   form.addView(text(getString(R.string.storage_note),13,Color.LTGRAY));
   ScrollView scroll=new ScrollView(this);scroll.addView(form);
-  AlertDialog dialog=new AlertDialog.Builder(this).setTitle(xtream?R.string.xtream_login:R.string.add_m3u).setView(scroll).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
+  AlertDialog dialog=new AlertDialog.Builder(this).setTitle(existing!=null?R.string.edit_source:xtream?R.string.xtream_login:R.string.add_m3u).setView(scroll).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
   dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
    try {
     Library.Source source=xtream?Library.Source.xtream(name.getText().toString(),address.getText().toString(),username.getText().toString(),password.getText().toString()):Library.Source.m3u(name.getText().toString(),address.getText().toString());
+    String epgId=epg.getSelectedItemPosition()>0?choices.get(epg.getSelectedItemPosition()-1).id:"";
+    source=source.withEpg(epgId);
+    if(existing!=null) {
+     Library.Source edited=new Library.Source(existing.id,source.name,source.server,source.username,source.password,source.xtream,epgId);
+     if(!changeLibrary(()->library.addSource(edited))) return;
+     source=edited;if(activeSource!=null && activeSource.id.equals(edited.id)) activeSource=edited;
+    }
     dialog.dismiss();loadSource(source);
    } catch(IllegalArgumentException e) {address.setError(getString(xtream?R.string.xtream_invalid:R.string.invalid_url));}
   }));dialog.show();
+ }
+ private String programmeTitle(Library.Entry entry,long now) {
+  Library.Source source=library.findSource(entry.sourceId);
+  if(entry.channel.kind!=Playlist.Kind.TV || source==null || library.findGuide(source.epgId)==null) return "";
+  EpgData guide=epgData.get(source.epgId);
+  if(guide==null) return getString(epgPending.contains(source.epgId)?R.string.epg_loading:R.string.epg_no_programme);
+  EpgData.Programme programme=guide.current(entry.channel,now);return programme==null?getString(R.string.epg_no_programme):programme.title;
+ }
+ private void loadAssignedGuides(boolean force) {
+  if(epgRepository==null || updatingAll) return;
+  Set<String> ids=new LinkedHashSet<>();for(Library.Source source:library.sources) if(!source.epgId.isEmpty()) ids.add(source.epgId);
+  for(String id:ids) {Library.Guide guide=library.findGuide(id);if(guide!=null) refreshGuide(guide,force);}
+ }
+ private void refreshGuide(Library.Guide guide,boolean force) {
+  long now=System.currentTimeMillis();Long attempted=epgAttempted.get(guide.id);
+  if(epgPending.contains(guide.id)||(!force && attempted!=null && now-attempted<5*60*1000L)) return;
+  epgPending.add(guide.id);epgAttempted.put(guide.id,now);
+  epgWorker.execute(()->{
+   EpgData cached=epgRepository.cached(guide);
+   if(cached!=null) runOnUiThread(()->acceptGuide(guide,cached));
+   try {if(force||cached==null||!epgRepository.fresh(guide,System.currentTimeMillis())) {EpgData fetched=epgRepository.fetch(guide,System.currentTimeMillis());runOnUiThread(()->acceptGuide(guide,fetched));}}
+   catch(Exception ignored) {if(force) runOnUiThread(()->{if(!isDestroyed()) Toast.makeText(this,getString(R.string.epg_fetch_failed,guide.name),Toast.LENGTH_LONG).show();});}
+   finally {runOnUiThread(()->{if(!isDestroyed()) {epgPending.remove(guide.id);adapter.notifyDataSetChanged();Library.Guide current=library.findGuide(guide.id);if(current!=null && !current.url.equals(guide.url)) {epgAttempted.remove(guide.id);refreshGuide(current,true);}}});}
+  });
+ }
+ private void acceptGuide(Library.Guide guide,EpgData data) {
+  if(isDestroyed()) return;Library.Guide current=library.findGuide(guide.id);
+  if(current!=null && current.url.equals(guide.url)) {epgData.put(guide.id,data);adapter.notifyDataSetChanged();}
+ }
+ private void showGuides() {
+  if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
+  List<Library.Guide> guides=new ArrayList<>(library.guides);
+  new AlertDialog.Builder(this).setTitle(R.string.tv_guide).setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,guides),(dialog,position)->showGuideEditor(guides.get(position)))
+   .setPositiveButton(R.string.add_epg,(dialog,which)->showGuideEditor(null)).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ private void showGuideEditor(Library.Guide existing) {
+  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(12));
+  EditText name=input(form,R.string.epg_name,android.text.InputType.TYPE_CLASS_TEXT);
+  EditText url=input(form,R.string.epg_url,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);
+  form.addView(text(getString(R.string.epg_format),13,Color.LTGRAY));
+  if(existing!=null) {name.setText(existing.name);url.setText(existing.url);}
+  AlertDialog.Builder builder=new AlertDialog.Builder(this).setTitle(existing==null?R.string.add_epg:R.string.edit_epg).setView(form).setPositiveButton(R.string.save,null).setNegativeButton(android.R.string.cancel,null);
+  if(existing!=null) builder.setNeutralButton(R.string.delete,(dialog,which)->{
+   new AlertDialog.Builder(this).setTitle(R.string.delete_epg).setMessage(R.string.delete_epg_note).setNegativeButton(R.string.no,null).setPositiveButton(R.string.yes,(d,w)->{
+    if(changeLibrary(()->library.removeGuide(existing.id))) {epgData.remove(existing.id);epgRepository.remove(existing);adapter.notifyDataSetChanged();}
+   }).show();
+  });
+  AlertDialog dialog=builder.create();dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
+   try {
+    Library.Guide created=Library.Guide.create(name.getText().toString(),url.getText().toString());
+    Library.Guide guide=existing==null?created:new Library.Guide(existing.id,created.name,created.url);
+    if(changeLibrary(()->library.putGuide(guide))) {epgData.remove(guide.id);epgAttempted.remove(guide.id);dialog.dismiss();refreshGuide(guide,true);}
+   } catch(IllegalArgumentException e) {url.setError(getString(R.string.epg_invalid));}
+  }));dialog.show();
+ }
+ private void confirmReset() {
+  new AlertDialog.Builder(this).setTitle(R.string.reset_app).setMessage(R.string.reset_app_note).setNegativeButton(R.string.no,null).setPositiveButton(R.string.yes,(dialog,which)->{
+   if(player!=null) player.stop();
+   if(cast!=null) cast.getSessionManager().endCurrentSession(true);
+   android.app.ActivityManager manager=(android.app.ActivityManager)getSystemService(android.content.Context.ACTIVITY_SERVICE);
+   if(manager==null || !manager.clearApplicationUserData()) Toast.makeText(this,R.string.reset_failed,Toast.LENGTH_LONG).show();
+  }).show();
+ }
+ private void updateAll() {
+  if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
+  updatingAll=true;
+  List<Library.Source> sources=new ArrayList<>(library.sources);List<Library.Guide> guides=new ArrayList<>(library.guides);
+  TextView progress=text(getString(R.string.updating_all),14,Color.LTGRAY);progress.setPadding(dp(24),dp(16),dp(24),dp(16));
+  AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.update_all).setView(progress).setCancelable(false).create();dialog.show();
+  worker.execute(()->{
+   Map<String,Catalog> catalogs=new LinkedHashMap<>();Map<String,EpgData> schedules=new LinkedHashMap<>();List<String> failures=new ArrayList<>();int completed=0,total=sources.size()+guides.size();
+   for(Library.Source source:sources) {
+    final int step=++completed;runOnUiThread(()->{if(!isDestroyed()) progress.setText(getString(R.string.update_progress,step,total,source.name));});
+    try {catalogs.put(source.id,source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server)));} catch(Exception e) {failures.add(source.name);}
+   }
+   for(Library.Guide guide:guides) {
+    final int step=++completed;runOnUiThread(()->{if(!isDestroyed()) progress.setText(getString(R.string.update_progress,step,total,guide.name));});
+    try {schedules.put(guide.id,epgRepository.fetch(guide,System.currentTimeMillis()));} catch(Exception e) {failures.add(guide.name);}
+   }
+   runOnUiThread(()->{
+    updatingAll=false;if(isDestroyed()) return;dialog.dismiss();
+    boolean saved=changeLibrary(()->{for(Map.Entry<String,Catalog> entry:catalogs.entrySet()) library.refreshFavorites(entry.getKey(),entry.getValue().items);});
+    if(activeSource!=null && catalogs.containsKey(activeSource.id)) catalog=catalogs.get(activeSource.id);
+    epgData.putAll(schedules);for(String id:schedules.keySet()) epgAttempted.put(id,System.currentTimeMillis());rebuildGroups();
+    String result=getResources().getQuantityString(R.plurals.updated_sources,catalogs.size(),catalogs.size())+"\n"+getResources().getQuantityString(R.plurals.updated_guides,schedules.size(),schedules.size())+"\n"+getResources().getQuantityString(R.plurals.update_failures,failures.size(),failures.size());
+    if(!failures.isEmpty()) result+="\n\n"+getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures));
+    if(!saved) result+="\n\n"+getString(R.string.storage_failed);
+    new AlertDialog.Builder(this).setTitle(R.string.update_all).setMessage(result).setPositiveButton(android.R.string.ok,null).show();
+   });
+  });
  }
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
  private void loadSource(Library.Source source) {
@@ -275,7 +393,7 @@ public final class MainActivity extends AppCompatActivity {
      if(isDestroyed()) return;
      Library.Source[] saved={source};
      if(changeLibrary(()->{saved[0]=library.addSource(source);library.lastSourceId=saved[0].id;library.refreshFavorites(saved[0].id,result.items);})) {
-      activeSource=saved[0];catalog=result;search.setText("");chooseFirstKind();busy(false);rebuildGroups();
+      activeSource=saved[0];catalog=result;search.setText("");chooseFirstKind();busy(false);rebuildGroups();loadAssignedGuides(false);
      }
     });
    } catch(Exception e) {runOnUiThread(()->{if(!isDestroyed()) showError(e);});}
@@ -327,7 +445,10 @@ public final class MainActivity extends AppCompatActivity {
     row.star=iconButton(R.drawable.ic_favorite_outline,"");row.star.setFocusable(false);layout.addView(row.star,new LinearLayout.LayoutParams(dp(48),dp(48)));layout.setTag(row);recycled=layout;
    } else row=(Row)recycled.getTag();
    Library.Entry entry=getItem(position);Playlist.Channel channel=entry.channel;row.name.setText(channel.name);
-   Library.Source source=library.findSource(entry.sourceId);row.group.setText(channel.group);row.group.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+   Library.Source source=library.findSource(entry.sourceId);
+   if(favoritesMode) {
+    String programme=programmeTitle(entry,System.currentTimeMillis());row.group.setText(programme);row.group.setMaxLines(2);row.group.setTextColor(Color.rgb(170,170,170));row.group.setVisibility(programme.isEmpty()?View.GONE:View.VISIBLE);
+   } else {row.group.setMaxLines(1);row.group.setText(channel.group);row.group.setVisibility(View.VISIBLE);}
    row.logo.setContentDescription(getString(R.string.logo_for,channel.name));
    String bundled=localLogos.find(channel.name);
    Object logoModel=bundled==null?LogoRequests.model(channel.logoUrl,source==null?null:source.server):bundled;
@@ -424,12 +545,12 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
- @Override protected void onResume() {super.onResume();if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();}
+ @Override protected void onResume() {super.onResume();if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);
   if(keyCode==android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_MUTE) getWindow().getDecorView().post(()->{if(playbackPanel!=null) playbackPanel.refresh();});
   return handled;
  }
- @Override protected void onStop() {super.onStop();if(player!=null){resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();}
- @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();super.onDestroy();}
+ @Override protected void onStop() {if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();}
+ @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();epgWorker.shutdownNow();super.onDestroy();}
 }

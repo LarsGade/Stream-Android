@@ -64,4 +64,22 @@
  <string name="seek_position">Afspilningsposition</string><string name="live">Live</string><string name="playback_time">%1$s / %2$s</string>
  <string name="player_settings">Afspillerindstillinger</string><string name="playback_speed">Afspilningshastighed</string>
  <string name="subtitles">Undertekster</string><string name="audio_track">Lydspor</string>
+ <string name="tv_guide">TV-Guide</string><string name="add_epg">Tilføj EPG</string><string name="edit_epg">Redigér TV-Guide</string>
+ <string name="epg_name">Navn på TV-guide</string><string name="epg_url">EPG-link (XMLTV eller XMLTV.gz)</string>
+ <string name="epg_format">Brug et HTTP/HTTPS-link til XMLTV. Komprimerede .gz-filer understøttes. Kanaler matches først via tvg-id og ellers via kanalnavn.</string>
+ <string name="epg_invalid">Angiv et navn og et gyldigt HTTP/HTTPS-link.</string>
+ <string name="select_epg">TV-Guide til denne kilde</string><string name="no_epg">Ingen TV-Guide</string>
+ <string name="epg_loading">Henter TV-guide …</string><string name="epg_no_programme">Ingen aktuelle programoplysninger</string>
+ <string name="edit_source">Redigér kilde</string><string name="save">Gem</string><string name="delete">Slet</string>
+ <string name="delete_epg">Slet TV-Guide</string><string name="delete_epg_note">Vil du slette TV-guiden? Kilder og favoritter beholdes, men mister tilknytningen til denne guide.</string>
+ <string name="update_all">Opdatér alt</string><string name="updating_all">Opdaterer kilder og TV-guides …</string>
+ <string name="update_progress">%1$d / %2$d: %3$s</string>
+ <string name="update_failed_names">Kunne ikke opdatere: %1$s. Tidligere data er beholdt.</string>
+ <string name="reset_app">Nulstil app</string><string name="yes">Ja</string><string name="no">Nej</string>
+ <string name="reset_app_note">Vil du nulstille appen? Alle gemte kilder, login, favoritter, TV-guides, indstillinger og cache slettes. Appen lukker og starter som ny, næste gang du åbner den.</string>
+ <string name="reset_failed">Appen kunne ikke nulstilles. Prøv igen.</string>
+ <plurals name="updated_sources"><item quantity="one">%1$d kilde opdateret</item><item quantity="other">%1$d kilder opdateret</item></plurals>
+ <plurals name="updated_guides"><item quantity="one">%1$d TV-guide opdateret</item><item quantity="other">%1$d TV-guides opdateret</item></plurals>
+ <plurals name="update_failures"><item quantity="one">%1$d opdatering mislykkedes</item><item quantity="other">%1$d opdateringer mislykkedes</item></plurals>
+ <string name="epg_fetch_failed">Kunne ikke hente %1$s. Tidligere programoplysninger beholdes, hvis de findes.</string>
 </resources>

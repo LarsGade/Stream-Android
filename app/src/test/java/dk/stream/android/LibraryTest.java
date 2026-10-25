@@ -53,4 +53,18 @@ public class LibraryTest {
   assertEquals("New Z",library.favorites.get(0).channel.name);assertEquals("https://example.com/new.png",library.favorites.get(0).channel.logoUrl);assertEquals("A",library.favorites.get(1).channel.name);
  }
  @Test(expected=org.json.JSONException.class) public void rejectsUnknownStorageVersion() throws Exception {Library.fromJson("{\"version\":999}");}
+ @Test public void guidesAndSourceSelectionSurviveUpgradeAndDeletionKeepsFavorites() throws Exception {
+  Library library=new Library();var guide=Library.Guide.create("Dansk TV","https://example.com/guide.xml.gz");library.putGuide(guide);
+  var source=library.addSource(Library.Source.m3u("TV","https://example.com/list").withEpg(guide.id));
+  var channel=new Playlist.Channel("DR1","https://example.com/live","DK",Playlist.Kind.TV,null,"","dr1.dk","DR 1");library.toggleFavorite(new Library.Entry(source.id,channel));
+  Library loaded=Library.fromJson(library.toJson());assertEquals(guide.id,loaded.findSource(source.id).epgId);assertEquals("dr1.dk",loaded.favorites.get(0).channel.epgId);
+  loaded.removeGuide(guide.id);assertEquals("",loaded.findSource(source.id).epgId);assertEquals(1,loaded.favorites.size());assertEquals(1,loaded.sources.size());
+ }
+ @Test public void editingSourceKeepsItsIdentityAndRefreshesFavoriteUrls() {
+  Library library=new Library();var source=library.addSource(Library.Source.m3u("Old name","https://example.com/old"));
+  library.toggleFavorite(new Library.Entry(source.id,new Playlist.Channel("DR1","https://example.com/old-stream","DK")));
+  library.addSource(new Library.Source(source.id,"New name","https://example.com/new","","",false));
+  library.refreshFavorites(source.id,java.util.Arrays.asList(new Playlist.Channel("DR1","https://example.com/new-stream","DK")));
+  assertEquals(1,library.sources.size());assertEquals("New name",library.findSource(source.id).name);assertEquals("https://example.com/new-stream",library.favorites.get(0).channel.url);
+ }
 }

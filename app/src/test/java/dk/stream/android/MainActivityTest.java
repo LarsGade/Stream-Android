@@ -44,7 +44,7 @@ public class MainActivityTest {
   for(TextView view:views(root,TextView.class)) if(view.getText().toString().equals(activity.getString(resource))) {view.performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();return;}
   fail("Missing control "+resource);
  }
- private AlertDialog dialog() {return (AlertDialog)ShadowDialog.getLatestDialog();}
+ private AlertDialog dialog() {Shadows.shadowOf(Looper.getMainLooper()).idle();return (AlertDialog)ShadowDialog.getLatestDialog();}
  private void sourceDialog(boolean xtream) {
   clickText(activity.getWindow().getDecorView(),R.string.settings);
   clickText(dialog().getWindow().getDecorView(),R.string.sources);
@@ -190,5 +190,56 @@ public class MainActivityTest {
   assertEquals(2400,panel.video.getWidth());assertEquals(1080,panel.video.getHeight());
   assertEquals(1920,image.getWidth());assertEquals(1080,image.getHeight());assertEquals(240,image.getLeft());
   assertFalse(panel.controlsVisible());
+ }
+ private String currentXml() {
+  java.text.SimpleDateFormat format=new java.text.SimpleDateFormat("yyyyMMddHHmmss",java.util.Locale.ROOT);format.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));long now=System.currentTimeMillis();
+  return "<tv><channel id='dr1.dk'><display-name>DR 1</display-name></channel><programme channel='dr1.dk' start='"+format.format(new java.util.Date(now-3600000))+" +0000' stop='"+format.format(new java.util.Date(now+3600000))+" +0000'><title>Nyheder lige nu</title></programme></tv>";
+ }
+ private void useGuideDispatcher() {
+  server.setDispatcher(new Dispatcher() {@Override public MockResponse dispatch(RecordedRequest request) {
+   String path=request.getPath();if(path.contains("bad")) return new MockResponse().setResponseCode(503);
+   if(path.contains("epg")) return new MockResponse().setBody(currentXml());
+   return new MockResponse().setBody("#EXTM3U\n#EXTINF:-1 tvg-id=\"dr1.dk\",DR 1\nhttps://example.com/live/1.m3u8\n");
+  }});
+ }
+ private void awaitGuides() throws Exception {
+  ExecutorService executor=ReflectionHelpers.getField(activity,"epgWorker");executor.submit(()->{}).get(30,TimeUnit.SECONDS);Shadows.shadowOf(Looper.getMainLooper()).idle();
+ }
+ @Test public void namedGuideCanBeAssignedAndCurrentProgrammeAppearsInGrayOnFavorite() throws Exception {
+  useGuideDispatcher();clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.tv_guide);
+  dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();List<EditText> guideFields=views(dialog().getWindow().getDecorView(),EditText.class);guideFields.get(0).setText("Dansk guide");guideFields.get(1).setText(server.url("/epg.xml").toString());dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitGuides();
+  assertEquals("Dansk guide",storage.saved.guides.get(0).name);
+  sourceDialog(false);List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);fields.get(0).setText("Dansk TV");fields.get(1).setText(server.url("/list.m3u").toString());views(dialog().getWindow().getDecorView(),Spinner.class).get(0).setSelection(1);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();awaitGuides();
+  Library library=ReflectionHelpers.getField(activity,"library");assertEquals(library.guides.get(0).id,library.sources.get(0).epgId);
+  ListView list=ReflectionHelpers.getField(activity,"list");View row=list.getAdapter().getView(0,null,list);views(row,ImageButton.class).get(0).performClick();clickText(activity.getWindow().getDecorView(),R.string.favorites);
+  View favorite=list.getAdapter().getView(0,null,list);List<TextView> labels=views(favorite,TextView.class);assertEquals("Nyheder lige nu",labels.get(1).getText().toString());assertEquals(View.VISIBLE,labels.get(1).getVisibility());assertEquals(android.graphics.Color.rgb(170,170,170),labels.get(1).getCurrentTextColor());
+ }
+ @Test public void updateAllRefreshesEverySourceAndEveryGuideAndContinuesAfterFailures() throws Exception {
+  useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");
+  library.addSource(Library.Source.m3u("Good source",server.url("/list.m3u").toString()));library.addSource(Library.Source.m3u("Bad source",server.url("/bad-source").toString()));
+  Library.Guide good=Library.Guide.create("Good guide",server.url("/epg.xml").toString());library.putGuide(good);library.putGuide(Library.Guide.create("Bad guide",server.url("/bad-epg").toString()));
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.update_all);awaitLoadAndRender();
+  assertEquals(4,server.getRequestCount());Map<String,EpgData> schedules=ReflectionHelpers.getField(activity,"epgData");assertNotNull(schedules.get(good.id));
+  TextView result=dialog().findViewById(android.R.id.message);assertTrue(result.getText().toString().contains("Bad source"));assertTrue(result.getText().toString().contains("Bad guide"));assertEquals(2,storage.saved.sources.size());
+ }
+ @Test public void resetRequiresYesAndNoLeavesDataUntouched() {
+  android.app.ActivityManager manager=(android.app.ActivityManager)activity.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+  org.robolectric.shadows.ShadowActivityManager shadow=Shadows.shadowOf(manager);
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.reset_app);assertFalse(shadow.isApplicationUserDataCleared());
+  assertEquals(activity.getString(R.string.no),dialog().getButton(AlertDialog.BUTTON_NEGATIVE).getText().toString());dialog().getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertFalse(shadow.isApplicationUserDataCleared());
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.reset_app);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(shadow.isApplicationUserDataCleared());
+ }
+ @Test public void sourceCanBeEditedAndDeletedFromSourceMenu() throws Exception {
+  useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");Library.Source source=library.addSource(Library.Source.m3u("Old name",server.url("/list.m3u").toString()));
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.sources);
+  ListView list=dialog().getListView();list.getOnItemLongClickListener().onItemLongClick(list,null,0,0);dialog().getListView().performItemClick(null,0,0);
+  List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);fields.get(0).setText("Updated name");dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();assertEquals("Updated name",storage.saved.findSource(source.id).name);assertEquals(1,storage.saved.sources.size());
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.sources);list=dialog().getListView();list.getOnItemLongClickListener().onItemLongClick(list,null,0,0);dialog().getListView().performItemClick(null,1,1);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(storage.saved.sources.isEmpty());
+ }
+ @Test public void guideCanBeRenamedAndDeletedWithoutDeletingItsSource() throws Exception {
+  useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");Library.Guide guide=Library.Guide.create("Old guide",server.url("/epg.xml").toString());library.putGuide(guide);Library.Source source=library.addSource(Library.Source.m3u("TV",server.url("/list.m3u").toString()).withEpg(guide.id));
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);
+  views(dialog().getWindow().getDecorView(),EditText.class).get(0).setText("New guide");dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitGuides();assertEquals("New guide",storage.saved.findGuide(guide.id).name);
+  clickText(activity.getWindow().getDecorView(),R.string.settings);clickText(dialog().getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);dialog().getButton(AlertDialog.BUTTON_NEUTRAL).performClick();dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertNull(storage.saved.findGuide(guide.id));assertNotNull(storage.saved.findSource(source.id));assertEquals("",storage.saved.findSource(source.id).epgId);
  }
 }

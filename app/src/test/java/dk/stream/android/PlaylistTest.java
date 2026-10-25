@@ -35,4 +35,8 @@ public class PlaylistTest {
   var items=Playlist.parse("#EXTM3U\n#EXTINF:-1 tvg-logo='https://example.com/logo?size=64,64',DR\nhttps://example.com/live\n", "https://example.com/list");
   assertEquals("https://example.com/logo?size=64,64",items.get(0).logoUrl);assertEquals("DR",items.get(0).name);
  }
+ @Test public void retainsXmltvIdAndNameFromM3uMetadata() {
+  var channels=Playlist.parse("#EXTM3U\n#EXTINF:-1 tvg-id='dr1.dk' tvg-name=\"DR 1\",Custom label\nhttps://example.com/live\n","https://example.com/list");
+  assertEquals("dr1.dk",channels.get(0).epgId);assertEquals("DR 1",channels.get(0).epgName);
+ }
 }

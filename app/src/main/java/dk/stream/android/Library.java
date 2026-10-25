@@ -6,11 +6,13 @@ import org.json.*;
 /** Ordered local sources and favorite snapshots. Serialize only into encrypted storage. */
 public final class Library {
  public static final class Source {
-  public final String id,name,server,username,password;
+  public final String id,name,server,username,password,epgId;
   public final boolean xtream;
-  public Source(String id,String name,String server,String username,String password,boolean xtream) {
-   this.id=id; this.name=name; this.server=server; this.username=username; this.password=password; this.xtream=xtream;
+  public Source(String id,String name,String server,String username,String password,boolean xtream) {this(id,name,server,username,password,xtream,"");}
+  public Source(String id,String name,String server,String username,String password,boolean xtream,String epgId) {
+   this.id=id; this.name=name; this.server=server; this.username=username; this.password=password; this.xtream=xtream;this.epgId=epgId;
   }
+  public Source withEpg(String epgId) {return new Source(id,name,server,username,password,xtream,epgId);}
   public static Source m3u(String name,String url) {
    String normalized=Playlist.httpUrl(url).toString();
    return new Source(UUID.randomUUID().toString(),label(name,normalized),normalized,"","",false);
@@ -22,6 +24,23 @@ public final class Library {
   }
   private static String label(String name,String url) { return name.trim().isEmpty()?Playlist.httpUrl(url).host():name.trim(); }
   @Override public String toString() { return name; }
+ }
+ public static final class Guide {
+  public final String id,name,url;
+  public Guide(String id,String name,String url) {this.id=id;this.name=name;this.url=url;}
+  public static Guide create(String name,String url) {
+   if(name.trim().isEmpty()) throw new IllegalArgumentException("Guide name required");
+   return new Guide(UUID.randomUUID().toString(),name.trim(),Playlist.httpUrl(url).toString());
+  }
+  @Override public String toString() {return name;}
+ }
+ public final List<Guide> guides=new ArrayList<>();
+ public Guide findGuide(String id) {for(Guide guide:guides) if(guide.id.equals(id)) return guide;return null;}
+ public void putGuide(Guide guide) {for(int i=0;i<guides.size();i++) if(guides.get(i).id.equals(guide.id)) {guides.set(i,guide);return;}guides.add(guide);}
+ public void assignEpg(String sourceId,String epgId) {for(int i=0;i<sources.size();i++) if(sources.get(i).id.equals(sourceId)) sources.set(i,sources.get(i).withEpg(epgId));}
+ public void removeGuide(String id) {
+  for(int i=guides.size()-1;i>=0;i--) if(guides.get(i).id.equals(id)) guides.remove(i);
+  for(int i=0;i<sources.size();i++) if(sources.get(i).epgId.equals(id)) sources.set(i,sources.get(i).withEpg(""));
  }
  public static final class Entry {
   public final String sourceId;
@@ -38,7 +57,13 @@ public final class Library {
  public String lastSourceId="";
  public Source findSource(String id) { for(Source source:sources) if(source.id.equals(id)) return source; return null; }
  public Source addSource(Source source) {
-  for(Source old:sources) if(old.xtream==source.xtream && old.server.equals(source.server) && old.username.equals(source.username) && old.password.equals(source.password)) return old;
+  for(int i=0;i<sources.size();i++) if(sources.get(i).id.equals(source.id)) {sources.set(i,source);return source;}
+  for(int i=0;i<sources.size();i++) {
+   Source old=sources.get(i);
+   if(old.xtream==source.xtream && old.server.equals(source.server) && old.username.equals(source.username) && old.password.equals(source.password)) {
+    Source updated=old.withEpg(source.epgId);sources.set(i,updated);return updated;
+   }
+  }
   sources.add(source); return source;
  }
  public void removeSource(String id) {
@@ -62,11 +87,19 @@ public final class Library {
  public void refreshFavorites(String sourceId,List<Playlist.Channel> items) {
   // Keep favorites in the user's order while refreshing names, logos and links from this source.
   Map<String,Playlist.Channel> current=new HashMap<>();
-  for(Playlist.Channel item:items) current.put(identity(item),item);
+  Map<String,Playlist.Channel> byEpg=new HashMap<>(),byName=new HashMap<>();Set<String> duplicateEpg=new HashSet<>(),duplicateName=new HashSet<>();
+  for(Playlist.Channel item:items) {
+   current.put(identity(item),item);String name=item.kind+":"+LocalChannelLogos.key(item.name);
+   if(byName.put(name,item)!=null) duplicateName.add(name);
+   if(!item.epgId.isEmpty()) {String id=item.kind+":"+item.epgId;if(byEpg.put(id,item)!=null) duplicateEpg.add(id);}
+  }
   for(int i=0;i<favorites.size();i++) {
    Entry old=favorites.get(i);
    if(old.sourceId.equals(sourceId)) {
     Playlist.Channel fresh=current.get(identity(old.channel));
+    String epg=old.channel.kind+":"+old.channel.epgId,name=old.channel.kind+":"+LocalChannelLogos.key(old.channel.name);
+    if(fresh==null && !old.channel.epgId.isEmpty() && !duplicateEpg.contains(epg)) fresh=byEpg.get(epg);
+    if(fresh==null && !duplicateName.contains(name)) fresh=byName.get(name);
     if(fresh!=null) favorites.set(i,new Entry(sourceId,fresh));
    }
   }
@@ -76,12 +109,15 @@ public final class Library {
   JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("lastSourceId",lastSourceId);
   JSONArray savedSources=new JSONArray();
   for(Source source:sources) {
-   JSONObject value=new JSONObject();value.put("id",source.id);value.put("name",source.name);value.put("server",source.server);value.put("username",source.username);value.put("password",source.password);value.put("xtream",source.xtream);savedSources.put(value);
+   JSONObject value=new JSONObject();value.put("id",source.id);value.put("name",source.name);value.put("server",source.server);value.put("username",source.username);value.put("password",source.password);value.put("xtream",source.xtream);value.put("epgId",source.epgId);savedSources.put(value);
   }
   root.put("sources",savedSources);
+  JSONArray savedGuides=new JSONArray();
+  for(Guide guide:guides) {JSONObject value=new JSONObject();value.put("id",guide.id);value.put("name",guide.name);value.put("url",guide.url);savedGuides.put(value);}
+  root.put("guides",savedGuides);
   JSONArray savedFavorites=new JSONArray();
   for(Entry entry:favorites) {
-   Playlist.Channel channel=entry.channel;JSONObject value=new JSONObject();value.put("sourceId",entry.sourceId);value.put("name",channel.name);value.put("url",channel.url);value.put("group",channel.group);value.put("kind",channel.kind.name());value.put("seriesId",channel.seriesId==null?JSONObject.NULL:channel.seriesId);value.put("logoUrl",channel.logoUrl);savedFavorites.put(value);
+   Playlist.Channel channel=entry.channel;JSONObject value=new JSONObject();value.put("sourceId",entry.sourceId);value.put("name",channel.name);value.put("url",channel.url);value.put("group",channel.group);value.put("kind",channel.kind.name());value.put("seriesId",channel.seriesId==null?JSONObject.NULL:channel.seriesId);value.put("logoUrl",channel.logoUrl);value.put("epgId",channel.epgId);value.put("epgName",channel.epgName);savedFavorites.put(value);
   }
   root.put("favorites",savedFavorites);return root.toString();
  }
@@ -92,15 +128,17 @@ public final class Library {
   JSONArray sources=root.getJSONArray("sources");
   for(int i=0;i<sources.length();i++) {
    JSONObject value=sources.getJSONObject(i);
-   library.sources.add(new Source(value.getString("id"),value.getString("name"),value.getString("server"),value.optString("username",""),value.optString("password",""),value.getBoolean("xtream")));
+   library.sources.add(new Source(value.getString("id"),value.getString("name"),value.getString("server"),value.optString("username",""),value.optString("password",""),value.getBoolean("xtream"),value.optString("epgId","")));
   }
+  JSONArray guides=root.optJSONArray("guides");
+  if(guides!=null) for(int i=0;i<guides.length();i++) {JSONObject value=guides.getJSONObject(i);library.guides.add(new Guide(value.getString("id"),value.getString("name"),value.getString("url")));}
   JSONArray favorites=root.getJSONArray("favorites");
   for(int i=0;i<favorites.length();i++) {
    JSONObject value=favorites.getJSONObject(i);
    if(library.findSource(value.getString("sourceId"))==null) continue;
    Playlist.Kind kind;
    try { kind=Playlist.Kind.valueOf(value.getString("kind")); } catch(IllegalArgumentException e) { throw new JSONException("Unsupported content type"); }
-   Playlist.Channel channel=new Playlist.Channel(value.getString("name"),value.getString("url"),value.optString("group",""),kind,value.isNull("seriesId")?null:value.getString("seriesId"),value.optString("logoUrl",""));
+   Playlist.Channel channel=new Playlist.Channel(value.getString("name"),value.getString("url"),value.optString("group",""),kind,value.isNull("seriesId")?null:value.getString("seriesId"),value.optString("logoUrl",""),value.optString("epgId",""),value.optString("epgName",""));
    library.favorites.add(new Entry(value.getString("sourceId"),channel));
   }
   return library;

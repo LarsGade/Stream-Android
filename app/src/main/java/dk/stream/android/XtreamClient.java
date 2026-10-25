@@ -66,7 +66,7 @@ public final class XtreamClient {
    String group=names.get(item.optString("category_id")); if(group==null) group="";
    String url=kind==Playlist.Kind.SERIES?"":streamUrl(kind,id,kind==Playlist.Kind.TV?liveExtension:item.optString("container_extension","mp4"));
    String image=item.optString("stream_icon","");if(image.isEmpty()) image=item.optString("cover","");
-   catalog.add(new Playlist.Channel(item.optString("name",id),url,group,kind,kind==Playlist.Kind.SERIES?id:null,logo(image)));
+   catalog.add(new Playlist.Channel(item.optString("name",id),url,group,kind,kind==Playlist.Kind.SERIES?id:null,logo(image),item.optString("epg_channel_id",""),item.optString("name","")));
   }
  }
  private String logo(String value) {
