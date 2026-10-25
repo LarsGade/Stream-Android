@@ -10,7 +10,6 @@
   <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
   <string name="search_hint">Søg efter titel eller gruppe</string>
   <plurals name="channel_count"><item quantity="one">%1$d element · vælg for at afspille</item><item quantity="other">%1$d elementer · vælg for at afspille</item></plurals>
-  <string name="playing">Afspiller: %1$s</string>
   <string name="casting">Caster: %1$s</string>
  <string name="xtream_login">Tilføj Xtream-login</string>
  <string name="xtream_server">Server, fx https://tv.eksempel.dk:8080</string>
@@ -62,4 +61,8 @@
  <string name="volume">Lydstyrke</string>
  <string name="volume_failed">Lydstyrken kunne ikke ændres på denne enhed.</string>
  <string name="playback_stopped">Afspilningen er stoppet.</string>
+ <string name="seek_back">Spol 10 sekunder tilbage</string><string name="seek_forward">Spol 10 sekunder frem</string>
+ <string name="seek_position">Afspilningsposition</string><string name="live">Live</string><string name="playback_time">%1$s / %2$s</string>
+ <string name="player_settings">Afspillerindstillinger</string><string name="playback_speed">Afspilningshastighed</string>
+ <string name="subtitles">Undertekster</string><string name="audio_track">Lydspor</string>
 </resources>

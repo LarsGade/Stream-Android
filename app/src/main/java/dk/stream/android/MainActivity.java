@@ -115,7 +115,7 @@ public final class MainActivity extends AppCompatActivity {
    public void togglePlayback() {togglePlaybackState();}
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
-   public void volumeFailed() {status.setVisibility(View.VISIBLE);status.setText(R.string.volume_failed);}
+   public void volumeFailed() {Toast.makeText(MainActivity.this,R.string.volume_failed,Toast.LENGTH_SHORT).show();}
    public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.getPlayWhenReady();}
    public boolean fullscreen() {return fullscreen;}
    public CastSession castSession() {return connectedCast();}
@@ -195,6 +195,7 @@ public final class MainActivity extends AppCompatActivity {
    if(activeSource!=null) for(Playlist.Channel channel:catalog.filter(currentKind,group,search.getText().toString())) visible.add(new Library.Entry(activeSource.id,channel));
   }
   adapter.notifyDataSetChanged();
+  if(playbackPanel!=null && playbackPanel.getVisibility()==View.VISIBLE && selected!=null) {status.setVisibility(View.GONE);return;}
   if(!loading) {
    if(favoritesMode) {
     status.setText(library.favorites.isEmpty()?getString(R.string.no_favorites):"");
@@ -342,9 +343,9 @@ public final class MainActivity extends AppCompatActivity {
   status.setVisibility(View.VISIBLE);
   boolean same=selected!=null && selected.url.equals(channel.url);
   if(!same) resumePosition=0;
-  selected=channel;CastSession session=connectedCast();playbackPanel.setVisibility(View.VISIBLE);
+  selected=channel;CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
-   exitFullscreen();video.setVisibility(View.GONE);if(player!=null) player.pause();watchRemote();playbackPanel.refresh();
+   exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null) player.pause();video.setPlayer(null);watchRemote();playbackPanel.refresh();
    MediaMetadata metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);
    if(!channel.logoUrl.isEmpty()) metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
    String path=Playlist.httpUrl(channel.url).encodedPath().toLowerCase(Locale.ROOT);
@@ -356,13 +357,14 @@ public final class MainActivity extends AppCompatActivity {
    if(player==null) {
     player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);
     player.addListener(new Player.Listener() {
-     @Override public void onPlayerError(PlaybackException e) {status.setVisibility(View.VISIBLE);status.setText(R.string.playback_failed);}
+     @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
      @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();}
     });
    }
+   video.setPlayer(player);
    if(same && channel.kind!=Playlist.Kind.TV && resumePosition>0) player.setMediaItem(MediaItem.fromUri(channel.url),resumePosition);
    else player.setMediaItem(MediaItem.fromUri(channel.url));
-   player.prepare();player.play();video.showController();playbackPanel.refresh();status.setText(getString(R.string.playing,channel.name));
+   player.prepare();player.play();playbackPanel.hideControls();playbackPanel.refresh();status.setVisibility(View.GONE);
   }
  }
  private CastSession connectedCast() {
@@ -384,7 +386,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void stopPlaybackState() {
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
-  if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;
+  if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;hideFullscreenSystemBars();
   status.setVisibility(View.VISIBLE);status.setText(R.string.playback_stopped);
  }
  private void enterFullscreen() {
@@ -403,10 +405,15 @@ public final class MainActivity extends AppCompatActivity {
   fullscreen=false;fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);
   playbackPanel.fullscreenLayout(false);fullscreenBack.setEnabled(false);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
   if(android.os.Build.VERSION.SDK_INT>=28) {android.view.WindowManager.LayoutParams params=getWindow().getAttributes();params.layoutInDisplayCutoutMode=previousCutoutMode;getWindow().setAttributes(params);}
-  androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.systemBars());setRequestedOrientation(previousOrientation);
+  androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.systemBars());setRequestedOrientation(previousOrientation);hideFullscreenSystemBars();
  }
  private void hideFullscreenSystemBars() {
-  if(!fullscreen) return;
+  if(!fullscreen) {
+   boolean active=playbackPanel!=null && playbackPanel.getVisibility()==View.VISIBLE && selected!=null;
+   if(active) {getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).hide(androidx.core.view.WindowInsetsCompat.Type.statusBars());}
+   else {getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.statusBars());}
+   return;
+  }
   androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
   getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
   if(android.os.Build.VERSION.SDK_INT>=28) {
