@@ -23,7 +23,6 @@ public final class PlaybackPanel extends FrameLayout {
  private final Actions actions;
  private final AudioManager audio;
  private final ImageButton play,mute,fullscreen,rewind,forward,settings;
- public final SeekBar volume;
  private final SeekBar timeline;
  private final TextView title,time;
  private int restoreVolume;
@@ -56,15 +55,7 @@ public final class PlaybackPanel extends FrameLayout {
    public void onStartTrackingTouch(SeekBar bar) {tracking=true;removeCallbacks(hideControls);}
    public void onStopTrackingTouch(SeekBar bar) {tracking=false;scheduleHide();}
   });
-  LinearLayout sound=new LinearLayout(context);sound.setGravity(Gravity.CENTER_VERTICAL);sound.setPadding(dp(12),0,dp(12),0);controls.addView(sound,new LinearLayout.LayoutParams(-1,dp(40)));
-  TextView label=new TextView(context);label.setText(R.string.volume);label.setTextSize(12);label.setTextColor(Color.LTGRAY);sound.addView(label);
-  volume=new SeekBar(context);volume.setContentDescription(context.getString(R.string.volume));sound.addView(volume,new LinearLayout.LayoutParams(0,-1,1));
-  settings=new ImageButton(context);settings.setImageResource(android.R.drawable.ic_menu_preferences);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackgroundResource(android.R.drawable.list_selector_background);settings.setContentDescription(context.getString(R.string.player_settings));sound.addView(settings,new LinearLayout.LayoutParams(dp(44),-1));settings.setOnClickListener(this::showSettings);
-  volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-   public void onProgressChanged(SeekBar bar,int value,boolean fromUser) {if(fromUser) setVolume(value);}
-   public void onStartTrackingTouch(SeekBar bar) {tracking=true;removeCallbacks(hideControls);}
-   public void onStopTrackingTouch(SeekBar bar) {tracking=false;scheduleHide();}
-  });
+  settings=new ImageButton(context);settings.setImageResource(android.R.drawable.ic_menu_preferences);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackgroundResource(android.R.drawable.list_selector_background);settings.setContentDescription(context.getString(R.string.player_settings));settings.setPadding(dp(8),dp(8),dp(8),dp(8));buttons.addView(settings,new LinearLayout.LayoutParams(0,-1,1));settings.setOnClickListener(this::showSettings);
   addView(controls,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this,(view,insets)->{
    androidx.core.graphics.Insets cutout=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout());
@@ -78,7 +69,7 @@ public final class PlaybackPanel extends FrameLayout {
  }
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private ImageButton button(LinearLayout row,int icon,int label,Runnable click) {
-  ImageButton button=new ImageButton(getContext());button.setImageResource(icon);button.setContentDescription(getContext().getString(label));button.setPadding(dp(10),dp(10),dp(10),dp(10));button.setBackgroundResource(android.R.drawable.list_selector_background);
+  ImageButton button=new ImageButton(getContext());button.setImageResource(icon);button.setContentDescription(getContext().getString(label));button.setPadding(dp(8),dp(8),dp(8),dp(8));button.setBackgroundResource(android.R.drawable.list_selector_background);
   row.addView(button,new LinearLayout.LayoutParams(0,-1,1));button.setOnClickListener(view->{click.run();if(controlsVisible()) scheduleHide();});return button;
  }
  public void setTitle(CharSequence name) {title.setText(name);}
@@ -87,7 +78,7 @@ public final class PlaybackPanel extends FrameLayout {
  public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);video.hideController();}
  public void fullscreenLayout(boolean enabled) {
   fullscreenMode=enabled;controls.setPadding(0,0,0,0);
-  video.setResizeMode(enabled?androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM:androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT);
+  video.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT);
   hideControls();requestLayout();refresh();
  }
  private void scheduleHide() {removeCallbacks(hideControls);if(!tracking && controlsVisible()) postDelayed(hideControls,2500);}
@@ -145,17 +136,11 @@ public final class PlaybackPanel extends FrameLayout {
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));
   try {
    CastSession session=actions.castSession();int level;
-   if(session!=null) {volume.setMax(100);level=session.isMute()?0:(int)Math.round(session.getVolume()*100);volume.setEnabled(true);mute.setEnabled(true);}
-   else {volume.setMax(audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC));level=audio.getStreamVolume(AudioManager.STREAM_MUSIC);volume.setEnabled(!audio.isVolumeFixed());mute.setEnabled(!audio.isVolumeFixed());}
-   volume.setProgress(level);mute.setImageResource(level==0?R.drawable.ic_mute:R.drawable.ic_volume);mute.setContentDescription(getContext().getString(level==0?R.string.unmute_action:R.string.mute_action));
+   if(session!=null) {level=session.isMute()?0:(int)Math.round(session.getVolume()*100);mute.setEnabled(true);}
+   else {level=audio.getStreamVolume(AudioManager.STREAM_MUSIC);mute.setEnabled(!audio.isVolumeFixed());}
+   mute.setImageResource(level==0?R.drawable.ic_mute:R.drawable.ic_volume);mute.setContentDescription(getContext().getString(level==0?R.string.unmute_action:R.string.mute_action));
   } catch(IllegalStateException e) {actions.volumeFailed();}
   settings.setEnabled(video.getPlayer()!=null && actions.castSession()==null);refreshProgress();
- }
- public void setVolume(int value) {
-  try {
-   CastSession session=actions.castSession();if(session!=null) {session.setMute(false);session.setVolume(Math.max(0,Math.min(100,value))/100.0);}
-   else {audio.setStreamVolume(AudioManager.STREAM_MUSIC,Math.max(0,Math.min(audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),value)),0);if(value>0) restoreVolume=value;}refresh();
-  } catch(java.io.IOException|IllegalStateException|SecurityException e) {actions.volumeFailed();}
  }
  public void toggleMute() {
   try {

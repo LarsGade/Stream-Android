@@ -113,7 +113,7 @@ public class MainActivityTest {
   startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");
   assertEquals(View.VISIBLE,panel.getVisibility());
   assertFalse(panel.video.getUseController());assertFalse(panel.controlsVisible());panel.video.performClick();assertTrue(panel.controlsVisible());
-  for(int label:new int[]{R.string.pause_action,R.string.stop_action,R.string.fullscreen_action,R.string.volume}) assertEquals(View.VISIBLE,control(panel,label).getVisibility());
+  for(int label:new int[]{R.string.pause_action,R.string.stop_action,R.string.fullscreen_action,R.string.player_settings}) assertEquals(View.VISIBLE,control(panel,label).getVisibility());
   control(panel,R.string.pause_action).performClick();
   androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");assertFalse(player.getPlayWhenReady());
   control(panel,R.string.play_action).performClick();assertTrue(player.getPlayWhenReady());
@@ -129,10 +129,12 @@ public class MainActivityTest {
   assertFalse(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));assertSame(player,ReflectionHelpers.getField(activity,"player"));
   assertSame(ReflectionHelpers.getField(activity,"content"),panel.getParent());
  }
- @Test public void volumeSliderAndMuteChangeMusicVolume() {
+ @Test public void deviceMusicStreamAndMuteWorkWithoutVolumeSlider() {
   startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");
   android.media.AudioManager audio=(android.media.AudioManager)activity.getSystemService(android.content.Context.AUDIO_SERVICE);
-  panel.video.performClick();panel.setVolume(3);assertEquals(3,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));assertEquals(3,panel.volume.getProgress());
+  panel.video.performClick();audio.setStreamVolume(android.media.AudioManager.STREAM_MUSIC,3,0);panel.refresh();
+  assertEquals(android.media.AudioManager.STREAM_MUSIC,activity.getVolumeControlStream());
+  assertEquals(1,views(panel,SeekBar.class).size()); // Only the playback timeline remains.
   control(panel,R.string.mute_action).performClick();assertEquals(0,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));
   control(panel,R.string.unmute_action).performClick();assertEquals(3,audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC));
  }
@@ -142,7 +144,7 @@ public class MainActivityTest {
   FrameLayout host=ReflectionHelpers.getField(activity,"fullscreenHost");
   host.measure(View.MeasureSpec.makeMeasureSpec(1920,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1080,View.MeasureSpec.EXACTLY));host.layout(0,0,1920,1080);
   assertEquals(1920,panel.video.getWidth());assertEquals(1080,panel.video.getHeight());
-  assertEquals(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,panel.video.getResizeMode());
+  assertEquals(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT,panel.video.getResizeMode());
   LinearLayout overlay=ReflectionHelpers.getField(panel,"controls");assertEquals(View.GONE,overlay.getVisibility());
   assertFalse(panel.video.isControllerFullyVisible());
   panel.video.performClick();assertEquals(View.VISIBLE,overlay.getVisibility());
@@ -180,5 +182,13 @@ public class MainActivityTest {
   menu.getMenu().performIdentifierAction(1,0);
   AlertDialog speed=dialog();ListView choices=speed.getListView();choices.performItemClick(null,5,choices.getAdapter().getItemId(5));
   androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");assertEquals(2f,player.getPlaybackParameters().speed,0.01f);
+ }
+ @Test public void fullscreenKeepsEntireVideoAndAddsSideBordersWhenNeeded() {
+  startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");panel.video.performClick();control(panel,R.string.fullscreen_action).performClick();
+  androidx.media3.ui.AspectRatioFrameLayout image=panel.video.findViewById(androidx.media3.ui.R.id.exo_content_frame);image.setAspectRatio(16f/9f);
+  FrameLayout host=ReflectionHelpers.getField(activity,"fullscreenHost");host.measure(View.MeasureSpec.makeMeasureSpec(2400,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1080,View.MeasureSpec.EXACTLY));host.layout(0,0,2400,1080);
+  assertEquals(2400,panel.video.getWidth());assertEquals(1080,panel.video.getHeight());
+  assertEquals(1920,image.getWidth());assertEquals(1080,image.getHeight());assertEquals(240,image.getLeft());
+  assertFalse(panel.controlsVisible());
  }
 }

@@ -58,7 +58,6 @@
  <string name="exit_fullscreen">Afslut fuldskærm</string>
  <string name="mute_action">Slå lyd fra</string>
  <string name="unmute_action">Slå lyd til</string>
- <string name="volume">Lydstyrke</string>
  <string name="volume_failed">Lydstyrken kunne ikke ændres på denne enhed.</string>
  <string name="playback_stopped">Afspilningen er stoppet.</string>
  <string name="seek_back">Spol 10 sekunder tilbage</string><string name="seek_forward">Spol 10 sekunder frem</string>
