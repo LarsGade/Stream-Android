@@ -1,0 +1,18 @@
+<resources>
+  <string name="cast_ended">Casting afsluttet. Vælg en kanal for at afspille her.</string>
+  <string name="cast_failed">Kunne ikke forbinde til Cast-enheden</string>
+  <string name="app_name">STREAM</string>
+  <string name="load">Indlæs kanaler</string>
+  <string name="welcome">Tilføj din M3U-liste for at komme i gang</string>
+  <string name="cast_unavailable">Google Cast kræver Google Play-tjenester. Lokal afspilning er tilgængelig.</string>
+  <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
+  <string name="loading">Henter kanalliste …</string>
+  <string name="load_failed">Kunne ikke indlæse listen. Kontrollér linket, netværket og M3U-formatet.</string>
+  <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
+  <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra TV\'et.</string>
+  <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
+  <string name="search_hint">Søg efter kanal eller gruppe</string>
+  <plurals name="channel_count"><item quantity="one">%1$d kanal · vælg en kanal</item><item quantity="other">%1$d kanaler · vælg en kanal</item></plurals>
+  <string name="playing">Afspiller: %1$s</string>
+  <string name="casting">Caster: %1$s</string>
+</resources>
