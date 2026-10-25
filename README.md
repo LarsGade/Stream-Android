@@ -54,6 +54,8 @@ Version 1.5.0 tilføjer TV-Guide med navngivne EPG-links, EPG-valg pr. kilde, ak
 
 Version 1.5.1 flytter alle indstillingspunkter og start-på-favoritter-kontakten direkte til en scrollbar burgermenu. Kildevælgerens knapper står lodret i rækkefølgen Tilføj M3U, Tilføj Xtream-login og Annuller nederst.
 
+Version 1.5.2 fjerner overskriften “Stream” i burgermenuen og de faste vejledningstekster under overskrifterne og i kilde-/guideformularer. Fejl og indlæsningsstatus bevares. En lille grå kreditering, “Udviklet af Lars Gade”, står nederst på appens almindelige sider. EPG-programtitlerne på Favoritter bevares.
+
 ## Udvikling
 
 Brug JDK 17 eller 21, Android SDK Platform 35 og Build Tools 34.0.0.

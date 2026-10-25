@@ -251,4 +251,10 @@ public class MainActivityTest {
   assertSame(actions.get(1).getParent(),actions.get(2).getParent());assertEquals(LinearLayout.VERTICAL,((LinearLayout)actions.get(2).getParent()).getOrientation());
   actions.get(2).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertFalse(dialog().isShowing());
  }
+ @Test public void headingsHaveNoGuideTextAndCreditIsAtBottom() {
+  TextView status=ReflectionHelpers.getField(activity,"status");assertEquals(View.GONE,status.getVisibility());assertEquals("",status.getText().toString());
+  LinearLayout content=ReflectionHelpers.getField(activity,"content");TextView footer=(TextView)content.getChildAt(content.getChildCount()-1);
+  assertEquals("Udviklet af Lars Gade",footer.getText().toString());assertEquals(android.view.Gravity.CENTER,footer.getGravity());
+  clickText(activity.getWindow().getDecorView(),R.string.favorites);assertEquals(View.GONE,status.getVisibility());
+ }
 }

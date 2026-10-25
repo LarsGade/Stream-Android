@@ -118,7 +118,7 @@ public final class MainActivity extends AppCompatActivity {
    @Override public void onDrawerClosed(View view) {closeDrawer.setEnabled(false);}
   });
   pageTitle=text("",20,Color.WHITE);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
-  status=text(getString(R.string.welcome),13,Color.LTGRAY);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
+  status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
    public void togglePlayback() {togglePlaybackState();}
    public void stopPlayback() {stopPlaybackState();}
@@ -138,6 +138,7 @@ public final class MainActivity extends AppCompatActivity {
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new ListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
+  TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(6),0,dp(4));root.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setOnItemClickListener((parent,view,position,id)->open(visible.get(position)));
   sections.setOnCheckedChangeListener((group,id)->{ for(int i=0;i<kindButtons.length;i++) if(kindButtons[i].getId()==id) currentKind=Playlist.Kind.values()[i];rebuildGroups(); });
@@ -153,7 +154,7 @@ public final class MainActivity extends AppCompatActivity {
   chooseFirstKind();rebuildGroups();loadAssignedGuides(false);
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
   catch(Exception e) { castButton.setVisibility(View.GONE); }
-  if(!storageReadable) status.setText(R.string.storage_failed);
+  if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
   else if(!favoritesMode) {
    Library.Source last=library.findSource(library.lastSourceId);
    if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);
@@ -169,7 +170,6 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  navigation.addView(text(getString(R.string.app_name),28,Color.WHITE));
   button(R.string.library,navigation,()->navigate(false));button(R.string.favorites,navigation,()->navigate(true));
   SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
@@ -213,16 +213,7 @@ public final class MainActivity extends AppCompatActivity {
   }
   adapter.notifyDataSetChanged();
   if(playbackPanel!=null && playbackPanel.getVisibility()==View.VISIBLE && selected!=null) {status.setVisibility(View.GONE);return;}
-  if(!loading) {
-   if(favoritesMode) {
-    status.setText(library.favorites.isEmpty()?getString(R.string.no_favorites):"");
-    status.setVisibility(library.favorites.isEmpty()?View.VISIBLE:View.GONE);
-    return;
-   }
-   status.setVisibility(View.VISIBLE);
-   if(activeSource==null) status.setText(R.string.welcome);
-   else status.setText(visible.isEmpty()?getString(R.string.no_section_items):getResources().getQuantityString(R.plurals.channel_count,visible.size(),visible.size()));
-  }
+  if(!loading) {status.setText("");status.setVisibility(View.GONE);}
  }
  private boolean changeLibrary(Runnable change) {
   if(!storageReadable) {status.setText(R.string.storage_failed);return false;}
@@ -271,7 +262,6 @@ public final class MainActivity extends AppCompatActivity {
   List<Library.Guide> choices=new ArrayList<>(library.guides);List<String> labels=new ArrayList<>();labels.add(getString(R.string.no_epg));for(Library.Guide guide:choices) labels.add(guide.name);
   Spinner epg=new Spinner(this);ArrayAdapter<String> epgChoices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);epgChoices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);epg.setAdapter(epgChoices);form.addView(epg);
   if(existing!=null) for(int i=0;i<choices.size();i++) if(choices.get(i).id.equals(existing.epgId)) epg.setSelection(i+1);
-  form.addView(text(getString(R.string.storage_note),13,Color.LTGRAY));
   ScrollView scroll=new ScrollView(this);scroll.addView(form);
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(existing!=null?R.string.edit_source:xtream?R.string.xtream_login:R.string.add_m3u).setView(scroll).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
   dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
@@ -326,7 +316,6 @@ public final class MainActivity extends AppCompatActivity {
   LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(12));
   EditText name=input(form,R.string.epg_name,android.text.InputType.TYPE_CLASS_TEXT);
   EditText url=input(form,R.string.epg_url,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);
-  form.addView(text(getString(R.string.epg_format),13,Color.LTGRAY));
   if(existing!=null) {name.setText(existing.name);url.setText(existing.url);}
   AlertDialog.Builder builder=new AlertDialog.Builder(this).setTitle(existing==null?R.string.add_epg:R.string.edit_epg).setView(form).setPositiveButton(R.string.save,null).setNegativeButton(android.R.string.cancel,null);
   if(existing!=null) builder.setNeutralButton(R.string.delete,(dialog,which)->{
@@ -422,7 +411,7 @@ public final class MainActivity extends AppCompatActivity {
     runOnUiThread(()->{
      if(isDestroyed()) return;
      new AlertDialog.Builder(this).setTitle(series.name).setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,episodes),(dialog,position)->play(episodes.get(position))).setNegativeButton(android.R.string.cancel,null).show();
-     status.setText(R.string.choose_episode);
+     status.setVisibility(View.GONE);
     });
    } catch(Exception e) {runOnUiThread(()->{if(!isDestroyed()) showError(e);});}
    finally {runOnUiThread(()->{if(!isDestroyed()) busy(false);});}

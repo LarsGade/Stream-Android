@@ -2,14 +2,12 @@
   <string name="cast_ended">Casting afsluttet. Vælg en kanal for at afspille her.</string>
   <string name="cast_failed">Kunne ikke forbinde til Cast-enheden</string>
   <string name="app_name">Stream</string>
-  <string name="welcome">Tilføj en kilde via ☰ → Kilder.</string>
   <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
   <string name="loading">Henter kanalliste …</string>
   <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
   <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra TV\'et.</string>
   <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
   <string name="search_hint">Søg efter titel eller gruppe</string>
-  <plurals name="channel_count"><item quantity="one">%1$d element · vælg for at afspille</item><item quantity="other">%1$d elementer · vælg for at afspille</item></plurals>
   <string name="casting">Caster: %1$s</string>
  <string name="xtream_login">Tilføj Xtream-login</string>
  <string name="xtream_server">Server, fx https://tv.eksempel.dk:8080</string>
@@ -27,19 +25,15 @@
  <string name="films">Film</string>
  <string name="series">Serier</string>
  <string name="all_groups">Alle grupper</string>
- <string name="no_section_items">Intet indhold i denne sektion eller søgning.</string>
  <string name="loading_catalog">Henter TV, film, serier og grupper …</string>
  <string name="loading_episodes">Henter seriens afsnit …</string>
- <string name="choose_episode">Vælg et afsnit i listen.</string>
  <string name="open_menu">Åbn menu</string>
  <string name="library">Streamingtjeneste</string>
  <string name="favorites">Favoritter</string>
  <string name="sources">Kilder</string>
  <string name="start_favorites">Vis favoritter, når appen åbner</string>
- <string name="storage_note">Kilder, login og favoritter gemmes krypteret på denne enhed.</string>
  <string name="storage_failed">Kunne ikke læse eller gemme dine lokale indstillinger. Dine gemte data er ikke overskrevet.</string>
  <string name="select_group">Vælg gruppe</string>
- <string name="no_favorites">Din favoritliste er tom. Tryk på stjernen ud for en kanal i biblioteket.</string>
  <string name="add_favorite">Tilføj %1$s til favoritter</string>
  <string name="remove_favorite">Fjern %1$s fra favoritter</string>
  <string name="logo_for">Logo for %1$s</string>
@@ -65,7 +59,6 @@
  <string name="subtitles">Undertekster</string><string name="audio_track">Lydspor</string>
  <string name="tv_guide">TV-Guide</string><string name="add_epg">Tilføj EPG</string><string name="edit_epg">Redigér TV-Guide</string>
  <string name="epg_name">Navn på TV-guide</string><string name="epg_url">EPG-link (XMLTV eller XMLTV.gz)</string>
- <string name="epg_format">Brug et HTTP/HTTPS-link til XMLTV. Komprimerede .gz-filer understøttes. Kanaler matches først via tvg-id og ellers via kanalnavn.</string>
  <string name="epg_invalid">Angiv et navn og et gyldigt HTTP/HTTPS-link.</string>
  <string name="select_epg">TV-Guide til denne kilde</string><string name="no_epg">Ingen TV-Guide</string>
  <string name="epg_loading">Henter TV-guide …</string><string name="epg_no_programme">Ingen aktuelle programoplysninger</string>
@@ -81,4 +74,5 @@
  <plurals name="updated_guides"><item quantity="one">%1$d TV-guide opdateret</item><item quantity="other">%1$d TV-guides opdateret</item></plurals>
  <plurals name="update_failures"><item quantity="one">%1$d opdatering mislykkedes</item><item quantity="other">%1$d opdateringer mislykkedes</item></plurals>
  <string name="epg_fetch_failed">Kunne ikke hente %1$s. Tidligere programoplysninger beholdes, hvis de findes.</string>
+ <string name="developer_credit">Udviklet af Lars Gade</string>
 </resources>
