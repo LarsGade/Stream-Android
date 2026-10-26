@@ -96,7 +96,7 @@ public final class MainActivity extends AppCompatActivity {
 
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
-  super.onCreate(state);
+  super.onCreate(state);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
   android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
@@ -220,6 +220,7 @@ public final class MainActivity extends AppCompatActivity {
   ScrollView menu=new ScrollView(this);menu.addView(navigation);
   DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(menu,params);
  }
+ @androidx.annotation.ChecksSdkIntAtLeast(api=26)
  private boolean supportsMiniPlayer() {
   return android.os.Build.VERSION.SDK_INT>=26 && getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
  }

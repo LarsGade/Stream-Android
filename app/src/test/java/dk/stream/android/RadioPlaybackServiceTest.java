@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class) @Config(sdk=28)
 public class RadioPlaybackServiceTest {
- @Test public void serviceStartsForegroundMediaSessionAndCanPauseResumeAndStop() throws Exception {
+ @Test public void serviceStartsForegroundMediaSessionAndAlwaysStopsInsteadOfPausing() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
    server.enqueue(new MockResponse().setResponseCode(404));server.enqueue(new MockResponse().setResponseCode(404));
    ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
@@ -21,9 +21,9 @@ public class RadioPlaybackServiceTest {
     service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);Player player=service.onGetSession(null).getPlayer();
     assertTrue(player.getPlayWhenReady());assertEquals("P1",RadioPlaybackService.nowPlaying());assertTrue(RadioPlaybackService.playing(station.id));assertNotNull(Shadows.shadowOf(service).getLastForegroundNotification());
     Intent toggle=RadioPlaybackService.playIntent(service,station).setAction(RadioPlaybackService.TOGGLE);
-    service.onStartCommand(toggle,0,2);assertFalse(player.getPlayWhenReady());assertFalse(RadioPlaybackService.playing(station.id));
+    service.onStartCommand(toggle,0,2);assertFalse(player.getPlayWhenReady());assertEquals(Player.STATE_IDLE,player.getPlaybackState());assertFalse(RadioPlaybackService.playing(station.id));
     service.onStartCommand(toggle,0,3);assertTrue(player.getPlayWhenReady());
-    service.onStartCommand(new Intent(service,RadioPlaybackService.class).setAction(RadioPlaybackService.STOP),0,4);assertEquals("",RadioPlaybackService.nowPlaying());assertEquals(Player.STATE_IDLE,player.getPlaybackState());
+    service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,4);assertEquals("",RadioPlaybackService.nowPlaying());assertEquals(Player.STATE_IDLE,player.getPlaybackState());
    } finally {controller.destroy();}
    assertFalse(RadioPlaybackService.playing("station"));
   }
@@ -52,14 +52,26 @@ public class RadioPlaybackServiceTest {
     RadioStation station=new RadioStation("station","DR P1",server.url("/radio.mp3").toString(),"");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);
     androidx.media3.session.MediaSession session=service.onGetSession(null);assertNotNull(session.getPlayer().getMediaMetadata().artworkData);assertEquals("DR P1",session.getPlayer().getMediaMetadata().title.toString());
     java.lang.reflect.Method method=RadioPlaybackService.class.getDeclaredMethod("notification",androidx.media3.session.MediaSession.class);method.setAccessible(true);android.app.Notification notification=(android.app.Notification)method.invoke(service,session);
-    assertEquals(0xFF3686FF,notification.color);assertTrue(notification.extras.getBoolean("android.colorized"));assertEquals(android.app.Notification.VISIBILITY_PUBLIC,notification.visibility);assertNotNull(notification.extras.getParcelable(android.app.Notification.EXTRA_MEDIA_SESSION));assertEquals("android.app.Notification$MediaStyle",notification.extras.getString(android.app.Notification.EXTRA_TEMPLATE));assertEquals(2,notification.actions.length);assertNotNull(notification.getLargeIcon());
+    assertEquals(0xFF3686FF,notification.color);assertTrue(notification.extras.getBoolean("android.colorized"));assertEquals(android.app.Notification.VISIBILITY_PUBLIC,notification.visibility);assertNotNull(notification.extras.getParcelable(android.app.Notification.EXTRA_MEDIA_SESSION));assertEquals("android.app.Notification$MediaStyle",notification.extras.getString(android.app.Notification.EXTRA_TEMPLATE));assertEquals(1,notification.actions.length);assertEquals(service.getString(R.string.stop_action),notification.actions[0].title);assertNotNull(notification.getLargeIcon());
     notification.actions[0].actionIntent.send();Intent action=Shadows.shadowOf(service.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.TRANSPORT_TOGGLE,action.getAction());service.onStartCommand(action,0,2);assertFalse(session.getPlayer().getPlayWhenReady());service.onStartCommand(action,0,3);assertTrue(session.getPlayer().getPlayWhenReady());
-    notification.actions[1].actionIntent.send();action=Shadows.shadowOf(service.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.STOP,action.getAction());service.onStartCommand(action,0,4);assertEquals("",RadioPlaybackService.nowPlaying());
+    action=RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP);service.onStartCommand(action,0,4);assertEquals("",RadioPlaybackService.nowPlaying());
+   } finally {controller.destroy();}
+  }
+ }
+ @Test public void controllerPauseIsConvertedToStopAndResumeIsFreshLivePlayback() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setResponseCode(404));server.enqueue(new MockResponse().setResponseCode(404));
+   ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+   try {
+    RadioStation station=new RadioStation("station","DR P1",server.url("/live.mp3").toString(),"");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);
+    Player player=service.onGetSession(null).getPlayer();assertTrue(player instanceof LiveRadioPlayer);player.pause();assertEquals(Player.STATE_IDLE,player.getPlaybackState());assertFalse(player.getPlayWhenReady());
+    player.play();assertTrue(player.getPlayWhenReady());assertEquals(0,player.getCurrentPosition());assertFalse(CarRadioCallback.playerCommands(true).contains(Player.COMMAND_PLAY_PAUSE));assertTrue(CarRadioCallback.playerCommands(false).contains(Player.COMMAND_PLAY_PAUSE));assertTrue(CarRadioCallback.sessionCommands().contains(CarRadioCallback.STOP_LIVE));
+    CarRadioCallback callback=new CarRadioCallback(new CarRadioCatalog(service));try {callback.onCustomCommand(service.onGetSession(null),null,CarRadioCallback.STOP_LIVE,android.os.Bundle.EMPTY).get();assertEquals(Player.STATE_IDLE,player.getPlaybackState());assertFalse(player.getPlayWhenReady());} finally {callback.close();}
    } finally {controller.destroy();}
   }
  }
  @Test public void invalidStationStopsCleanly() {
   ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
-  try {service.onStartCommand(new Intent(service,RadioPlaybackService.class).setAction(RadioPlaybackService.PLAY).putExtra("station","not-json"),0,1);assertEquals("",RadioPlaybackService.nowPlaying());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());} finally {controller.destroy();}
+  try {service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.PLAY).putExtra("station","not-json"),0,1);assertEquals("",RadioPlaybackService.nowPlaying());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());} finally {controller.destroy();}
  }
 }

@@ -4,7 +4,7 @@ Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
 
 ## Radio og widgets
 
-Åbn **☰ → Radio** for danske stationer fra Radio Browser. Appen henter kun stationer med landekoden DK og gyldige HTTP(S)-streams, skjuler kendte defekte stationer og forsøger alternative Radio Browser-servere ved fejl. Søg efter stationsnavn, tryk på en station for at afspille, og brug stjernen for at tilføje den til **Favoritter → Radio**. Radio kan fortsætte i baggrunden med Androids mediebetjening, lydfokus og pause, når hovedtelefoner frakobles. Radio og lokal video afspilles ikke samtidigt.
+Åbn **☰ → Radio** for danske stationer fra Radio Browser. Appen henter kun stationer med landekoden DK og gyldige HTTP(S)-streams, skjuler kendte defekte stationer og forsøger alternative Radio Browser-servere ved fejl. Søg efter stationsnavn, tryk på en station for at afspille, og brug stjernen for at tilføje den til **Favoritter → Radio**. Radio kan fortsætte i baggrunden med Androids mediebetjening, lydfokus og stop, når hovedtelefoner frakobles. Radio og lokal video afspilles ikke samtidigt.
 
 I **☰ → Favoritter → Radio**: Hold og slip en station for at vælge **Omdøb** eller **Fjern fra favoritter**; hold og træk for at ændre rækkefølgen. Navn og rækkefølge gemmes separat fra **Favoritter → TV**. Et lokalt navn som **DR P1**, **DR P3** eller **Nova** bruger det tilsvarende indbyggede logo fra de uploadede filer, når der findes et match. Det oprindelige stations-id og stream-link bevares ved omdøbning.
 
@@ -68,7 +68,7 @@ Version 1.6.0 fjerner Favoritter-overskriften og favoritstjernerne på selve fav
 
 ## Udvikling
 
-Brug JDK 17 eller 21, Android SDK Platform 35 og Build Tools 34.0.0.
+Brug JDK 21, Android SDK Platform 37.0 og Build Tools 36.0.0 eller nyere. Projektet bruger Android Gradle Plugin 9.3.2, Gradle Wrapper 9.7.1 og targetSdk 37.
 
 ```sh
 ./gradlew assembleDebug testDebugUnitTest lintDebug
@@ -81,7 +81,7 @@ I det klargjorte cloudmiljø:
 ```sh
 . /workspace/setup/android-env.sh
 cd /workspace/Stream-Android
-gradle assembleDebug testDebugUnitTest lintDebug
+./gradlew assembleDebug testDebugUnitTest lintDebug
 ```
 
 Tests kontrollerer metadata, relative links, specialtegn i links og Xtream-login, HTTP-redirects, gzip, UTF-16, store lister, serverfejl, API-kataloger, rækkefølgen for sektioner og grupper samt sæsoner og afsnit. Der er også tests af logo-adresser, gemte kilder, favoritter, startindstilling og krypteringens integritet. M3U-hentning accepterer op til 64 MB og viser konkrete fejl uden at vise loginoplysninger. Android-tests med Robolectric gennemgår tilføjelse af M3U- og Xtream-kilder, visning af kanallogoer og sektioner samt favoritter og startindstillingen. Billedtests kontrollerer desuden pixelindholdet i hentede PNG-, JPEG-, WebP- og SVG-logoer samt redirects og sikre headers. Favoritvisningen testes uden filtre og antal på tværs af indholdstyper. Afspiller-tests kontrollerer skjult starttilstand, tryk på videoen, automatisk skjulning uden ændring af videovinduets størrelse, afspillerindstillinger, pause/afspilning, stop, fuldskærm og tilbage uden udskiftning af afspilleren samt faktisk ændring af medielydstyrke og mute. Logo-tests kontrollerer de 47 pakkede filer, navnematch og indlæsning fra assets. De bruger en isoleret lagringsbackend til UI-testene; Android Keystore og faktisk afspilning/casting skal også afprøves på en Android-enhed. EPG-tests kontrollerer id-/navnematch, tvetydige navne, tidszoner og sommertid, programskift, cache og gzip/redirects. UI-tests dækker navngivne guides, valg pr. kilde, grå programtekst, kilde-/guide-redigering og sletning, opdatering af alle poster med delvise fejl samt Ja/Nej til nulstilling. Nulstilling testes via Androids simulerede datarydnings-API og udføres ikke på brugerens faktiske appdata under bygningen. Cloudmiljøet har ingen fysisk Cast-modtager.
@@ -106,3 +106,9 @@ Version 1.9.0 fjerner overskriften fra Radio-Favoritter og gør hele den konfigu
 Version 1.10.0 samler TV- og radiofavoritter under **☰ → Favoritter**, hvor der vælges **TV** eller **Radio**. Eksisterende favoritter, omdøbninger og rækkefølger bevares. Valgt fane gemmes, og **Vis favoritter, når appen åbner** åbner favoritsiden på den gemte fane. Versionen indeholder også den blå medienotifikation og den gennemsigtige 1 × 1-logo-widget med kort afspil/stop-animation. Tilføj gamle widgets igen for at få 1 × 1-størrelsen. Androids endelige mediepanel kan stadig variere mellem telefoner.
 
 Version 1.10.1 placerer Favoritter under Radio i burgermenuen og centrerer TV/Radio-valget. Medielogoet bevarer den originale gennemsigtighed uden pålagt baggrund; notifikationens blå temafarve bevares, mens Android kan tilpasse sit eget mediepanel. Widget-feedback sendes kun én gang ved tryk, mens afspillerens statusopdateringer afventer, at den korte fade-animation er færdig.
+
+Version 1.11.0 bygger til Android 17 (API 37) og omfatter kompatibilitetstests på Android 16 (API 36) og 17. Telefonens TV-, film- og serieafspiller bevares som video. Android Auto registreres som en officiel medieapp med radiofavoritter, danske radiostationer, søgning, logoer og bilens mediebetjening via MediaLibraryService/MediaBrowserService. Telefon- og bilafspiller deler den samme radioafspiller. Der tilbydes ikke TV som ren lyd i bilen: TV-billede på alle Android Auto-enheder er ikke en funktion, som appen kan garantere eller gennemtvinge.
+
+Radio kan kun afspilles eller stoppes. En pausekommando fra telefonens medieafspiller, bil, headset eller lydfokus bliver til et stop. Næste afspilning åbner en ny forbindelse fra live-positionen. Radiosøgning og katalogindlæsning kører uden for mediesessionens hovedtråd; cache kan bruges ved netværksfejl. Bilens bibliotek deler radiofavoritternes navne og rækkefølge, og ingen TV-kilder eller loginoplysninger offentliggøres til bilen.
+
+Ved manuel APK-installation kan Android Auto kræve **Ukendte kilder** under sine udviklerindstillinger, og Stream kan skulle vælges under **Tilpas applisten**. Offentlig distribution og godkendelse i Android Auto via Google Play er en separat proces. Der er endnu ikke udført test i en fysisk bil eller med Android Auto Desktop Head Unit.

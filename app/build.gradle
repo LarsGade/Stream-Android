@@ -1,11 +1,13 @@
 plugins { id 'com.android.application' }
 android {
  namespace 'dk.stream.android'
- compileSdk 35
- defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 35; versionCode 25; versionName '1.10.1' }
+ compileSdk 37
+ defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 37; versionCode 26; versionName '1.11.0' }
  testOptions {
   unitTests.includeAndroidResources = true
   unitTests.all {
+   // Robolectric's Android 16/17 file-descriptor bridge needs JDK module access.
+   jvmArgs '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED'
    def testHome = new File(gradle.gradleUserHomeDir, 'test-home')
    testHome.mkdirs()
    systemProperty 'user.home', testHome.absolutePath
@@ -35,7 +37,7 @@ dependencies {
  implementation 'androidx.media3:media3-ui:1.5.1'
  implementation 'com.google.android.gms:play-services-cast-framework:22.0.0'
  testImplementation 'junit:junit:4.13.2'
- testImplementation 'org.robolectric:robolectric:4.14.1'
+ testImplementation 'org.robolectric:robolectric:4.17'
  testImplementation 'org.json:json:20240303'
  testImplementation 'net.sf.kxml:kxml2:2.3.0'
 }

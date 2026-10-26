@@ -62,7 +62,7 @@ public final class RadioPanel extends LinearLayout {
  private void load() {
   if(loading) return;loading=true;refresh.setEnabled(false);filter();
   worker.execute(()->{
-   try {List<RadioStation> result=browser.loadDanish();main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;refresh.setEnabled(true);filter();});}
+   try {List<RadioStation> result=browser.loadDanish();CarRadioCatalog.writeCache(getContext(),result);main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;refresh.setEnabled(true);filter();});}
    catch(Exception error) {main.post(()->{if(closed)return;loading=false;refresh.setEnabled(true);filter();if(!favorites) message.setText(R.string.radio_failed);});}
   });
  }
