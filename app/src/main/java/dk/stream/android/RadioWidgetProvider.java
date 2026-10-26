@@ -28,13 +28,13 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
    if(local!=null) try(java.io.InputStream in=context.getAssets().open(local.substring("file:///android_asset/".length()))) {views.setImageViewBitmap(R.id.widget_logo,BitmapFactory.decodeStream(in));} catch(java.io.IOException ignored) { }
   }
   Intent configure=new Intent(context,RadioWidgetConfigureActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId).setData(Uri.parse("stream://radio-widget/config/"+widgetId));
-  PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setOnClickPendingIntent(R.id.widget_logo,config);
+  PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   if(station!=null) {
    boolean playing=RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_stop:R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.radio_stop:R.string.radio_start));
    Intent toggle=new Intent(context,RadioPlaybackService.class).setAction(RadioPlaybackService.WIDGET_TOGGLE).setData(Uri.parse("stream://radio-widget/play/"+widgetId)).putExtra("favoriteId",station.id);
    PendingIntent action=android.os.Build.VERSION.SDK_INT>=26?PendingIntent.getForegroundService(context,widgetId,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE):PendingIntent.getService(context,widgetId,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-   views.setOnClickPendingIntent(R.id.widget_play,action);
-  } else {views.setImageViewResource(R.id.widget_play,R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(R.string.radio_widget_choose));views.setOnClickPendingIntent(R.id.widget_play,config);}
+   views.setOnClickPendingIntent(R.id.widget_root,action);views.setOnClickPendingIntent(R.id.widget_logo,action);views.setOnClickPendingIntent(R.id.widget_play,action);
+  } else {views.setImageViewResource(R.id.widget_play,R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(R.string.radio_widget_choose));views.setOnClickPendingIntent(R.id.widget_root,config);views.setOnClickPendingIntent(R.id.widget_logo,config);views.setOnClickPendingIntent(R.id.widget_play,config);}
   return views;
  }
  @Override public void onUpdate(Context context,AppWidgetManager manager,int[] ids) {for(int id:ids) update(context,manager,id);}

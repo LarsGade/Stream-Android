@@ -31,6 +31,7 @@ public class MainActivityTest {
   public void save(Library value) throws Exception {saved=Library.fromJson(value.toJson());}
  }
  @Before public void start() throws Exception {
+  Shadows.shadowOf((android.app.Application)org.robolectric.RuntimeEnvironment.getApplication()).grantPermissions("dk.stream.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION");
   server=new MockWebServer();server.start();
   controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();
   storage=new MemoryStore();ReflectionHelpers.setField(activity,"store",storage);
@@ -108,6 +109,15 @@ public class MainActivityTest {
    assertEquals(View.VISIBLE,first.findViewWithTag("now_playing_dot").getVisibility());assertEquals(View.INVISIBLE,other.findViewWithTag("now_playing_dot").getVisibility());
    audible.set(false);first=list.getAdapter().getView(0,first,list);assertEquals(View.INVISIBLE,first.findViewWithTag("now_playing_dot").getVisibility());
   } finally {ReflectionHelpers.setField(activity,"player",null);ReflectionHelpers.setField(activity,"selected",null);}
+ }
+ @Test public void backgroundVideoExposesMediaSessionAndNotificationControls() throws Exception {
+  startTestPlayback();androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");
+  activity.onPause();android.app.NotificationManager manager=(android.app.NotificationManager)activity.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+  android.app.Notification notification=Shadows.shadowOf(manager).getNotification(2002);assertNotNull(notification);assertNotNull(notification.extras.getParcelable(android.app.Notification.EXTRA_MEDIA_SESSION));assertEquals(2,notification.actions.length);
+  androidx.media3.session.MediaSession session=ReflectionHelpers.getField(activity,"videoSession");assertSame(player,session.getPlayer());assertNotNull(player.getMediaMetadata().artworkData);
+  notification.actions[0].actionIntent.send();Shadows.shadowOf(Looper.getMainLooper()).idle();assertFalse(player.getPlayWhenReady());
+  notification=Shadows.shadowOf(manager).getNotification(2002);notification.actions[0].actionIntent.send();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(player.getPlayWhenReady());
+  notification.actions[1].actionIntent.send();Shadows.shadowOf(Looper.getMainLooper()).idle();assertEquals(View.GONE,ReflectionHelpers.<PlaybackPanel>getField(activity,"playbackPanel").getVisibility());assertNull(Shadows.shadowOf(manager).getNotification(2002));
  }
  @Test public void radioNotificationOpensRadioFavoritesAndExitsFullscreen() {
   startTestPlayback();ReflectionHelpers.callInstanceMethod(activity,"enterFullscreen");assertTrue(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));

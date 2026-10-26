@@ -67,7 +67,7 @@ public final class RadioPanel extends LinearLayout {
   });
  }
  private void filter() {
-  title.setText(favorites?R.string.radio_favorites:R.string.radio);search.setVisibility(favorites?GONE:VISIBLE);refresh.setVisibility(favorites?GONE:VISIBLE);
+  title.setVisibility(favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(favorites?GONE:VISIBLE);refresh.setVisibility(favorites?GONE:VISIBLE);
   visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
   for(RadioStation station:favorites?library.get().radioFavorites:stations) if(favorites || station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
   message.setText(favorites?(visible.isEmpty()?getContext().getString(R.string.radio_favorites_empty):""):loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();

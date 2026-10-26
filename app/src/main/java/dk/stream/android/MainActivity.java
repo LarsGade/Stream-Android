@@ -59,6 +59,15 @@ public final class MainActivity extends AppCompatActivity {
  private FrameLayout fullscreenHost;
  private boolean fullscreen;
  private int panelIndex,previousOrientation,previousCutoutMode;
+ private androidx.media3.session.MediaSession videoSession;
+ private boolean backgroundPlayback;
+ private int videoArtworkGeneration;
+ private final ExecutorService videoArtworkWorker=Executors.newSingleThreadExecutor();
+ private static final String VIDEO_TOGGLE="dk.stream.android.VIDEO_TOGGLE",VIDEO_STOP="dk.stream.android.VIDEO_STOP";
+ private final androidx.activity.result.ActivityResultLauncher<String> notificationPermission=registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),granted->{});
+ private final android.content.BroadcastReceiver videoTransport=new android.content.BroadcastReceiver() {
+  @Override public void onReceive(android.content.Context context,android.content.Intent intent) {if(VIDEO_STOP.equals(intent.getAction())) stopPlaybackState();else if(VIDEO_TOGGLE.equals(intent.getAction())) togglePlaybackState();}
+ };
  private long resumePosition;
  private boolean resumeLocalPlayback,pipLayout,pipWasFullscreen;
  private androidx.activity.OnBackPressedCallback miniBack;
@@ -86,6 +95,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
   super.onCreate(state);
+  android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
    library=store.load();
@@ -143,7 +153,7 @@ public final class MainActivity extends AppCompatActivity {
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new FavoriteListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
-  radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
+  radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(6),0,dp(4));root.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
@@ -262,6 +272,32 @@ public final class MainActivity extends AppCompatActivity {
    pipLayout=false;
    if(!pipWasFullscreen) {fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(false);}
   }
+ }
+ private void requestNotificationPermission() {
+  if(android.os.Build.VERSION.SDK_INT>=33 && androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED && !getPreferences(0).getBoolean("notifications_requested",false)) {
+   getPreferences(0).edit().putBoolean("notifications_requested",true).apply();notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+  }
+ }
+ private android.app.PendingIntent videoAction(String action,int request) {
+  return android.app.PendingIntent.getBroadcast(this,request,new android.content.Intent(action).setPackage(getPackageName()),android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
+ }
+ // Android exempts genuine media-session notifications from POST_NOTIFICATIONS.
+ @android.annotation.SuppressLint("MissingPermission")
+ private void updateVideoNotification() {
+  android.app.NotificationManager manager=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+  if(!backgroundPlayback || videoSession==null || selected==null || player==null || connectedCast()!=null || player.getPlaybackState()==Player.STATE_IDLE) {manager.cancel(2002);return;}
+  manager.notify(2002,PlaybackNotification.create(this,"stream_video",videoSession,videoAction(VIDEO_TOGGLE,10),videoAction(VIDEO_STOP,11)));
+ }
+ private void loadVideoArtwork(Playlist.Channel channel,androidx.media3.common.MediaItem item) {
+  int generation=++videoArtworkGeneration;
+  if(PlaybackArtwork.bundled(this,channel.name) || channel.logoUrl.isEmpty()) return;
+  videoArtworkWorker.execute(()->{
+   byte[] data=PlaybackArtwork.remote(this,channel.logoUrl);if(data==null) return;
+   runOnUiThread(()->{
+    if(isDestroyed() || generation!=videoArtworkGeneration || selected==null || !selected.url.equals(channel.url) || player==null) return;
+    player.replaceMediaItem(0,item.buildUpon().setMediaMetadata(item.mediaMetadata.buildUpon().setArtworkData(data,androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build());updateVideoNotification();
+   });
+  });
  }
  private void openRadio(boolean favorites) {
   exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(favorites);
@@ -547,6 +583,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private static final class Row {ImageView logo;TextView name,group;ImageButton star;View indicator;}
  private void play(Playlist.Channel channel) {
+  requestNotificationPermission();
   stopService(new android.content.Intent(this,RadioPlaybackService.class));
   status.setVisibility(View.VISIBLE);
   boolean same=selected!=null && selected.url.equals(channel.url);
@@ -564,14 +601,18 @@ public final class MainActivity extends AppCompatActivity {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
     player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
+    videoSession=new androidx.media3.session.MediaSession.Builder(this,player).setId("stream-video").setSessionActivity(android.app.PendingIntent.getActivity(this,10,new android.content.Intent(this,MainActivity.class).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE)).build();
     player.addListener(new Player.Listener() {
      @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
-     @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}
+     @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateVideoNotification();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}
     });
    }
    video.setPlayer(player);
-   if(same && channel.kind!=Playlist.Kind.TV && resumePosition>0) player.setMediaItem(MediaItem.fromUri(channel.url),resumePosition);
-   else player.setMediaItem(MediaItem.fromUri(channel.url));
+   androidx.media3.common.MediaMetadata metadata=new androidx.media3.common.MediaMetadata.Builder().setTitle(channel.name).setArtist(getString(R.string.app_name)).setArtworkData(PlaybackArtwork.local(this,channel.name),androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
+   MediaItem item=new MediaItem.Builder().setUri(channel.url).setMediaMetadata(metadata).build();
+   if(same && channel.kind!=Playlist.Kind.TV && resumePosition>0) player.setMediaItem(item,resumePosition);
+   else player.setMediaItem(item);
+   loadVideoArtwork(channel,item);
    player.prepare();player.play();updateMiniBack();playbackPanel.hideControls();playbackPanel.refresh();status.setVisibility(View.GONE);
   }
  }
@@ -593,7 +634,7 @@ public final class MainActivity extends AppCompatActivity {
   playbackPanel.refresh();updateMiniBack();
  }
  private void stopPlaybackState() {
-  rememberPlayback();resumeLocalPlayback=false;
+  rememberPlayback();videoArtworkGeneration++;resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
   if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
   status.setVisibility(View.VISIBLE);status.setText(R.string.playback_stopped);
@@ -634,13 +675,13 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
- @Override protected void onResume() {super.onResume();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
+ @Override protected void onResume() {super.onResume();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);
   if(keyCode==android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_MUTE) getWindow().getDecorView().post(()->{if(playbackPanel!=null) playbackPanel.refresh();});
   return handled;
  }
- @Override protected void onPause() {rememberPlayback();super.onPause();}
- @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}
- @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
+ @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
+ @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

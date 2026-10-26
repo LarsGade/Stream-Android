@@ -23,6 +23,7 @@ import static org.junit.Assert.*;
 public class RadioUiTest {
  private ActivityController<MainActivity> controller;private MainActivity activity;private RadioPanel panel;private Library library;private MockWebServer server;
  @Before public void setup() throws Exception {
+  Shadows.shadowOf((android.app.Application)org.robolectric.RuntimeEnvironment.getApplication()).grantPermissions("dk.stream.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION");
   server=new MockWebServer();server.start();controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();library=new Library();
   panel=new RadioPanel(activity,()->library,change->{change.run();return true;},()->{},new RadioBrowser(Arrays.asList(server.url("/"))));
  }
@@ -33,7 +34,7 @@ public class RadioUiTest {
   ReflectionHelpers.<ExecutorService>getField(panel,"worker").submit(()->{}).get(10,TimeUnit.SECONDS);Shadows.shadowOf(Looper.getMainLooper()).idle();
   FavoriteListView list=ReflectionHelpers.getField(panel,"list");assertEquals(1,list.getCount());View row=list.getAdapter().getView(0,null,list);
   ((ImageButton)((ViewGroup)row).getChildAt(2)).performClick();assertEquals(1,library.radioFavorites.size());
-  library.addRadio(new RadioStation("b","Second","https://example.com/second",""));panel.open(true);
+  library.addRadio(new RadioStation("b","Second","https://example.com/second",""));panel.open(true);assertEquals(View.GONE,ReflectionHelpers.<TextView>getField(panel,"title").getVisibility());
   row=list.getAdapter().getView(0,null,list);assertEquals(3,((ViewGroup)row).getChildCount());
   list.getOnItemLongClickListener().onItemLongClick(list,row,0,0);PopupMenu popup=ShadowPopupMenu.getLatestPopupMenu();assertEquals(2,popup.getMenu().size());
   // Popup listeners live on each menu item, matching a real click.
@@ -49,8 +50,9 @@ public class RadioUiTest {
   RadioWidgetProvider.bind(activity,21,station.id);RadioWidgetProvider.bind(activity,22,"b");assertEquals("a",RadioWidgetProvider.favoriteId(activity,21));assertEquals("b",RadioWidgetProvider.favoriteId(activity,22));
   View widget=RadioWidgetProvider.views(activity,21,station).apply(activity.getApplicationContext(),new FrameLayout(activity.getApplicationContext()));assertEquals("DR P1",widget.findViewById(R.id.widget_logo).getContentDescription().toString());assertEquals(activity.getString(R.string.radio_start),widget.findViewById(R.id.widget_play).getContentDescription().toString());
   assertTrue(texts(widget).isEmpty());
-  widget.findViewById(R.id.widget_logo).performClick();Intent config=Shadows.shadowOf(activity.getApplication()).getNextStartedActivity();assertNotNull(config);assertEquals(21,config.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,-1));
-  widget.findViewById(R.id.widget_play).performClick();Intent start=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertNotNull(start);assertEquals(RadioPlaybackService.WIDGET_TOGGLE,start.getAction());assertEquals(station.id,start.getStringExtra("favoriteId"));
+  for(int target:new int[]{R.id.widget_root,R.id.widget_logo,R.id.widget_play}) {
+   widget.findViewById(target).performClick();Intent start=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertNotNull(start);assertEquals(RadioPlaybackService.WIDGET_TOGGLE,start.getAction());assertEquals(station.id,start.getStringExtra("favoriteId"));assertNull(Shadows.shadowOf(activity.getApplication()).getNextStartedActivity());
+  }
   widget=RadioWidgetProvider.views(activity,21,null).apply(activity.getApplicationContext(),new FrameLayout(activity.getApplicationContext()));assertEquals(activity.getString(R.string.radio_widget_choose),widget.findViewById(R.id.widget_play).getContentDescription().toString());
   new RadioWidgetProvider().onDeleted(activity,new int[]{21});assertEquals("",RadioWidgetProvider.favoriteId(activity,21));assertEquals("b",RadioWidgetProvider.favoriteId(activity,22));
  }
