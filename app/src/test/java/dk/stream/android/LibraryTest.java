@@ -5,6 +5,16 @@ import java.util.*;
 
 public class LibraryTest {
  private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
+ @Test public void radioFavoritesAreIndependentOrderedAndAliasesSurviveReload() throws Exception {
+  Library library=new Library();RadioStation one=new RadioStation("one","Original","https://example.com/one",""),two=new RadioStation("two","Two","https://example.com/two","");
+  library.addRadio(one);library.addRadio(two);library.addRadio(one);assertEquals(2,library.radioFavorites.size());
+  library.renameRadio("one"," P1 ");library.reorderRadio(Arrays.asList(two,one));
+  Library restored=Library.fromJson(library.toJson());assertTrue(restored.favorites.isEmpty());assertEquals("two",restored.radioFavorites.get(0).id);
+  assertEquals("P1",restored.findRadio("one").displayName());assertEquals("Original",restored.findRadio("one").name);assertEquals(one.url,restored.findRadio("one").url);
+  try {restored.reorderRadio(Arrays.asList(one,one));fail();} catch(IllegalArgumentException expected) { }
+  assertEquals("two",restored.radioFavorites.get(0).id);restored.removeRadio("two");assertEquals(1,restored.radioFavorites.size());
+  assertTrue(Library.fromJson("{\"version\":1,\"sources\":[],\"favorites\":[]}").radioFavorites.isEmpty());
+ }
  @Test public void playbackSettingsAndPositionSurviveReload() throws Exception {
   Library library=new Library();library.autoPlayLast=true;library.miniPlayer=true;library.lastPlayedPosition=12345;
   library.lastPlayed=new Playlist.Channel("Episode","https://example.com/series/u/p/123.mp4","Shows",Playlist.Kind.SERIES,null,"https://example.com/cover");

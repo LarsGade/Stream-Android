@@ -34,6 +34,17 @@ public final class Library {
   }
   @Override public String toString() {return name;}
  }
+ public final List<RadioStation> radioFavorites=new ArrayList<>();
+ public RadioStation findRadio(String id) {for(RadioStation station:radioFavorites) if(station.id.equals(id)) return station;return null;}
+ public void addRadio(RadioStation station) {if(findRadio(station.id)==null) radioFavorites.add(station);}
+ public void removeRadio(String id) {for(int i=radioFavorites.size()-1;i>=0;i--) if(radioFavorites.get(i).id.equals(id)) radioFavorites.remove(i);}
+ public void renameRadio(String id,String name) {for(int i=0;i<radioFavorites.size();i++) if(radioFavorites.get(i).id.equals(id)) {radioFavorites.set(i,radioFavorites.get(i).renamed(name));return;}}
+ public void reorderRadio(List<RadioStation> ordered) {
+  Set<String> expected=new HashSet<>();for(RadioStation station:radioFavorites) expected.add(station.id);
+  if(ordered.size()!=radioFavorites.size()) throw new IllegalArgumentException("Favorite set changed");
+  for(RadioStation station:ordered) if(!expected.remove(station.id)) throw new IllegalArgumentException("Favorite set changed");
+  List<RadioStation> fresh=new ArrayList<>();for(RadioStation station:ordered) fresh.add(findRadio(station.id));radioFavorites.clear();radioFavorites.addAll(fresh);
+ }
  public final List<Guide> guides=new ArrayList<>();
  public Guide findGuide(String id) {for(Guide guide:guides) if(guide.id.equals(id)) return guide;return null;}
  public void putGuide(Guide guide) {for(int i=0;i<guides.size();i++) if(guides.get(i).id.equals(guide.id)) {guides.set(i,guide);return;}guides.add(guide);}
@@ -141,7 +152,7 @@ public final class Library {
   for(Entry entry:favorites) {
    Playlist.Channel channel=entry.channel;JSONObject value=new JSONObject();value.put("sourceId",entry.sourceId);value.put("name",channel.name);value.put("url",channel.url);value.put("group",channel.group);value.put("kind",channel.kind.name());value.put("seriesId",channel.seriesId==null?JSONObject.NULL:channel.seriesId);value.put("logoUrl",channel.logoUrl);value.put("epgId",channel.epgId);value.put("epgName",channel.epgName);savedFavorites.put(value);
   }
-  root.put("favorites",savedFavorites);return root.toString();
+  root.put("favorites",savedFavorites);JSONArray radios=new JSONArray();for(RadioStation station:radioFavorites) radios.put(station.toJson());root.put("radioFavorites",radios);return root.toString();
  }
  public static Library fromJson(String json) throws JSONException {
   Library library=new Library();JSONObject root=new JSONObject(json);
@@ -169,6 +180,7 @@ public final class Library {
    Playlist.Channel channel=new Playlist.Channel(value.getString("name"),value.getString("url"),value.optString("group",""),kind,value.isNull("seriesId")?null:value.getString("seriesId"),value.optString("logoUrl",""),value.optString("epgId",""),value.optString("epgName",""));
    library.favorites.add(new Entry(value.getString("sourceId"),channel));
   }
+  JSONArray radios=root.optJSONArray("radioFavorites");if(radios!=null) for(int i=0;i<radios.length();i++) library.addRadio(RadioStation.fromJson(radios.getJSONObject(i)));
   return library;
  }
 }

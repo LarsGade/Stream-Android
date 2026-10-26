@@ -98,6 +98,12 @@ public class MainActivityTest {
   clickText(activity.getWindow().getDecorView(),R.string.library);
   for(String name:new String[]{"search","groups","sections"}) {View control=ReflectionHelpers.getField(activity,name);assertEquals(name,View.VISIBLE,control.getVisibility());}
  }
+ @Test public void radioNotificationOpensRadioFavoritesAndExitsFullscreen() {
+  startTestPlayback();ReflectionHelpers.callInstanceMethod(activity,"enterFullscreen");assertTrue(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));
+  activity.onNewIntent(new android.content.Intent(activity,MainActivity.class).putExtra("openRadio",true));
+  assertFalse(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));
+  RadioPanel radio=ReflectionHelpers.getField(activity,"radioPanel");assertEquals(View.VISIBLE,radio.getVisibility());assertTrue(ReflectionHelpers.<Boolean>getField(radio,"favorites"));
+ }
  @Test public void streamingServiceAsksWhichSourceToOpenAndLoadsTheSelection() throws Exception {
   Library library=ReflectionHelpers.getField(activity,"library");
   Library.Source first=library.addSource(Library.Source.m3u("First",server.url("/first.m3u").toString()));

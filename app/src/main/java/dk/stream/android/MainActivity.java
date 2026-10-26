@@ -32,7 +32,8 @@ public final class MainActivity extends AppCompatActivity {
  private final Map<String,EpgData> epgData=new HashMap<>();
  private final Set<String> epgPending=new HashSet<>();
  private final Map<String,Long> epgAttempted=new HashMap<>();
- private boolean updatingAll;
+ private boolean updatingAll,radioMode;
+ private RadioPanel radioPanel;
  private final Runnable epgTick=new Runnable() {
   public void run() {if(isDestroyed()) return;if(adapter!=null) adapter.notifyDataSetChanged();loadAssignedGuides(false);list.postDelayed(this,60000);}
  };
@@ -142,6 +143,7 @@ public final class MainActivity extends AppCompatActivity {
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new FavoriteListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
+  radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(6),0,dp(4));root.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
@@ -175,8 +177,9 @@ public final class MainActivity extends AppCompatActivity {
    if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);
    if(last!=null) loadSource(last);
   }
-  restoreLastPlayback();
+  restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);
  }
+ @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
  private TextView text(String value,int size,int color) {TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setTextColor(color);return view;}
@@ -187,6 +190,7 @@ public final class MainActivity extends AppCompatActivity {
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
   button(R.string.library,navigation,this::openStreamingService);button(R.string.favorites,navigation,()->navigate(true));
+  button(R.string.radio,navigation,()->openRadio(false));button(R.string.radio_favorites,navigation,()->openRadio(true));
   SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -215,7 +219,7 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void restoreLastPlayback() {
-  if(!storageReadable || !library.autoPlayLast || library.lastPlayed==null || library.lastPlayed.url.isEmpty()) return;
+  if(!RadioPlaybackService.nowPlaying().isEmpty() || !storageReadable || !library.autoPlayLast || library.lastPlayed==null || library.lastPlayed.url.isEmpty()) return;
   selected=library.lastPlayed;resumePosition=library.lastPlayedPosition;play(selected);
  }
  private void rememberPlayback() {
@@ -259,6 +263,9 @@ public final class MainActivity extends AppCompatActivity {
    if(!pipWasFullscreen) {fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(false);}
   }
  }
+ private void openRadio(boolean favorites) {
+  exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(favorites);
+ }
  private void openStreamingService() {
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);
   if(library.sources.size()>1) {
@@ -269,7 +276,7 @@ public final class MainActivity extends AppCompatActivity {
   } else navigate(false);
  }
  private void navigate(boolean favorites) {
-  list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
+  list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
   if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && library.sources.size()==1) last=library.sources.get(0);if(last!=null) loadSource(last);}
  }
  private void chooseFirstKind() {
@@ -286,6 +293,8 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void filter() {
   if(adapter==null) return;
+  list.setVisibility(radioMode?View.GONE:View.VISIBLE);
+  if(radioMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
   pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   pageTitle.setText(favoritesMode?"":activeSource==null?getString(R.string.library):activeSource.name);
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
@@ -305,7 +314,7 @@ public final class MainActivity extends AppCompatActivity {
   if(!storageReadable) {status.setText(R.string.storage_failed);return false;}
   String previous;
   try {previous=library.toJson();} catch(Exception e) {status.setText(R.string.storage_failed);return false;}
-  try {change.run();store.save(library);return true;}
+  try {change.run();store.save(library);RadioWidgetProvider.refresh(this);return true;}
   catch(Exception e) {
    try {library=Library.fromJson(previous);} catch(Exception ignored) {storageReadable=false;}
    status.setText(R.string.storage_failed);Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return false;
@@ -419,6 +428,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void confirmReset() {
   new AlertDialog.Builder(this).setTitle(R.string.reset_app).setMessage(R.string.reset_app_note).setNegativeButton(R.string.no,null).setPositiveButton(R.string.yes,(dialog,which)->{
+   stopService(new android.content.Intent(this,RadioPlaybackService.class));
    if(player!=null) player.stop();
    if(cast!=null) cast.getSessionManager().endCurrentSession(true);
    android.app.ActivityManager manager=(android.app.ActivityManager)getSystemService(android.content.Context.ACTIVITY_SERVICE);
@@ -456,7 +466,7 @@ public final class MainActivity extends AppCompatActivity {
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
  private void loadSource(Library.Source source) {
   if(loading) return;
-  favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
+  radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
   worker.execute(()->{
    try {
     Catalog result=source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server));
@@ -532,6 +542,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private static final class Row {ImageView logo;TextView name,group;ImageButton star;}
  private void play(Playlist.Channel channel) {
+  stopService(new android.content.Intent(this,RadioPlaybackService.class));
   status.setVisibility(View.VISIBLE);
   boolean same=selected!=null && selected.url.equals(channel.url);
   if(!same) resumePosition=0;
@@ -547,7 +558,7 @@ public final class MainActivity extends AppCompatActivity {
   } else {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
-    player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);
+    player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
     player.addListener(new Player.Listener() {
      @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
      @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateMiniBack();}
@@ -626,5 +637,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();}
- @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();epgWorker.shutdownNow();super.onDestroy();}
+ @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

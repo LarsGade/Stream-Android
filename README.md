@@ -2,6 +2,14 @@
 
 Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
 
+## Radio og widgets
+
+Åbn **☰ → Radio** for danske stationer fra Radio Browser. Appen henter kun stationer med landekoden DK og gyldige HTTP(S)-streams, skjuler kendte defekte stationer og forsøger alternative Radio Browser-servere ved fejl. Søg efter stationsnavn, tryk på en station for at afspille, og brug stjernen for at tilføje den til **Radio-Favoritter**. Radio kan fortsætte i baggrunden med Androids mediebetjening, lydfokus og pause, når hovedtelefoner frakobles. Radio og lokal video afspilles ikke samtidigt.
+
+I **☰ → Radio-Favoritter**: Hold og slip en station for at vælge **Omdøb** eller **Fjern fra favoritter**; hold og træk for at ændre rækkefølgen. Navn og rækkefølge gemmes separat fra **TV-Favoritter**. Et lokalt navn som **P1**, **P3** eller **Nova** bruger det tilsvarende indbyggede logo fra de uploadede filer, når der findes et match. Det oprindelige stations-id og stream-link bevares ved omdøbning.
+
+Tilføj en widget på Androids startskærm: Hold på et tomt område → **Widgets → Stream Radio**, og vælg en station fra Radio-Favoritter. Hver widget kan have sin egen station. Tryk **Afspil/Pause** på widgetten uden at åbne appen; tryk på navnet for at vælge en anden favorit. Ændrede favoritnavne og indbyggede logoer opdateres på widgets. Hvis en favorit slettes, beder widgetten om en ny station. Radio kræver internet, og en station kan være utilgængelig, selvom den findes i Radio Browser.
+
 ## Brug
 
 1. Installér debug-APK'en på Android 6 eller nyere. Appen hedder **Stream** og bruger det vedhæftede blå ikon i et sort, gråt og blåt tema.
@@ -85,3 +93,5 @@ Version 1.6.2 fjerner alle faste størrelses- og antalgrænser for Xtream-kilder
 Version 1.7.0 bruger blå trykmarkeringer og tidslinje i afspilleren samt et tandhjul til afspillerindstillinger. Burgermenuen har to nye valg, der som standard er slået fra: **Afspil automatisk seneste** starter den senest afspillede video ved næste appstart (film/afsnit fra den gemte position, TV på live-positionen). Oplysningerne gemmes krypteret sammen med biblioteket. **Mini-afspiller** åbner Androids billede-i-billede, når appen forlades med Hjem eller Tilbage under lokal afspilning. Fra fuldskærm afslutter første Tilbage fuldskærm. Valget kræver Android 8 eller nyere og en enhed med understøttelse af billede-i-billede; Androids tilladelse til funktionen skal være aktiv. Casting bruger fortsat Cast-modtageren. At tvangslukke appen eller fjerne mini-vinduet stopper lokal afspilning.
 
 Version 1.7.1 åbner en kildevælger ved tryk på Streamingtjeneste i burgermenuen, når der er flere kilder. Vælg en kilde for at indlæse den; Annuller bevarer den aktuelle visning. Med én kilde åbnes den direkte. Søgefeltet hedder nu Søg, og logoet øverst vises 10 % mindre.
+
+Version 1.8.0 omdøber Favoritter til TV-Favoritter, tilføjer Radio og Radio-Favoritter lige nedenunder i burgermenuen samt konfigurerbare Radio-widgets med afspil/pause. Radio-favoritter gemmes krypteret sammen med det eksisterende bibliotek. Stationerne kommer fra den offentlige Radio Browser-tjeneste.

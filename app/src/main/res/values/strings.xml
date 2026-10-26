@@ -29,9 +29,9 @@
  <string name="loading_episodes">Henter seriens afsnit …</string>
  <string name="open_menu">Åbn menu</string>
  <string name="library">Streamingtjeneste</string>
- <string name="favorites">Favoritter</string>
+ <string name="favorites">TV-Favoritter</string>
  <string name="sources">Kilder</string>
- <string name="start_favorites">Vis favoritter, når appen åbner</string>
+ <string name="start_favorites">Vis TV-favoritter, når appen åbner</string>
  <string name="storage_failed">Kunne ikke læse eller gemme dine lokale indstillinger. Dine gemte data er ikke overskrevet.</string>
  <string name="select_group">Vælg gruppe</string>
  <string name="add_favorite">Tilføj %1$s til favoritter</string>
@@ -79,4 +79,19 @@
  <string name="auto_play_last">Afspil automatisk seneste</string>
  <string name="mini_player">Mini-afspiller</string>
  <string name="choose_source">Vælg kilde</string>
+ <string name="radio">Radio</string>
+ <string name="radio_favorites">Radio-Favoritter</string>
+ <string name="radio_loading">Henter danske radiostationer …</string>
+ <string name="radio_failed">Kunne ikke hente radiostationer. Prøv igen.</string>
+ <string name="radio_empty">Ingen stationer fundet</string>
+ <string name="radio_favorites_empty">Tilføj stationer til Radio-Favoritter fra Radio</string>
+ <string name="rename_radio">Omdøb</string>
+ <string name="refresh_radio">Opdatér radio</string>
+ <string name="radio_widget">Stream Radio</string>
+ <string name="radio_widget_description">Afspil en station fra Radio-Favoritter</string>
+ <string name="radio_widget_choose">Vælg radiostation</string>
+ <string name="radio_start">Afspil</string>
+ <string name="radio_pause">Pause</string>
+ <string name="radio_stop">Stop radio</string>
+ <string name="radio_error">Radiostationen kunne ikke afspilles. Prøv igen eller vælg en anden station.</string>
 </resources>
