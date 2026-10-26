@@ -110,7 +110,7 @@ public final class MainActivity extends AppCompatActivity {
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(56)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
-  ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.header_banner);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));header.addView(brand,new LinearLayout.LayoutParams(0,dp(64),1));
+  ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.header_banner);brand.setScaleX(0.9f);brand.setScaleY(0.9f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));header.addView(brand,new LinearLayout.LayoutParams(0,dp(64),1));
   MediaRouteButton castButton=new MediaRouteButton(this);header.addView(castButton,new LinearLayout.LayoutParams(dp(48),dp(56)));
   createDrawer();
   androidx.activity.OnBackPressedCallback closeDrawer=new androidx.activity.OnBackPressedCallback(false) {
@@ -186,7 +186,7 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  button(R.string.library,navigation,()->navigate(false));button(R.string.favorites,navigation,()->navigate(true));
+  button(R.string.library,navigation,this::openStreamingService);button(R.string.favorites,navigation,()->navigate(true));
   SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -259,9 +259,18 @@ public final class MainActivity extends AppCompatActivity {
    if(!pipWasFullscreen) {fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(false);}
   }
  }
+ private void openStreamingService() {
+  drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+  if(library.sources.size()>1) {
+   List<Library.Source> sources=new ArrayList<>(library.sources);
+   new AlertDialog.Builder(this).setTitle(R.string.choose_source)
+    .setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(dialog,position)->{list.cancelFavoriteGesture();loadSource(sources.get(position));})
+    .setNegativeButton(android.R.string.cancel,null).show();
+  } else navigate(false);
+ }
  private void navigate(boolean favorites) {
   list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
-  if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last!=null) loadSource(last);}
+  if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && library.sources.size()==1) last=library.sources.get(0);if(last!=null) loadSource(last);}
  }
  private void chooseFirstKind() {
   if(favoritesMode && !library.favorites.isEmpty()) currentKind=library.favorites.get(0).channel.kind;

@@ -7,7 +7,7 @@
   <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
   <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra TV\'et.</string>
   <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
-  <string name="search_hint">Søg efter titel eller gruppe</string>
+  <string name="search_hint">Søg</string>
   <string name="casting">Caster: %1$s</string>
  <string name="xtream_login">Tilføj Xtream-login</string>
  <string name="xtream_server">Server, fx https://tv.eksempel.dk:8080</string>
@@ -78,4 +78,5 @@
  <string name="remove_from_favorites">Fjern fra favoritter</string>
  <string name="auto_play_last">Afspil automatisk seneste</string>
  <string name="mini_player">Mini-afspiller</string>
+ <string name="choose_source">Vælg kilde</string>
 </resources>
