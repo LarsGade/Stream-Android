@@ -52,6 +52,15 @@ public class LibraryTest {
   library.refreshFavorites("s",Arrays.asList(channel("A","https://example.com/a"),fresh));
   assertEquals("New Z",library.favorites.get(0).channel.name);assertEquals("https://example.com/new.png",library.favorites.get(0).channel.logoUrl);assertEquals("A",library.favorites.get(1).channel.name);
  }
+ @Test public void refreshingFavoritesStillRejectsAmbiguousNames() {
+  Library library=new Library();Playlist.Channel old=channel("TV","https://example.com/old");
+  library.toggleFavorite(new Library.Entry("s",old));
+  library.refreshFavorites("s",Arrays.asList(channel("TV","https://example.com/new1"),channel("TV","https://example.com/new2")));
+  assertSame(old,library.favorites.get(0).channel);
+  Playlist.Channel exact=channel("Renamed","https://example.com/old");
+  library.refreshFavorites("s",Arrays.asList(channel("TV","https://example.com/new1"),channel("TV","https://example.com/new2"),exact));
+  assertSame(exact,library.favorites.get(0).channel);
+ }
  @Test(expected=org.json.JSONException.class) public void rejectsUnknownStorageVersion() throws Exception {Library.fromJson("{\"version\":999}");}
  @Test public void guidesAndSourceSelectionSurviveUpgradeAndDeletionKeepsFavorites() throws Exception {
   Library library=new Library();var guide=Library.Guide.create("Dansk TV","https://example.com/guide.xml.gz");library.putGuide(guide);

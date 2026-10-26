@@ -15,6 +15,44 @@ public class XtreamClientTest {
    "[{\"category_id\":\"40\",\"category_name\":\"Shows\"}]",
    "[{\"series_id\":4,\"name\":\"Series\",\"cover\":\"/logos/series.jpg\",\"category_id\":\"40\"}]"}) server.enqueue(new MockResponse().setBody(body));
  }
+ @Test public void largeCatalogSkipsUnusedMetadataAndRetainsServerOrder() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setBody("{\"user_info\":{\"auth\":1}}"));
+   server.enqueue(new MockResponse().setBody("[]"));
+   StringBuilder body=new StringBuilder("[");
+   for(int i=1;i<=20000;i++) {
+    if(i>1) body.append(',');
+    body.append("{\"stream_id\":").append(i).append(",\"name\":\"Channel ").append(i)
+     .append("\",\"stream_icon\":null,\"unused_metadata\":{\"details\":[1,2,{\"nested\":true}]}}");
+   }
+   server.enqueue(new MockResponse().setBody(body.append(']').toString()));
+   for(int i=0;i<4;i++) server.enqueue(new MockResponse().setBody("null"));
+   Catalog catalog=new XtreamClient(server.url("/").toString(),"u","p").load();
+   assertEquals(20000,catalog.items.size());assertEquals("Channel 1",catalog.items.get(0).name);
+   assertEquals("Channel 20000",catalog.items.get(19999).name);assertEquals("",catalog.items.get(0).logoUrl);
+  }
+ }
+ @Test public void oversizedCatalogFailsCleanlyInsteadOfGrowingWithoutLimit() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setBody("{\"user_info\":{\"auth\":1}}"));
+   server.enqueue(new MockResponse().setBody("[]"));
+   StringBuilder body=new StringBuilder("[");
+   for(int i=1;i<=100001;i++) {if(i>1) body.append(',');body.append("{\"stream_id\":").append(i).append('}');}
+   server.enqueue(new MockResponse().setBody(body.append(']').toString()));
+   try {new XtreamClient(server.url("/").toString(),"u","p").load();fail("Expected size limit");}
+   catch(PlaylistLoader.Failure e) {assertEquals(-1,e.status);}
+   assertEquals(3,server.getRequestCount());
+  }
+ }
+ @Test public void malformedCatalogReturnsAnError() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setBody("{\"user_info\":{\"auth\":1}}"));
+   server.enqueue(new MockResponse().setBody("[]"));
+   server.enqueue(new MockResponse().setBody("[{\"stream_id\":1},"));
+   try {new XtreamClient(server.url("/").toString(),"u","p").load();fail("Expected parse error");}
+   catch(java.io.IOException expected) { }
+  }
+ }
  @Test public void fetchesAllSectionsAndPreservesCategoryAndStreamOrder() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
    catalogResponses(server);

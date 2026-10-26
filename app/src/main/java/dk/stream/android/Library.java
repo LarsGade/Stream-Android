@@ -92,13 +92,22 @@ public final class Library {
   return result;
  }
  public void refreshFavorites(String sourceId,List<Playlist.Channel> items) {
+  // Avoid building indexes for large catalogs when this source has no favorites.
+  boolean needed=false;for(Entry entry:favorites) if(entry.sourceId.equals(sourceId)) {needed=true;break;}
+  if(!needed) return;
   // Keep favorites in the user's order while refreshing names, logos and links from this source.
+  Set<String> wantedIds=new HashSet<>(),wantedNames=new HashSet<>(),wantedEpg=new HashSet<>();
+  for(Entry entry:favorites) if(entry.sourceId.equals(sourceId)) {
+   wantedIds.add(identity(entry.channel));wantedNames.add(entry.channel.kind+":"+LocalChannelLogos.key(entry.channel.name));
+   if(!entry.channel.epgId.isEmpty()) wantedEpg.add(entry.channel.kind+":"+entry.channel.epgId);
+  }
   Map<String,Playlist.Channel> current=new HashMap<>();
   Map<String,Playlist.Channel> byEpg=new HashMap<>(),byName=new HashMap<>();Set<String> duplicateEpg=new HashSet<>(),duplicateName=new HashSet<>();
   for(Playlist.Channel item:items) {
-   current.put(identity(item),item);String name=item.kind+":"+LocalChannelLogos.key(item.name);
-   if(byName.put(name,item)!=null) duplicateName.add(name);
-   if(!item.epgId.isEmpty()) {String id=item.kind+":"+item.epgId;if(byEpg.put(id,item)!=null) duplicateEpg.add(id);}
+   String identity=identity(item);if(wantedIds.contains(identity)) current.put(identity,item);
+   String name=item.kind+":"+LocalChannelLogos.key(item.name);
+   if(wantedNames.contains(name) && byName.put(name,item)!=null) duplicateName.add(name);
+   if(!item.epgId.isEmpty()) {String id=item.kind+":"+item.epgId;if(wantedEpg.contains(id) && byEpg.put(id,item)!=null) duplicateEpg.add(id);}
   }
   for(int i=0;i<favorites.size();i++) {
    Entry old=favorites.get(i);

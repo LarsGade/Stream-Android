@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import okhttp3.*;
 import org.json.*;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 
 /** Xtream catalog order is retained; credentials are never logged. */
 public final class XtreamClient {
@@ -27,9 +29,43 @@ public final class XtreamClient {
    if(response.body()==null) throw new PlaylistLoader.Failure(0);
    try(InputStream in=response.body().byteStream();ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
     byte[] buffer=new byte[8192]; int count;
-    while((count=in.read(buffer))!=-1) { if(bytes.size()+count>PlaylistLoader.MAX_BYTES) throw new PlaylistLoader.Failure(-1); bytes.write(buffer,0,count); }
+    while((count=in.read(buffer))!=-1) { if(bytes.size()+count>4*1024*1024) throw new PlaylistLoader.Failure(-1); bytes.write(buffer,0,count); }
     return bytes.toString("UTF-8").replace("\uFEFF","");
    }
+  }
+ }
+ // Parse catalog rows directly from the response; never retain a second copy of the catalog.
+ private interface RowConsumer { void accept(JSONObject row) throws JSONException,IOException; }
+ private void rows(String action,RowConsumer consumer) throws IOException,JSONException {
+  HttpUrl url=base.newBuilder().addPathSegment("player_api.php").addQueryParameter("username",username)
+   .addQueryParameter("password",password).addQueryParameter("action",action).build();
+  try(Response response=client.newCall(new Request.Builder().url(url).header("User-Agent","Stream-Android/1.1").build()).execute()) {
+   if(!response.isSuccessful()) throw new PlaylistLoader.Failure(response.code());
+   if(response.body()==null) throw new PlaylistLoader.Failure(0);
+   InputStream bounded=new FilterInputStream(response.body().byteStream()) {
+    private long count;
+    private void counted(int n) throws IOException {if(n>0 && (count+=n)>PlaylistLoader.MAX_BYTES) throw new PlaylistLoader.Failure(-1);}
+    @Override public int read() throws IOException {int value=in.read();counted(value<0?0:1);return value;}
+    @Override public int read(byte[] data,int offset,int length) throws IOException {int n=in.read(data,offset,length);counted(n);return n;}
+   };
+   try(JsonReader reader=new JsonReader(new InputStreamReader(bounded,java.nio.charset.StandardCharsets.UTF_8))) {
+    if(reader.peek()==JsonToken.NULL) {reader.nextNull();return;}
+    if(reader.peek()!=JsonToken.BEGIN_ARRAY) throw new PlaylistLoader.Failure(0);
+    reader.beginArray();
+    Set<String> fields=new HashSet<>(Arrays.asList("category_id","category_name","stream_id","series_id","name","container_extension","stream_icon","cover","epg_channel_id"));
+    while(reader.hasNext()) {
+     if(reader.peek()!=JsonToken.BEGIN_OBJECT) {reader.skipValue();continue;}
+     JSONObject row=new JSONObject();reader.beginObject();
+     while(reader.hasNext()) {
+      String field=reader.nextName();JsonToken token=reader.peek();
+      if(fields.contains(field) && (token==JsonToken.STRING || token==JsonToken.NUMBER)) {
+       String value=reader.nextString();if(value.length()>16384) throw new PlaylistLoader.Failure(-1);row.put(field,value);
+      } else reader.skipValue();
+     }
+     reader.endObject();consumer.accept(row);
+    }
+    reader.endArray();if(reader.peek()!=JsonToken.END_DOCUMENT) throw new PlaylistLoader.Failure(0);
+   } catch(IllegalStateException e) {throw new PlaylistLoader.Failure(0);}
   }
  }
  public Catalog load() throws IOException {
@@ -52,23 +88,21 @@ public final class XtreamClient {
   } catch(JSONException e) { throw new PlaylistLoader.Failure(0); }
  }
  private void loadSection(Catalog catalog,Playlist.Kind kind,String categoriesAction,String streamsAction) throws IOException,JSONException {
-  JSONArray categories=new JSONArray(request(categoriesAction,null));
   Map<String,String> names=new LinkedHashMap<>();
-  for(int i=0;i<categories.length();i++) {
-   JSONObject category=categories.getJSONObject(i);
-   String name=category.optString("category_name",""); names.put(category.optString("category_id"),name); catalog.addGroup(kind,name);
-  }
-  JSONArray streams=new JSONArray(request(streamsAction,null));
-  for(int i=0;i<streams.length();i++) {
-   JSONObject item=streams.getJSONObject(i);
+  rows(categoriesAction,category->{
+   String name=category.optString("category_name","");names.put(category.optString("category_id"),name);catalog.addGroup(kind,name);
+  });
+  rows(streamsAction,item->{
    String id=item.optString(kind==Playlist.Kind.SERIES?"series_id":"stream_id","");
-   if(!id.matches("[0-9]+")) continue;
-   String group=names.get(item.optString("category_id")); if(group==null) group="";
+   if(!id.matches("[0-9]+")) return;
+   if(catalog.items.size()>=100000) throw new PlaylistLoader.Failure(-1);
+   String group=names.get(item.optString("category_id"));if(group==null) group="";
    String url=kind==Playlist.Kind.SERIES?"":streamUrl(kind,id,kind==Playlist.Kind.TV?liveExtension:item.optString("container_extension","mp4"));
    String image=item.optString("stream_icon","");if(image.isEmpty()) image=item.optString("cover","");
    catalog.add(new Playlist.Channel(item.optString("name",id),url,group,kind,kind==Playlist.Kind.SERIES?id:null,logo(image),item.optString("epg_channel_id",""),item.optString("name","")));
-  }
+  });
  }
+
  private String logo(String value) {
   return LogoUrls.resolve(value,base);
  }
