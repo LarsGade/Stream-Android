@@ -71,8 +71,25 @@ public class RadioUiTest {
    audible.set(false);assertEquals(View.INVISIBLE,list.getAdapter().getView(0,null,list).findViewWithTag("now_playing_dot").getVisibility());
   } finally {ReflectionHelpers.setField(service,"player",original);serviceController.destroy();}
  }
+ @org.robolectric.annotation.Implements(android.appwidget.AppWidgetManager.class)
+ public static class PartialWidgetManager extends org.robolectric.shadows.ShadowAppWidgetManager {
+  static android.widget.RemoteViews lastPartial;static int partialCount;
+  @org.robolectric.annotation.Implementation protected void partiallyUpdateAppWidget(int id,android.widget.RemoteViews views) {lastPartial=views;partialCount++;}
+ }
+ @Test @Config(shadows=PartialWidgetManager.class) public void playerStatusRefreshDoesNotRestartWidgetFeedback() {
+  android.appwidget.AppWidgetManager manager=android.appwidget.AppWidgetManager.getInstance(activity);
+  int id=Shadows.shadowOf(manager).createWidget(RadioWidgetProvider.class,R.layout.radio_widget);
+  PartialWidgetManager.partialCount=0;RadioWidgetProvider.showFeedback(activity,id,true);assertEquals(1,PartialWidgetManager.partialCount);
+  View host=Shadows.shadowOf(manager).getViewFor(id);PartialWidgetManager.lastPartial.reapply(activity.getApplicationContext(),host);ViewFlipper flipper=host.findViewById(R.id.widget_feedback);assertEquals(1,flipper.getDisplayedChild());
+  android.view.animation.Animation fade=flipper.getInAnimation();assertNotNull(fade);fade.setStartTime(1234);
+  RadioWidgetProvider.refresh(activity);RadioWidgetProvider.update(activity,manager,id);
+  assertEquals(1,PartialWidgetManager.partialCount);assertSame(host,Shadows.shadowOf(manager).getViewFor(id));assertEquals(1234,fade.getStartTime());assertEquals(1,flipper.getDisplayedChild());
+  Shadows.shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(1000));assertEquals(2,PartialWidgetManager.partialCount);assertFalse(RadioWidgetProvider.feedbackVisible(id));
+ }
  @Test public void drawerHasOneFavoritesEntryWithTvAndRadioTabs() {
   List<TextView> labels=texts(activity.getWindow().getDecorView());assertTrue(labels.stream().anyMatch(v->v.getText().toString().equals("Favoritter")));assertFalse(labels.stream().anyMatch(v->v.getText().toString().equals("TV-Favoritter")||v.getText().toString().equals("Radio-Favoritter")));
+  List<Button> menuButtons=new ArrayList<>();for(TextView label:labels) if(label instanceof Button && !(label instanceof RadioButton)) menuButtons.add((Button)label);
+  int radioIndex=-1,favoritesIndex=-1;for(int i=0;i<menuButtons.size();i++) {if(menuButtons.get(i).getText().toString().equals("Radio")) radioIndex=i;if(menuButtons.get(i).getText().toString().equals("Favoritter")) favoritesIndex=i;}assertEquals(radioIndex+1,favoritesIndex);
   ReflectionHelpers.callInstanceMethod(activity,"navigate",ReflectionHelpers.ClassParameter.from(boolean.class,true));
   ReflectionHelpers.setField(activity,"store",new LibraryPersistence(){public Library load(){return new Library();}public void save(Library value){} });
   RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(View.VISIBLE,tabs.getVisibility());assertEquals("TV",((RadioButton)tabs.getChildAt(0)).getText().toString());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());

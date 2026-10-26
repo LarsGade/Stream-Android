@@ -11,12 +11,21 @@ import android.widget.RemoteViews;
 public final class RadioWidgetProvider extends AppWidgetProvider {
  private static final android.os.Handler feedbackHandler=new android.os.Handler(android.os.Looper.getMainLooper());
  private static final java.util.Map<Integer,Feedback> feedback=new java.util.HashMap<>();
- private static final class Feedback {final boolean play;final long until;Feedback(boolean play) {this.play=play;until=android.os.SystemClock.elapsedRealtime()+850;}}
+ private static final class Feedback {final boolean play;final long until;Feedback(boolean play) {this.play=play;until=android.os.SystemClock.elapsedRealtime()+650;}}
  static void showFeedback(Context context,int widgetId,boolean play) {
   if(widgetId==AppWidgetManager.INVALID_APPWIDGET_ID) return;
-  Feedback state=new Feedback(play);feedback.put(widgetId,state);Context app=context.getApplicationContext();safeUpdate(app,widgetId);
-  feedbackHandler.postDelayed(()->{if(feedback.get(widgetId)==state) {feedback.remove(widgetId);safeUpdate(app,widgetId);}},850);
+  boolean alreadyShowing=feedbackVisible(widgetId);Feedback state=new Feedback(play);feedback.put(widgetId,state);Context app=context.getApplicationContext();
+  RemoteViews pulse=new RemoteViews(app.getPackageName(),R.layout.radio_widget);pulse.setImageViewResource(R.id.widget_play,play?R.drawable.ic_play:R.drawable.ic_stop);
+  if(!alreadyShowing) pulse.setDisplayedChild(R.id.widget_feedback,1);
+  partialUpdate(app,widgetId,pulse);
+  feedbackHandler.postDelayed(()->{
+   if(feedback.get(widgetId)!=state) return;
+   RemoteViews hide=new RemoteViews(app.getPackageName(),R.layout.radio_widget);hide.setDisplayedChild(R.id.widget_feedback,0);partialUpdate(app,widgetId,hide);
+   // Wait for fade-out before replacing the full layout or reloading logo bitmaps.
+   feedbackHandler.postDelayed(()->{if(feedback.get(widgetId)==state) {feedback.remove(widgetId);safeUpdate(app,widgetId);}},180);
+  },650);
  }
+ private static void partialUpdate(Context context,int widgetId,RemoteViews views) {try {AppWidgetManager.getInstance(context).partiallyUpdateAppWidget(widgetId,views);} catch(RuntimeException ignored) { }}
  // A removed or unavailable launcher widget must never interrupt audio playback.
  private static void safeUpdate(Context context,int widgetId) {try {update(context,AppWidgetManager.getInstance(context),widgetId);} catch(RuntimeException ignored) { }}
  static boolean feedbackVisible(int widgetId) {Feedback state=feedback.get(widgetId);return state!=null && android.os.SystemClock.elapsedRealtime()<state.until;}
@@ -27,6 +36,7 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
   for(int id:ids) update(context,manager,id);
  }
  static void update(Context context,AppWidgetManager manager,int widgetId) {
+  if(feedback.containsKey(widgetId)) return; // Player events must not restart a running animation.
   RadioStation station=null;try {station=new LibraryStore(context).load().findRadio(favoriteId(context,widgetId));} catch(Exception ignored) { }
   manager.updateAppWidget(widgetId,views(context,widgetId,station));
  }

@@ -24,10 +24,10 @@ public class LogoImagesTest {
  private ExecutorService executor;
  @Before public void start() throws Exception {server=new MockWebServer();server.start();executor=Executors.newSingleThreadExecutor();}
  @After public void stop() throws Exception {executor.shutdownNow();server.shutdown();Glide.tearDown();}
- @Test public void mediaArtworkUsesBlueAsTheBackgroundWithoutLosingTheLogo() {
-  Bitmap red=Bitmap.createBitmap(40,20,Bitmap.Config.ARGB_8888);red.eraseColor(Color.RED);java.io.ByteArrayOutputStream data=new java.io.ByteArrayOutputStream();red.compress(Bitmap.CompressFormat.PNG,100,data);
-  byte[] encoded=PlaybackArtwork.blueCover(data.toByteArray());Bitmap cover=android.graphics.BitmapFactory.decodeByteArray(encoded,0,encoded.length);
-  assertEquals(0xFF3686FF,cover.getPixel(0,0));assertEquals(0xFF3686FF,cover.getPixel(60,60));assertEquals(Color.RED,cover.getPixel(192,192));
+ @Test public void mediaArtworkPreservesOriginalLogoTransparency() throws Exception {
+  byte[] encoded=PlaybackArtwork.local(RuntimeEnvironment.getApplication(),"DR P1");
+  try(InputStream original=RuntimeEnvironment.getApplication().getAssets().open("channel_logos/DR P1.png")) {assertArrayEquals(original.readAllBytes(),encoded);}
+  Bitmap logo=android.graphics.BitmapFactory.decodeByteArray(encoded,0,encoded.length);assertEquals(0,Color.alpha(logo.getPixel(0,0)));assertEquals(283,logo.getWidth());assertEquals(273,logo.getHeight());
  }
  private int imagePixel(String path) throws Exception {
   GlideUrl model=LogoRequests.model(server.url(path).toString(),server.url("/get.php?username=user&password=secret").toString());

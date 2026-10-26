@@ -104,3 +104,5 @@ Version 1.9.0 fjerner overskriften fra Radio-Favoritter og gør hele den konfigu
 
 
 Version 1.10.0 samler TV- og radiofavoritter under **☰ → Favoritter**, hvor der vælges **TV** eller **Radio**. Eksisterende favoritter, omdøbninger og rækkefølger bevares. Valgt fane gemmes, og **Vis favoritter, når appen åbner** åbner favoritsiden på den gemte fane. Versionen indeholder også den blå medienotifikation og den gennemsigtige 1 × 1-logo-widget med kort afspil/stop-animation. Tilføj gamle widgets igen for at få 1 × 1-størrelsen. Androids endelige mediepanel kan stadig variere mellem telefoner.
+
+Version 1.10.1 placerer Favoritter under Radio i burgermenuen og centrerer TV/Radio-valget. Medielogoet bevarer den originale gennemsigtighed uden pålagt baggrund; notifikationens blå temafarve bevares, mens Android kan tilpasse sit eget mediepanel. Widget-feedback sendes kun én gang ved tryk, mens afspillerens statusopdateringer afventer, at den korte fade-animation er færdig.
