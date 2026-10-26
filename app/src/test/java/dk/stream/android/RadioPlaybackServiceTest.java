@@ -70,6 +70,18 @@ public class RadioPlaybackServiceTest {
    } finally {controller.destroy();}
   }
  }
+ @Test @Config(sdk={28,36,37}) public void systemMediaControllersReceiveStopInsteadOfPause() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+   ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+   try {
+    RadioStation station=new RadioStation("station","DR P1",server.url("/live.mp3").toString(),"");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+    androidx.media3.session.MediaSession session=service.onGetSession(null);assertFalse(session.getPlayer().getAvailableCommands().contains(Player.COMMAND_PLAY_PAUSE));
+    assertEquals(1,session.getCustomLayout().size());assertEquals(CarRadioCallback.STOP_LIVE,session.getCustomLayout().get(0).sessionCommand);assertEquals(androidx.media3.session.CommandButton.ICON_STOP,session.getCustomLayout().get(0).icon);
+    CarRadioCallback callback=new CarRadioCallback(new CarRadioCatalog(service));try {callback.onCustomCommand(session,null,CarRadioCallback.STOP_LIVE,android.os.Bundle.EMPTY).get();Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertTrue(session.getPlayer().getAvailableCommands().contains(Player.COMMAND_PLAY_PAUSE));assertFalse(session.getPlayer().getPlayWhenReady());} finally {callback.close();}
+   } finally {controller.destroy();}
+  }
+ }
  @Test public void invalidStationStopsCleanly() {
   ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
   try {service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.PLAY).putExtra("station","not-json"),0,1);assertEquals("",RadioPlaybackService.nowPlaying());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());} finally {controller.destroy();}

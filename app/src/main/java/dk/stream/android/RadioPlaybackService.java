@@ -65,8 +65,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
  }
  private void updateCarControls() {
   if(session==null) return;boolean playing=player.getPlayWhenReady();
-  java.util.List<CommandButton> buttons=playing?java.util.Collections.singletonList(new CommandButton.Builder().setIconResId(R.drawable.ic_stop).setDisplayName(getString(R.string.stop_action)).setSessionCommand(CarRadioCallback.STOP_LIVE).build()):java.util.Collections.emptyList();
-  session.setMediaButtonPreferences(buttons);
+  java.util.List<CommandButton> buttons=playing?java.util.Collections.singletonList(new CommandButton.Builder(CommandButton.ICON_STOP).setIconResId(R.drawable.ic_stop).setDisplayName(getString(R.string.stop_action)).setSessionCommand(CarRadioCallback.STOP_LIVE).build()):java.util.Collections.emptyList();
+  session.setCustomLayout(buttons);session.setMediaButtonPreferences(buttons);
   for(MediaSession.ControllerInfo controller:session.getConnectedControllers()) session.setAvailableCommands(controller,CarRadioCallback.sessionCommands(),CarRadioCallback.playerCommands(playing));
  }
  private void foreground() {startForeground(2001,notification(session));}
