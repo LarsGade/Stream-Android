@@ -108,6 +108,40 @@ public class MainActivityTest {
   for(View view:views(root,View.class)) if(label.contentEquals(view.getContentDescription()==null?"":view.getContentDescription())) return view;
   throw new AssertionError("Missing control "+label);
  }
+ @Test public void lastVideoOnlyStartsWhenAutoPlayIsEnabledAndResumesPosition() {
+  Library library=ReflectionHelpers.getField(activity,"library");
+  library.lastPlayed=new Playlist.Channel("Film",server.url("/movie.mp4").toString(),"",Playlist.Kind.FILM,null);library.lastPlayedPosition=42000;
+  ReflectionHelpers.callInstanceMethod(activity,"restoreLastPlayback");assertNull(ReflectionHelpers.getField(activity,"player"));
+  library.autoPlayLast=true;server.enqueue(new MockResponse().setResponseCode(404));
+  ReflectionHelpers.callInstanceMethod(activity,"restoreLastPlayback");
+  androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");assertNotNull(player);assertTrue(player.getPlayWhenReady());assertEquals(42000,player.getCurrentPosition());
+  assertEquals(library.lastPlayed.url,storage.saved.lastPlayed.url);assertEquals(42000,storage.saved.lastPlayedPosition);
+ }
+ @Test public void switchingVideosResetsTheSavedPosition() {
+  startTestPlayback();androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");player.seekTo(90000);
+  Playlist.Channel next=new Playlist.Channel("New film",server.url("/next.mp4").toString(),"",Playlist.Kind.FILM,null);
+  server.enqueue(new MockResponse().setResponseCode(404));ReflectionHelpers.callInstanceMethod(activity,"play",ReflectionHelpers.ClassParameter.from(Playlist.Channel.class,next));
+  assertEquals(0,storage.saved.lastPlayedPosition);assertEquals(next.url,storage.saved.lastPlayed.url);
+ }
+ @Test public void miniPlayerShowsOnlyVideoAndRestoresInlineLayout() {
+  startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");Object player=ReflectionHelpers.getField(activity,"player");
+  activity.onPictureInPictureModeChanged(true,activity.getResources().getConfiguration());
+  FrameLayout host=ReflectionHelpers.getField(activity,"fullscreenHost");assertSame(host,panel.getParent());assertFalse(panel.controlsVisible());
+  assertEquals(View.GONE,((View)ReflectionHelpers.getField(activity,"drawer")).getVisibility());
+  activity.onPause();assertSame(player,ReflectionHelpers.getField(activity,"player"));
+  activity.onPictureInPictureModeChanged(false,activity.getResources().getConfiguration());
+  assertSame(ReflectionHelpers.getField(activity,"content"),panel.getParent());assertSame(player,ReflectionHelpers.getField(activity,"player"));
+ }
+ @Test public void playbackTogglesSaveAndMiniPlayerRequiresDeviceSupport() {
+  Shadows.shadowOf(activity.getPackageManager()).setSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE,true);
+  assertTrue(ReflectionHelpers.<Boolean>callInstanceMethod(activity,"supportsMiniPlayer"));
+  List<SwitchCompat> toggles=views(activity.getWindow().getDecorView(),SwitchCompat.class);
+  SwitchCompat auto=toggles.stream().filter(v->v.getText().toString().equals(activity.getString(R.string.auto_play_last))).reduce((a,b)->b).get();
+  SwitchCompat mini=toggles.stream().filter(v->v.getText().toString().equals(activity.getString(R.string.mini_player))).reduce((a,b)->b).get();
+  auto.setChecked(true);mini.setChecked(true);assertTrue(storage.saved.autoPlayLast);assertTrue(storage.saved.miniPlayer);
+  auto.setChecked(false);mini.setChecked(false);assertFalse(storage.saved.autoPlayLast);assertFalse(storage.saved.miniPlayer);
+  assertFalse(ReflectionHelpers.<Boolean>callInstanceMethod(activity,"enterMiniPlayer"));
+ }
  @Test public void playerShowsVolumeTransportAndFullscreenControls() {
   startTestPlayback();PlaybackPanel panel=ReflectionHelpers.getField(activity,"playbackPanel");
   assertEquals(View.VISIBLE,panel.getVisibility());

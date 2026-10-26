@@ -1,4 +1,5 @@
 <resources><style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+<item name="android:colorAccent">@color/stream_blue</item><item name="android:colorControlActivated">@color/stream_blue</item><item name="android:colorControlHighlight">#663686FF</item><item name="colorControlHighlight">#663686FF</item>
 <item name="colorAccent">@color/stream_blue</item><item name="colorControlActivated">@color/stream_blue</item>
 <item name="colorPrimary">#202020</item><item name="colorPrimaryDark">#101010</item>
 <item name="android:colorBackground">#101010</item><item name="android:windowBackground">#101010</item>

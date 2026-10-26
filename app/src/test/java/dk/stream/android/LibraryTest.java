@@ -5,6 +5,14 @@ import java.util.*;
 
 public class LibraryTest {
  private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
+ @Test public void playbackSettingsAndPositionSurviveReload() throws Exception {
+  Library library=new Library();library.autoPlayLast=true;library.miniPlayer=true;library.lastPlayedPosition=12345;
+  library.lastPlayed=new Playlist.Channel("Episode","https://example.com/series/u/p/123.mp4","Shows",Playlist.Kind.SERIES,null,"https://example.com/cover");
+  Library restored=Library.fromJson(library.toJson());assertTrue(restored.autoPlayLast);assertTrue(restored.miniPlayer);
+  assertEquals(12345,restored.lastPlayedPosition);assertEquals(library.lastPlayed.url,restored.lastPlayed.url);assertEquals(Playlist.Kind.SERIES,restored.lastPlayed.kind);assertNull(restored.lastPlayed.seriesId);
+  Library legacy=Library.fromJson("{\"version\":1,\"sources\":[],\"favorites\":[]}");
+  assertFalse(legacy.autoPlayLast);assertFalse(legacy.miniPlayer);assertNull(legacy.lastPlayed);
+ }
  @Test public void favoritesAndStartupPreferenceSurviveReload() throws Exception {
   Library library=new Library();Library.Source source=library.addSource(Library.Source.m3u("Min liste","https://example.com/get.php?password=p%26x"));
   library.lastSourceId=source.id;library.favoritesOnStart=true;

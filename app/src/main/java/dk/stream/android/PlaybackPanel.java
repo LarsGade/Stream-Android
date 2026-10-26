@@ -49,13 +49,13 @@ public final class PlaybackPanel extends FrameLayout {
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
   LinearLayout progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(32)));
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
-  timeline=new SeekBar(context);timeline.setMax(1000);timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
+  timeline=new SeekBar(context);timeline.setMax(1000);timeline.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
   timeline.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
    public void onProgressChanged(SeekBar bar,int value,boolean fromUser) {if(fromUser && duration()>0) seekTo(duration()*value/1000);}
    public void onStartTrackingTouch(SeekBar bar) {tracking=true;removeCallbacks(hideControls);}
    public void onStopTrackingTouch(SeekBar bar) {tracking=false;scheduleHide();}
   });
-  settings=new ImageButton(context);settings.setImageResource(android.R.drawable.ic_menu_preferences);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackgroundResource(android.R.drawable.list_selector_background);settings.setContentDescription(context.getString(R.string.player_settings));settings.setPadding(dp(8),dp(8),dp(8),dp(8));buttons.addView(settings,new LinearLayout.LayoutParams(0,-1,1));settings.setOnClickListener(this::showSettings);
+  settings=new ImageButton(context);settings.setImageResource(R.drawable.ic_settings);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackground(controlBackground());settings.setContentDescription(context.getString(R.string.player_settings));settings.setPadding(dp(8),dp(8),dp(8),dp(8));buttons.addView(settings,new LinearLayout.LayoutParams(0,-1,1));settings.setOnClickListener(this::showSettings);
   addView(controls,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this,(view,insets)->{
    androidx.core.graphics.Insets cutout=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout());
@@ -67,9 +67,10 @@ public final class PlaybackPanel extends FrameLayout {
   if(!fullscreenMode && MeasureSpec.getMode(heightSpec)!=MeasureSpec.EXACTLY) heightSpec=MeasureSpec.makeMeasureSpec(dp(210),MeasureSpec.EXACTLY);
   super.onMeasure(widthSpec,heightSpec);
  }
+ private android.graphics.drawable.Drawable controlBackground() {return new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x663686FF),null,new android.graphics.drawable.ColorDrawable(Color.WHITE));}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private ImageButton button(LinearLayout row,int icon,int label,Runnable click) {
-  ImageButton button=new ImageButton(getContext());button.setImageResource(icon);button.setContentDescription(getContext().getString(label));button.setPadding(dp(8),dp(8),dp(8),dp(8));button.setBackgroundResource(android.R.drawable.list_selector_background);
+  ImageButton button=new ImageButton(getContext());button.setImageResource(icon);button.setContentDescription(getContext().getString(label));button.setPadding(dp(8),dp(8),dp(8),dp(8));button.setBackground(controlBackground());
   row.addView(button,new LinearLayout.LayoutParams(0,-1,1));button.setOnClickListener(view->{click.run();if(controlsVisible()) scheduleHide();});return button;
  }
  public void setTitle(CharSequence name) {title.setText(name);}

@@ -76,4 +76,6 @@
  <string name="epg_fetch_failed">Kunne ikke hente %1$s. Tidligere programoplysninger beholdes, hvis de findes.</string>
  <string name="developer_credit">Udviklet af Lars Gade</string>
  <string name="remove_from_favorites">Fjern fra favoritter</string>
+ <string name="auto_play_last">Afspil automatisk seneste</string>
+ <string name="mini_player">Mini-afspiller</string>
 </resources>

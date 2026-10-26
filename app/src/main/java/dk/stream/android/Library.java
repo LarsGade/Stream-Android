@@ -53,7 +53,9 @@ public final class Library {
  }
  public final List<Source> sources=new ArrayList<>();
  public final List<Entry> favorites=new ArrayList<>();
- public boolean favoritesOnStart;
+ public boolean favoritesOnStart,autoPlayLast,miniPlayer;
+ public Playlist.Channel lastPlayed;
+ public long lastPlayedPosition;
  public String lastSourceId="";
  public Source findSource(String id) { for(Source source:sources) if(source.id.equals(id)) return source; return null; }
  public Source addSource(Source source) {
@@ -123,6 +125,10 @@ public final class Library {
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
   JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("lastSourceId",lastSourceId);
+  root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
+  if(lastPlayed!=null) {
+   JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
+  }
   JSONArray savedSources=new JSONArray();
   for(Source source:sources) {
    JSONObject value=new JSONObject();value.put("id",source.id);value.put("name",source.name);value.put("server",source.server);value.put("username",source.username);value.put("password",source.password);value.put("xtream",source.xtream);value.put("epgId",source.epgId);savedSources.put(value);
@@ -141,6 +147,12 @@ public final class Library {
   Library library=new Library();JSONObject root=new JSONObject(json);
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
   library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.lastSourceId=root.optString("lastSourceId","");
+  library.autoPlayLast=root.optBoolean("autoPlayLast");library.miniPlayer=root.optBoolean("miniPlayer");library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
+  JSONObject last=root.optJSONObject("lastPlayed");
+  if(last!=null) {
+   try {library.lastPlayed=new Playlist.Channel(last.getString("name"),last.getString("url"),last.optString("group",""),Playlist.Kind.valueOf(last.getString("kind")),null,last.optString("logoUrl",""),last.optString("epgId",""),last.optString("epgName",""));}
+   catch(IllegalArgumentException e) {throw new JSONException("Unsupported playback type");}
+  }
   JSONArray sources=root.getJSONArray("sources");
   for(int i=0;i<sources.length();i++) {
    JSONObject value=sources.getJSONObject(i);

@@ -59,6 +59,8 @@ public final class MainActivity extends AppCompatActivity {
  private boolean fullscreen;
  private int panelIndex,previousOrientation,previousCutoutMode;
  private long resumePosition;
+ private boolean resumeLocalPlayback,pipLayout,pipWasFullscreen;
+ private androidx.activity.OnBackPressedCallback miniBack;
  private LocalChannelLogos localLogos;
  private androidx.activity.OnBackPressedCallback fullscreenBack;
  private com.google.android.gms.cast.framework.media.RemoteMediaClient watchedRemote;
@@ -98,6 +100,8 @@ public final class MainActivity extends AppCompatActivity {
   content=root;drawer.addView(root,new DrawerLayout.LayoutParams(-1,-1));
   FrameLayout screen=new FrameLayout(this);screen.addView(drawer,new FrameLayout.LayoutParams(-1,-1));
   fullscreenHost=new FrameLayout(this);fullscreenHost.setBackgroundColor(Color.BLACK);fullscreenHost.setVisibility(View.GONE);screen.addView(fullscreenHost,new FrameLayout.LayoutParams(-1,-1));setContentView(screen);
+  miniBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {if(!enterMiniPlayer()) finish();}};
+  getOnBackPressedDispatcher().addCallback(this,miniBack);
   fullscreenBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {exitFullscreen();}};
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{
@@ -128,7 +132,7 @@ public final class MainActivity extends AppCompatActivity {
    public boolean fullscreen() {return fullscreen;}
    public CastSession castSession() {return connectedCast();}
   });
-  video=playbackPanel.video;root.addView(playbackPanel,new LinearLayout.LayoutParams(-1,-2));panelIndex=root.indexOfChild(playbackPanel);
+  video=playbackPanel.video;video.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->updateMiniBack());root.addView(playbackPanel,new LinearLayout.LayoutParams(-1,-2));panelIndex=root.indexOfChild(playbackPanel);
   sections=new RadioGroup(this);sections.setOrientation(RadioGroup.HORIZONTAL);root.addView(sections);
   int[] labels={R.string.tv,R.string.films,R.string.series};
   for(int i=0;i<labels.length;i++) {
@@ -171,6 +175,7 @@ public final class MainActivity extends AppCompatActivity {
    if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);
    if(last!=null) loadSource(last);
   }
+  restoreLastPlayback();
  }
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
@@ -187,12 +192,72 @@ public final class MainActivity extends AppCompatActivity {
    if(restoring[0]) return;
    if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
   });
+  playbackPreference(navigation,R.string.auto_play_last,false);playbackPreference(navigation,R.string.mini_player,true);
   button(R.string.sources,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
   button(R.string.tv_guide,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
   button(R.string.update_all,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
   button(R.string.reset_app,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
   ScrollView menu=new ScrollView(this);menu.addView(navigation);
   DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(menu,params);
+ }
+ private boolean supportsMiniPlayer() {
+  return android.os.Build.VERSION.SDK_INT>=26 && getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
+ }
+ private void playbackPreference(LinearLayout menu,int label,boolean mini) {
+  SwitchCompat toggle=new SwitchCompat(this);toggle.setText(label);toggle.setChecked(mini?library.miniPlayer:library.autoPlayLast);toggle.setPadding(0,dp(12),0,dp(12));menu.addView(toggle);
+  if(mini) toggle.setEnabled(supportsMiniPlayer());
+  boolean[] restoring={false};toggle.setOnCheckedChangeListener((button,checked)->{
+   if(restoring[0]) return;
+   if(!changeLibrary(()->{if(mini) library.miniPlayer=checked;else library.autoPlayLast=checked;})) {
+    restoring[0]=true;button.setChecked(mini?library.miniPlayer:library.autoPlayLast);restoring[0]=false;
+   }
+   updateMiniBack();
+  });
+ }
+ private void restoreLastPlayback() {
+  if(!storageReadable || !library.autoPlayLast || library.lastPlayed==null || library.lastPlayed.url.isEmpty()) return;
+  selected=library.lastPlayed;resumePosition=library.lastPlayedPosition;play(selected);
+ }
+ private void rememberPlayback() {
+  if(selected==null) return;
+  long position=player!=null?Math.max(0,player.getCurrentPosition()):resumePosition;
+  CastSession session=connectedCast();
+  if(session!=null && session.getRemoteMediaClient()!=null) position=Math.max(0,session.getRemoteMediaClient().getApproximateStreamPosition());
+  long saved=selected.kind==Playlist.Kind.TV?0:position;Playlist.Channel channel=selected;
+  changeLibrary(()->{library.lastPlayed=channel;library.lastPlayedPosition=saved;});
+ }
+ private boolean miniPlaybackReady() {return library.miniPlayer && supportsMiniPlayer() && selected!=null && player!=null && player.getPlayWhenReady() && connectedCast()==null;}
+ @androidx.annotation.RequiresApi(26)
+ private android.app.PictureInPictureParams miniParams(boolean autoEnter) {
+  android.app.PictureInPictureParams.Builder params=new android.app.PictureInPictureParams.Builder().setAspectRatio(new android.util.Rational(16,9));
+  android.graphics.Rect bounds=new android.graphics.Rect();if(video!=null && video.getGlobalVisibleRect(bounds)) params.setSourceRectHint(bounds);
+  if(android.os.Build.VERSION.SDK_INT>=31) params.setAutoEnterEnabled(autoEnter);
+  return params.build();
+ }
+ private void updateMiniBack() {
+  boolean ready=miniPlaybackReady();if(miniBack!=null) miniBack.setEnabled(ready);
+  if(android.os.Build.VERSION.SDK_INT>=31 && supportsMiniPlayer() && !isInPictureInPictureMode()) {
+   try {setPictureInPictureParams(miniParams(ready));} catch(IllegalStateException|IllegalArgumentException|SecurityException ignored) { }
+  }
+ }
+ private boolean enterMiniPlayer() {
+  if(!library.miniPlayer || !supportsMiniPlayer() || selected==null || player==null || !player.getPlayWhenReady() || connectedCast()!=null || isFinishing()) return false;
+  if(isInPictureInPictureMode()) return true;
+  rememberPlayback();playbackPanel.hideControls();
+  try {return enterPictureInPictureMode(miniParams(miniPlaybackReady()));}
+  catch(IllegalStateException|IllegalArgumentException|SecurityException e) {return false;}
+ }
+ @Override protected void onUserLeaveHint() {super.onUserLeaveHint();if(android.os.Build.VERSION.SDK_INT>=31) updateMiniBack();else enterMiniPlayer();}
+ @Override public void onPictureInPictureModeChanged(boolean inPip,android.content.res.Configuration config) {
+  super.onPictureInPictureModeChanged(inPip,config);
+  if(inPip && !pipLayout) {
+   pipLayout=true;pipWasFullscreen=fullscreen;drawer.closeDrawers();
+   if(!fullscreen) {content.removeView(playbackPanel);fullscreenHost.addView(playbackPanel,new FrameLayout.LayoutParams(-1,-1));}
+   drawer.setVisibility(View.GONE);fullscreenHost.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(true);
+  } else if(!inPip && pipLayout) {
+   pipLayout=false;
+   if(!pipWasFullscreen) {fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(false);}
+  }
  }
  private void navigate(boolean favorites) {
   list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
@@ -461,7 +526,7 @@ public final class MainActivity extends AppCompatActivity {
   status.setVisibility(View.VISIBLE);
   boolean same=selected!=null && selected.url.equals(channel.url);
   if(!same) resumePosition=0;
-  selected=channel;CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
+  selected=channel;long savedPosition=channel.kind==Playlist.Kind.TV?0:resumePosition;changeLibrary(()->{library.lastPlayed=channel;library.lastPlayedPosition=savedPosition;});CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
    exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null) player.pause();video.setPlayer(null);watchRemote();playbackPanel.refresh();
    MediaMetadata metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);
@@ -476,13 +541,13 @@ public final class MainActivity extends AppCompatActivity {
     player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);
     player.addListener(new Player.Listener() {
      @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
-     @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();}
+     @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateMiniBack();}
     });
    }
    video.setPlayer(player);
    if(same && channel.kind!=Playlist.Kind.TV && resumePosition>0) player.setMediaItem(MediaItem.fromUri(channel.url),resumePosition);
    else player.setMediaItem(MediaItem.fromUri(channel.url));
-   player.prepare();player.play();playbackPanel.hideControls();playbackPanel.refresh();status.setVisibility(View.GONE);
+   player.prepare();player.play();updateMiniBack();playbackPanel.hideControls();playbackPanel.refresh();status.setVisibility(View.GONE);
   }
  }
  private CastSession connectedCast() {
@@ -500,11 +565,12 @@ public final class MainActivity extends AppCompatActivity {
    var remote=session.getRemoteMediaClient();if(remote.isPlaying()) remote.pause();else remote.play();
   } else if(player!=null) {if(player.getPlayWhenReady()) player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE) player.prepare();player.play();}}
   else if(selected!=null) play(selected);
-  playbackPanel.refresh();
+  playbackPanel.refresh();updateMiniBack();
  }
  private void stopPlaybackState() {
+  rememberPlayback();resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
-  if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;hideFullscreenSystemBars();
+  if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
   status.setVisibility(View.VISIBLE);status.setText(R.string.playback_stopped);
  }
  private void enterFullscreen() {
@@ -543,12 +609,13 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
- @Override protected void onResume() {super.onResume();if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
+ @Override protected void onResume() {super.onResume();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);
   if(keyCode==android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_MUTE) getWindow().getDecorView().post(()->{if(playbackPanel!=null) playbackPanel.refresh();});
   return handled;
  }
- @Override protected void onStop() {if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();}
+ @Override protected void onPause() {rememberPlayback();super.onPause();}
+ @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();}
  @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();epgWorker.shutdownNow();super.onDestroy();}
 }
