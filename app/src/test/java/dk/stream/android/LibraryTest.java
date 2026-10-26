@@ -25,12 +25,12 @@ public class LibraryTest {
  }
  @Test public void favoritesAndStartupPreferenceSurviveReload() throws Exception {
   Library library=new Library();Library.Source source=library.addSource(Library.Source.m3u("Min liste","https://example.com/get.php?password=p%26x"));
-  library.lastSourceId=source.id;library.favoritesOnStart=true;
+  library.lastSourceId=source.id;library.favoritesOnStart=true;library.favoritesRadio=true;
   Library.Entry z=new Library.Entry(source.id,channel("Z","https://example.com/z"));
   Library.Entry a=new Library.Entry(source.id,channel("A","https://example.com/a"));
   library.toggleFavorite(z);library.toggleFavorite(a);
   Library restored=Library.fromJson(library.toJson());
-  assertTrue(restored.favoritesOnStart);assertEquals(source.id,restored.lastSourceId);assertTrue(restored.isFavorite(z));
+  assertTrue(restored.favoritesOnStart);assertTrue(restored.favoritesRadio);assertEquals(source.id,restored.lastSourceId);assertTrue(restored.isFavorite(z));
   assertEquals("Z",restored.favorites.get(0).channel.name);assertEquals("A",restored.favorites.get(1).channel.name);
   assertEquals("https://example.com/logo.png",restored.favorites.get(0).channel.logoUrl);
  }

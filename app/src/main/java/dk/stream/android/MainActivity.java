@@ -32,7 +32,9 @@ public final class MainActivity extends AppCompatActivity {
  private final Map<String,EpgData> epgData=new HashMap<>();
  private final Set<String> epgPending=new HashSet<>();
  private final Map<String,Long> epgAttempted=new HashMap<>();
- private boolean updatingAll,radioMode;
+ private boolean updatingAll,radioMode,favoritesPage,choosingFavoriteTab;
+ private RadioGroup favoriteTabs;
+ private RadioButton favoriteTv,favoriteRadio;
  private RadioPanel radioPanel;
  private final Runnable epgTick=new Runnable() {
   public void run() {if(isDestroyed()) return;if(adapter!=null) adapter.notifyDataSetChanged();loadAssignedGuides(false);list.postDelayed(this,60000);}
@@ -105,7 +107,7 @@ public final class MainActivity extends AppCompatActivity {
     getPreferences(0).edit().remove("playlist").apply();
    }
   } catch(Exception e) { storageReadable=false; }
-  favoritesMode=library.favoritesOnStart;
+  favoritesPage=library.favoritesOnStart;favoritesMode=favoritesPage;
   drawer=new DrawerLayout(this);drawer.setBackgroundColor(Color.rgb(16,16,16));
   LinearLayout root=column();root.setBackgroundColor(Color.rgb(16,16,16));
   content=root;drawer.addView(root,new DrawerLayout.LayoutParams(-1,-1));
@@ -150,6 +152,9 @@ public final class MainActivity extends AppCompatActivity {
    RadioButton button=new RadioButton(this);button.setId(View.generateViewId());button.setText(labels[i]);kindButtons[i]=button;sections.addView(button,new RadioGroup.LayoutParams(0,-2,1));
   }
   kindButtons[0].setChecked(true);
+  favoriteTabs=new RadioGroup(this);favoriteTabs.setOrientation(RadioGroup.HORIZONTAL);root.addView(favoriteTabs);
+  favoriteTv=new RadioButton(this);favoriteTv.setId(View.generateViewId());favoriteTv.setText(R.string.tv);favoriteTabs.addView(favoriteTv,new RadioGroup.LayoutParams(0,-2,1));
+  favoriteRadio=new RadioButton(this);favoriteRadio.setId(View.generateViewId());favoriteRadio.setText(R.string.radio);favoriteTabs.addView(favoriteRadio,new RadioGroup.LayoutParams(0,-2,1));favoriteTv.setChecked(true);
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new FavoriteListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
@@ -178,7 +183,8 @@ public final class MainActivity extends AppCompatActivity {
    public void onTextChanged(CharSequence s,int start,int before,int count) { filter(); }
    public void afterTextChanged(Editable value) { }
   });
-  chooseFirstKind();rebuildGroups();loadAssignedGuides(false);
+  favoriteTabs.setOnCheckedChangeListener((group,id)->{if(choosingFavoriteTab) return;boolean radio=id==favoriteRadio.getId();if(changeLibrary(()->library.favoritesRadio=radio)) showFavoriteKind(radio);else showFavoriteKind(library.favoritesRadio);});
+  chooseFirstKind();rebuildGroups();loadAssignedGuides(false);if(favoritesPage && library.favoritesRadio) showFavoriteKind(true);
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
   catch(Exception e) { castButton.setVisibility(View.GONE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
@@ -200,7 +206,7 @@ public final class MainActivity extends AppCompatActivity {
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
   button(R.string.library,navigation,this::openStreamingService);button(R.string.favorites,navigation,()->navigate(true));
-  button(R.string.radio,navigation,()->openRadio(false));button(R.string.radio_favorites,navigation,()->openRadio(true));
+  button(R.string.radio,navigation,()->openRadio(false));
   SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -299,8 +305,15 @@ public final class MainActivity extends AppCompatActivity {
    });
   });
  }
+ private void showFavoriteKind(boolean radio) {
+  list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=radio;
+  choosingFavoriteTab=true;favoriteTabs.check(radio?favoriteRadio.getId():favoriteTv.getId());choosingFavoriteTab=false;
+  radioPanel.setVisibility(radio?View.VISIBLE:View.GONE);if(radio) radioPanel.open(true);filter();
+ }
  private void openRadio(boolean favorites) {
-  exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(favorites);
+  exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+  if(favorites) {showFavoriteKind(true);return;}
+  favoritesPage=false;favoritesMode=false;radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(false);
  }
  private void openStreamingService() {
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);
@@ -312,7 +325,8 @@ public final class MainActivity extends AppCompatActivity {
   } else navigate(false);
  }
  private void navigate(boolean favorites) {
-  list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
+  if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoriteKind(library.favoritesRadio);return;}
+  favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
   if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && library.sources.size()==1) last=library.sources.get(0);if(last!=null) loadSource(last);}
  }
  private void chooseFirstKind() {
@@ -329,6 +343,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void filter() {
   if(adapter==null) return;
+  favoriteTabs.setVisibility(favoritesPage?View.VISIBLE:View.GONE);
   list.setVisibility(radioMode?View.GONE:View.VISIBLE);
   if(radioMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
   pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
@@ -502,7 +517,7 @@ public final class MainActivity extends AppCompatActivity {
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
  private void loadSource(Library.Source source) {
   if(loading) return;
-  radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
+  favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
   worker.execute(()->{
    try {
     Catalog result=source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server));

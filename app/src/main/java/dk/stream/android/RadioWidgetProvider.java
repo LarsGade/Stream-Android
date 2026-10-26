@@ -9,6 +9,17 @@ import android.widget.RemoteViews;
 
 @androidx.media3.common.util.UnstableApi
 public final class RadioWidgetProvider extends AppWidgetProvider {
+ private static final android.os.Handler feedbackHandler=new android.os.Handler(android.os.Looper.getMainLooper());
+ private static final java.util.Map<Integer,Feedback> feedback=new java.util.HashMap<>();
+ private static final class Feedback {final boolean play;final long until;Feedback(boolean play) {this.play=play;until=android.os.SystemClock.elapsedRealtime()+850;}}
+ static void showFeedback(Context context,int widgetId,boolean play) {
+  if(widgetId==AppWidgetManager.INVALID_APPWIDGET_ID) return;
+  Feedback state=new Feedback(play);feedback.put(widgetId,state);Context app=context.getApplicationContext();safeUpdate(app,widgetId);
+  feedbackHandler.postDelayed(()->{if(feedback.get(widgetId)==state) {feedback.remove(widgetId);safeUpdate(app,widgetId);}},850);
+ }
+ // A removed or unavailable launcher widget must never interrupt audio playback.
+ private static void safeUpdate(Context context,int widgetId) {try {update(context,AppWidgetManager.getInstance(context),widgetId);} catch(RuntimeException ignored) { }}
+ static boolean feedbackVisible(int widgetId) {Feedback state=feedback.get(widgetId);return state!=null && android.os.SystemClock.elapsedRealtime()<state.until;}
  static String favoriteId(Context context,int widgetId) {return context.getSharedPreferences("radio_widgets",0).getString("station_"+widgetId,"");}
  static void bind(Context context,int widgetId,String id) {context.getSharedPreferences("radio_widgets",0).edit().putString("station_"+widgetId,id).apply();}
  public static void refresh(Context context) {
@@ -30,13 +41,13 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
   Intent configure=new Intent(context,RadioWidgetConfigureActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId).setData(Uri.parse("stream://radio-widget/config/"+widgetId));
   PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   if(station!=null) {
-   boolean playing=RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_stop:R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.radio_stop:R.string.radio_start));
-   Intent toggle=new Intent(context,RadioPlaybackService.class).setAction(RadioPlaybackService.WIDGET_TOGGLE).setData(Uri.parse("stream://radio-widget/play/"+widgetId)).putExtra("favoriteId",station.id);
+   boolean playing=RadioPlaybackService.playing(station.id);Feedback pulse=feedback.get(widgetId);boolean show=feedbackVisible(widgetId);views.setDisplayedChild(R.id.widget_feedback,show?1:0);views.setImageViewResource(R.id.widget_play,show && !pulse.play?R.drawable.ic_stop:R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.radio_stop:R.string.radio_start));
+   Intent toggle=new Intent(context,RadioPlaybackService.class).setAction(RadioPlaybackService.WIDGET_TOGGLE).setData(Uri.parse("stream://radio-widget/play/"+widgetId)).putExtra("favoriteId",station.id).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);
    PendingIntent action=android.os.Build.VERSION.SDK_INT>=26?PendingIntent.getForegroundService(context,widgetId,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE):PendingIntent.getService(context,widgetId,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
    views.setOnClickPendingIntent(R.id.widget_root,action);views.setOnClickPendingIntent(R.id.widget_logo,action);views.setOnClickPendingIntent(R.id.widget_play,action);
-  } else {views.setImageViewResource(R.id.widget_play,R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(R.string.radio_widget_choose));views.setOnClickPendingIntent(R.id.widget_root,config);views.setOnClickPendingIntent(R.id.widget_logo,config);views.setOnClickPendingIntent(R.id.widget_play,config);}
+  } else {views.setDisplayedChild(R.id.widget_feedback,0);views.setImageViewResource(R.id.widget_play,R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(R.string.radio_widget_choose));views.setOnClickPendingIntent(R.id.widget_root,config);views.setOnClickPendingIntent(R.id.widget_logo,config);views.setOnClickPendingIntent(R.id.widget_play,config);}
   return views;
  }
  @Override public void onUpdate(Context context,AppWidgetManager manager,int[] ids) {for(int id:ids) update(context,manager,id);}
- @Override public void onDeleted(Context context,int[] ids) {android.content.SharedPreferences.Editor edit=context.getSharedPreferences("radio_widgets",0).edit();for(int id:ids) edit.remove("station_"+id);edit.apply();}
+ @Override public void onDeleted(Context context,int[] ids) {android.content.SharedPreferences.Editor edit=context.getSharedPreferences("radio_widgets",0).edit();for(int id:ids) {edit.remove("station_"+id);feedback.remove(id);}edit.apply();}
 }

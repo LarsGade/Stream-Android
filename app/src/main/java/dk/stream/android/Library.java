@@ -64,7 +64,7 @@ public final class Library {
  }
  public final List<Source> sources=new ArrayList<>();
  public final List<Entry> favorites=new ArrayList<>();
- public boolean favoritesOnStart,autoPlayLast,miniPlayer;
+ public boolean favoritesOnStart,favoritesRadio,autoPlayLast,miniPlayer;
  public Playlist.Channel lastPlayed;
  public long lastPlayedPosition;
  public String lastSourceId="";
@@ -135,7 +135,7 @@ public final class Library {
  }
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
-  JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("lastSourceId",lastSourceId);
+  JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesRadio",favoritesRadio);root.put("lastSourceId",lastSourceId);
   root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
    JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
@@ -157,7 +157,7 @@ public final class Library {
  public static Library fromJson(String json) throws JSONException {
   Library library=new Library();JSONObject root=new JSONObject(json);
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
-  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.lastSourceId=root.optString("lastSourceId","");
+  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.lastSourceId=root.optString("lastSourceId","");
   library.autoPlayLast=root.optBoolean("autoPlayLast");library.miniPlayer=root.optBoolean("miniPlayer");library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
   JSONObject last=root.optJSONObject("lastPlayed");
   if(last!=null) {

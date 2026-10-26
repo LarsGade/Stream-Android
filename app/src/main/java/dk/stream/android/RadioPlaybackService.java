@@ -76,6 +76,7 @@ public final class RadioPlaybackService extends MediaSessionService {
    else station=RadioStation.fromJson(new JSONObject(intent.getStringExtra("station")));
    if(station==null || okhttp3.HttpUrl.parse(station.url)==null) throw new IllegalArgumentException("Station missing");
    error="";
+   if(WIDGET_TOGGLE.equals(action)) RadioWidgetProvider.showFeedback(this,intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID),!playing(station.id));
    if(WIDGET_TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) {player.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
    else if(TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) player.pause();
    else {

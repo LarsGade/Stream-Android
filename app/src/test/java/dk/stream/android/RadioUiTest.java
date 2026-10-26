@@ -49,7 +49,7 @@ public class RadioUiTest {
   RadioStation station=new RadioStation("a","Original","https://example.com/radio","", "DR P1");
   RadioWidgetProvider.bind(activity,21,station.id);RadioWidgetProvider.bind(activity,22,"b");assertEquals("a",RadioWidgetProvider.favoriteId(activity,21));assertEquals("b",RadioWidgetProvider.favoriteId(activity,22));
   View widget=RadioWidgetProvider.views(activity,21,station).apply(activity.getApplicationContext(),new FrameLayout(activity.getApplicationContext()));assertEquals("DR P1",widget.findViewById(R.id.widget_logo).getContentDescription().toString());assertEquals(activity.getString(R.string.radio_start),widget.findViewById(R.id.widget_play).getContentDescription().toString());
-  assertTrue(texts(widget).isEmpty());
+  assertTrue(texts(widget).isEmpty());assertEquals(0,((ViewFlipper)widget.findViewById(R.id.widget_feedback)).getDisplayedChild());assertEquals(android.graphics.Color.TRANSPARENT,((android.graphics.drawable.ColorDrawable)widget.getBackground()).getColor());
   for(int target:new int[]{R.id.widget_root,R.id.widget_logo,R.id.widget_play}) {
    widget.findViewById(target).performClick();Intent start=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertNotNull(start);assertEquals(RadioPlaybackService.WIDGET_TOGGLE,start.getAction());assertEquals(station.id,start.getStringExtra("favoriteId"));assertNull(Shadows.shadowOf(activity.getApplication()).getNextStartedActivity());
   }
@@ -71,9 +71,12 @@ public class RadioUiTest {
    audible.set(false);assertEquals(View.INVISIBLE,list.getAdapter().getView(0,null,list).findViewWithTag("now_playing_dot").getVisibility());
   } finally {ReflectionHelpers.setField(service,"player",original);serviceController.destroy();}
  }
- @Test public void drawerPlacesRadioAndRadioFavoritesImmediatelyAfterTvFavorites() {
-  List<TextView> labels=texts(activity.getWindow().getDecorView());int tv=-1,radio=-1,favorites=-1;
-  for(int i=0;i<labels.size();i++) {String text=labels.get(i).getText().toString();if(text.equals("TV-Favoritter")) tv=i;if(text.equals("Radio")) radio=i;if(text.equals("Radio-Favoritter")) favorites=i;}
-  assertTrue(tv>=0);assertEquals(tv+1,radio);assertEquals(radio+1,favorites);
+ @Test public void drawerHasOneFavoritesEntryWithTvAndRadioTabs() {
+  List<TextView> labels=texts(activity.getWindow().getDecorView());assertTrue(labels.stream().anyMatch(v->v.getText().toString().equals("Favoritter")));assertFalse(labels.stream().anyMatch(v->v.getText().toString().equals("TV-Favoritter")||v.getText().toString().equals("Radio-Favoritter")));
+  ReflectionHelpers.callInstanceMethod(activity,"navigate",ReflectionHelpers.ClassParameter.from(boolean.class,true));
+  ReflectionHelpers.setField(activity,"store",new LibraryPersistence(){public Library load(){return new Library();}public void save(Library value){} });
+  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(View.VISIBLE,tabs.getVisibility());assertEquals("TV",((RadioButton)tabs.getChildAt(0)).getText().toString());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());
+  RadioButton radio=ReflectionHelpers.getField(activity,"favoriteRadio");radio.setChecked(true);assertTrue(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesPage"));
+  RadioButton tv=ReflectionHelpers.getField(activity,"favoriteTv");tv.setChecked(true);assertFalse(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));
  }
 }
