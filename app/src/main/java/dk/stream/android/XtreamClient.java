@@ -29,7 +29,7 @@ public final class XtreamClient {
    if(response.body()==null) throw new PlaylistLoader.Failure(0);
    try(InputStream in=response.body().byteStream();ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
     byte[] buffer=new byte[8192]; int count;
-    while((count=in.read(buffer))!=-1) { if(bytes.size()+count>4*1024*1024) throw new PlaylistLoader.Failure(-1); bytes.write(buffer,0,count); }
+    while((count=in.read(buffer))!=-1) { bytes.write(buffer,0,count); }
     return bytes.toString("UTF-8").replace("\uFEFF","");
    }
   }
@@ -42,13 +42,7 @@ public final class XtreamClient {
   try(Response response=client.newCall(new Request.Builder().url(url).header("User-Agent","Stream-Android/1.1").build()).execute()) {
    if(!response.isSuccessful()) throw new PlaylistLoader.Failure(response.code());
    if(response.body()==null) throw new PlaylistLoader.Failure(0);
-   InputStream bounded=new FilterInputStream(response.body().byteStream()) {
-    private long count;
-    private void counted(int n) throws IOException {if(n>0 && (count+=n)>PlaylistLoader.MAX_BYTES) throw new PlaylistLoader.Failure(-1);}
-    @Override public int read() throws IOException {int value=in.read();counted(value<0?0:1);return value;}
-    @Override public int read(byte[] data,int offset,int length) throws IOException {int n=in.read(data,offset,length);counted(n);return n;}
-   };
-   try(JsonReader reader=new JsonReader(new InputStreamReader(bounded,java.nio.charset.StandardCharsets.UTF_8))) {
+   try(JsonReader reader=new JsonReader(new InputStreamReader(response.body().byteStream(),java.nio.charset.StandardCharsets.UTF_8))) {
     if(reader.peek()==JsonToken.NULL) {reader.nextNull();return;}
     if(reader.peek()!=JsonToken.BEGIN_ARRAY) throw new PlaylistLoader.Failure(0);
     reader.beginArray();
@@ -59,7 +53,7 @@ public final class XtreamClient {
      while(reader.hasNext()) {
       String field=reader.nextName();JsonToken token=reader.peek();
       if(fields.contains(field) && (token==JsonToken.STRING || token==JsonToken.NUMBER)) {
-       String value=reader.nextString();if(value.length()>16384) throw new PlaylistLoader.Failure(-1);row.put(field,value);
+       String value=reader.nextString();row.put(field,value);
       } else reader.skipValue();
      }
      reader.endObject();consumer.accept(row);
@@ -95,7 +89,6 @@ public final class XtreamClient {
   rows(streamsAction,item->{
    String id=item.optString(kind==Playlist.Kind.SERIES?"series_id":"stream_id","");
    if(!id.matches("[0-9]+")) return;
-   if(catalog.items.size()>=100000) throw new PlaylistLoader.Failure(-1);
    String group=names.get(item.optString("category_id"));if(group==null) group="";
    String url=kind==Playlist.Kind.SERIES?"":streamUrl(kind,id,kind==Playlist.Kind.TV?liveExtension:item.optString("container_extension","mp4"));
    String image=item.optString("stream_icon","");if(image.isEmpty()) image=item.optString("cover","");

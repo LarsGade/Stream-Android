@@ -32,16 +32,35 @@ public class XtreamClientTest {
    assertEquals("Channel 20000",catalog.items.get(19999).name);assertEquals("",catalog.items.get(0).logoUrl);
   }
  }
- @Test public void oversizedCatalogFailsCleanlyInsteadOfGrowingWithoutLimit() throws Exception {
+ @Test public void catalogCanExceedOneHundredThousandItems() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
    server.enqueue(new MockResponse().setBody("{\"user_info\":{\"auth\":1}}"));
    server.enqueue(new MockResponse().setBody("[]"));
    StringBuilder body=new StringBuilder("[");
    for(int i=1;i<=100001;i++) {if(i>1) body.append(',');body.append("{\"stream_id\":").append(i).append('}');}
    server.enqueue(new MockResponse().setBody(body.append(']').toString()));
-   try {new XtreamClient(server.url("/").toString(),"u","p").load();fail("Expected size limit");}
-   catch(PlaylistLoader.Failure e) {assertEquals(-1,e.status);}
-   assertEquals(3,server.getRequestCount());
+   for(int i=0;i<4;i++) server.enqueue(new MockResponse().setBody("[]"));
+   Catalog catalog=new XtreamClient(server.url("/").toString(),"u","p").load();
+   assertEquals(100001,catalog.items.size());
+   assertTrue(catalog.items.get(100000).url.endsWith("/100001.m3u8"));
+  }
+ }
+ @Test public void catalogResponseCanExceedSixtyFourMiB() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setBody("{\"user_info\":{\"auth\":1}}"));
+   server.enqueue(new MockResponse().setBody("[]"));
+   // Compress on the server side to exercise a >64 MiB decoded response without a large test fixture.
+   java.io.ByteArrayOutputStream compressed=new java.io.ByteArrayOutputStream();
+   try(java.util.zip.GZIPOutputStream gzip=new java.util.zip.GZIPOutputStream(compressed)) {
+    gzip.write("[{\"stream_id\":1,\"name\":\"Large source\",\"unused\":\"".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    byte[] block=new byte[1024];Arrays.fill(block,(byte)'x');
+    for(int i=0;i<65*1024;i++) gzip.write(block);
+    gzip.write("\"}]".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+   }
+   server.enqueue(new MockResponse().setHeader("Content-Encoding","gzip").setBody(new okio.Buffer().write(compressed.toByteArray())));
+   for(int i=0;i<4;i++) server.enqueue(new MockResponse().setBody("[]"));
+   Catalog catalog=new XtreamClient(server.url("/").toString(),"u","p").load();
+   assertEquals(1,catalog.items.size());assertEquals("Large source",catalog.items.get(0).name);
   }
  }
  @Test public void malformedCatalogReturnsAnError() throws Exception {
