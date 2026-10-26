@@ -98,6 +98,17 @@ public class MainActivityTest {
   clickText(activity.getWindow().getDecorView(),R.string.library);
   for(String name:new String[]{"search","groups","sections"}) {View control=ReflectionHelpers.getField(activity,name);assertEquals(name,View.VISIBLE,control.getVisibility());}
  }
+ @Test public void onlyTheActivelyPlayingVideoRowHasAWhiteDot() {
+  FavoriteListView list=sampleFavorites();java.util.List<Library.Entry> items=ReflectionHelpers.getField(activity,"visible");
+  java.util.concurrent.atomic.AtomicBoolean audible=new java.util.concurrent.atomic.AtomicBoolean(true);
+  androidx.media3.exoplayer.ExoPlayer fake=(androidx.media3.exoplayer.ExoPlayer)java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{androidx.media3.exoplayer.ExoPlayer.class},(proxy,method,args)->method.getName().equals("isPlaying")?audible.get():null);
+  ReflectionHelpers.setField(activity,"selected",items.get(0).channel);ReflectionHelpers.setField(activity,"player",fake);
+  try {
+   View first=list.getAdapter().getView(0,null,list),other=list.getAdapter().getView(1,null,list);
+   assertEquals(View.VISIBLE,first.findViewWithTag("now_playing_dot").getVisibility());assertEquals(View.INVISIBLE,other.findViewWithTag("now_playing_dot").getVisibility());
+   audible.set(false);first=list.getAdapter().getView(0,first,list);assertEquals(View.INVISIBLE,first.findViewWithTag("now_playing_dot").getVisibility());
+  } finally {ReflectionHelpers.setField(activity,"player",null);ReflectionHelpers.setField(activity,"selected",null);}
+ }
  @Test public void radioNotificationOpensRadioFavoritesAndExitsFullscreen() {
   startTestPlayback();ReflectionHelpers.callInstanceMethod(activity,"enterFullscreen");assertTrue(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));
   activity.onNewIntent(new android.content.Intent(activity,MainActivity.class).putExtra("openRadio",true));

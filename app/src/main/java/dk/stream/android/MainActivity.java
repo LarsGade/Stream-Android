@@ -66,7 +66,7 @@ public final class MainActivity extends AppCompatActivity {
  private androidx.activity.OnBackPressedCallback fullscreenBack;
  private com.google.android.gms.cast.framework.media.RemoteMediaClient watchedRemote;
  private final com.google.android.gms.cast.framework.media.RemoteMediaClient.Callback remoteUpdates=new com.google.android.gms.cast.framework.media.RemoteMediaClient.Callback() {
-  @Override public void onStatusUpdated() {if(playbackPanel!=null) playbackPanel.refresh();}
+  @Override public void onStatusUpdated() {if(playbackPanel!=null) playbackPanel.refresh();if(adapter!=null) adapter.notifyDataSetChanged();}
   @Override public void onMetadataUpdated() {if(playbackPanel!=null) playbackPanel.refresh();}
  };
  private CastContext cast;
@@ -74,13 +74,13 @@ public final class MainActivity extends AppCompatActivity {
  private final SessionManagerListener<CastSession> sessions=new SessionManagerListener<CastSession>() {
   public void onSessionStarted(CastSession s,String id) { if(selected!=null) play(selected); }
   public void onSessionResumed(CastSession s,boolean suspended) { if(selected!=null) play(selected); }
-  public void onSessionEnded(CastSession s,int error) {watchRemote();if(playbackPanel!=null) playbackPanel.refresh();status.setText(R.string.cast_ended); }
+  public void onSessionEnded(CastSession s,int error) {watchRemote();if(playbackPanel!=null) playbackPanel.refresh();if(adapter!=null) adapter.notifyDataSetChanged();status.setText(R.string.cast_ended); }
   public void onSessionStarting(CastSession s) { }
   public void onSessionStartFailed(CastSession s,int error) { status.setText(R.string.cast_failed); }
   public void onSessionEnding(CastSession s) { }
   public void onSessionResuming(CastSession s,String id) { }
   public void onSessionResumeFailed(CastSession s,int error) { }
-  public void onSessionSuspended(CastSession s,int reason) { }
+  public void onSessionSuspended(CastSession s,int reason) {if(adapter!=null) adapter.notifyDataSetChanged();}
  };
 
  @Override public void onCreate(Bundle state) {
@@ -523,7 +523,7 @@ public final class MainActivity extends AppCompatActivity {
     LinearLayout layout=new LinearLayout(MainActivity.this);layout.setGravity(Gravity.CENTER_VERTICAL);layout.setPadding(dp(10),dp(8),dp(4),dp(8));layout.setBackgroundColor(Color.rgb(29,29,29));
     row=new Row();row.logo=new ImageView(MainActivity.this);row.logo.setScaleType(ImageView.ScaleType.FIT_CENTER);layout.addView(row.logo,new LinearLayout.LayoutParams(dp(48),dp(48)));
     LinearLayout labels=column();labels.setPadding(dp(12),0,dp(4),0);row.name=text("",16,Color.WHITE);row.name.setMaxLines(2);labels.addView(row.name);row.group=text("",12,Color.LTGRAY);row.group.setMaxLines(1);labels.addView(row.group);layout.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
-    row.star=iconButton(R.drawable.ic_favorite_outline,"");row.star.setFocusable(false);layout.addView(row.star,new LinearLayout.LayoutParams(dp(48),dp(48)));layout.setTag(row);recycled=layout;
+    row.star=iconButton(R.drawable.ic_favorite_outline,"");row.star.setFocusable(false);layout.addView(row.star,new LinearLayout.LayoutParams(dp(48),dp(48)));row.indicator=NowPlayingIndicator.addTo(layout);layout.setTag(row);recycled=layout;
    } else row=(Row)recycled.getTag();
    Library.Entry entry=getItem(position);Playlist.Channel channel=entry.channel;row.name.setText(channel.name);
    Library.Source source=library.findSource(entry.sourceId);
@@ -533,14 +533,19 @@ public final class MainActivity extends AppCompatActivity {
    row.logo.setContentDescription(getString(R.string.logo_for,channel.name));
    String bundled=localLogos.find(channel.name);
    Object logoModel=bundled==null?LogoRequests.model(channel.logoUrl,source==null?null:source.server):bundled;
-   Glide.with(MainActivity.this).load(logoModel).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
+   Glide.with(MainActivity.this).load(logoModel).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(MainActivity.this)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
    recycled.setAlpha(list.isPicked(position)?0.6f:1f);row.star.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+   NowPlayingIndicator.show(row.indicator,isChannelPlaying(channel));
    boolean favorite=library.isFavorite(entry);row.star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);row.star.setContentDescription(getString(favorite?R.string.remove_favorite:R.string.add_favorite,channel.name));
    row.star.setOnClickListener(v->{if(!favoritesMode&&changeLibrary(()->library.toggleFavorite(entry))) {if(favoritesMode) rebuildGroups();else notifyDataSetChanged();}});
    return recycled;
   }
  }
- private static final class Row {ImageView logo;TextView name,group;ImageButton star;}
+ private boolean isChannelPlaying(Playlist.Channel channel) {
+  if(selected==null || !selected.url.equals(channel.url)) return false;
+  CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.isPlaying();
+ }
+ private static final class Row {ImageView logo;TextView name,group;ImageButton star;View indicator;}
  private void play(Playlist.Channel channel) {
   stopService(new android.content.Intent(this,RadioPlaybackService.class));
   status.setVisibility(View.VISIBLE);
@@ -561,7 +566,7 @@ public final class MainActivity extends AppCompatActivity {
     player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
     player.addListener(new Player.Listener() {
      @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
-     @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateMiniBack();}
+     @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}
     });
    }
    video.setPlayer(player);
@@ -636,6 +641,6 @@ public final class MainActivity extends AppCompatActivity {
   return handled;
  }
  @Override protected void onPause() {rememberPlayback();super.onPause();}
- @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();}
+ @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}
  @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);worker.shutdownNow();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

@@ -12,13 +12,14 @@ import org.json.JSONObject;
 /** Radio owns a foreground media session, so launcher widgets also work after the UI closes. */
 @androidx.media3.common.util.UnstableApi
 public final class RadioPlaybackService extends MediaSessionService {
- public static final String PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP";
+ public static final String PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE";
  private static RadioPlaybackService active;
  private ExoPlayer player;
  private MediaSession session;
  private RadioStation current;
  private String error="";
  public static boolean playing(String id) {return active!=null && active.current!=null && active.current.id.equals(id) && active.player!=null && active.player.getPlayWhenReady();}
+ public static String audibleStationId() {return active!=null && active.current!=null && active.player!=null && active.player.isPlaying()?active.current.id:"";}
  public static String nowPlaying() {return active==null||active.current==null?"":active.current.displayName();}
  public static String error() {return active==null?"":active.error;}
  public static Intent playIntent(Context context,RadioStation station) {
@@ -48,7 +49,7 @@ public final class RadioPlaybackService extends MediaSessionService {
   if(intent==null) return START_NOT_STICKY;
   String action=intent.getAction();
   if(STOP.equals(action)) {player.stop();current=null;error="";RadioWidgetProvider.refresh(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();return START_NOT_STICKY;}
-  if(!PLAY.equals(action) && !TOGGLE.equals(action)) return START_NOT_STICKY;
+  if(!PLAY.equals(action) && !TOGGLE.equals(action) && !WIDGET_TOGGLE.equals(action)) return START_NOT_STICKY;
   // A foreground-service PendingIntent must promptly show a notification even if the favorite was removed.
   foreground(getString(R.string.radio));
   try {
@@ -58,7 +59,8 @@ public final class RadioPlaybackService extends MediaSessionService {
    else station=RadioStation.fromJson(new JSONObject(intent.getStringExtra("station")));
    if(station==null || okhttp3.HttpUrl.parse(station.url)==null) throw new IllegalArgumentException("Station missing");
    error="";
-   if(TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) player.pause();
+   if(WIDGET_TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) {player.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
+   else if(TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) player.pause();
    else {
     current=station;
     MediaMetadata metadata=new MediaMetadata.Builder().setTitle(station.displayName()).setArtist("Radio Browser").build();

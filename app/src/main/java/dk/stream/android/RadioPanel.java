@@ -31,6 +31,7 @@ public final class RadioPanel extends LinearLayout {
  private final Adapter adapter=new Adapter();
  private List<RadioStation> stations=new ArrayList<>(),visible=new ArrayList<>();
  private boolean favorites,loading,loaded,closed;
+ private String markedStation="";
  private final Runnable tick=new Runnable() {public void run() {if(closed || !isAttachedToWindow()) return;updatePlayback();postDelayed(this,1000);}};
  public RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay) {this(context,library,save,beforePlay,new RadioBrowser());}
  RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay,RadioBrowser browser) {
@@ -54,7 +55,6 @@ public final class RadioPanel extends LinearLayout {
    public void cancel() {filter();}
   });
   playing=text("",13);addView(playing);stop=new Button(context);stop.setText(R.string.radio_stop);addView(stop);stop.setOnClickListener(v->{context.stopService(new Intent(context,RadioPlaybackService.class));postDelayed(this::updatePlayback,100);});
-  TextView credit=text("Radio Browser",11);credit.setTextColor(Color.LTGRAY);credit.setGravity(Gravity.CENTER);addView(credit);credit.setOnClickListener(v->context.startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://www.radio-browser.info/"))));
  }
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private TextView text(String value,int size) {TextView view=new TextView(getContext());view.setText(value);view.setTextSize(size);view.setTextColor(Color.WHITE);view.setPadding(dp(4),dp(6),dp(4),dp(6));return view;}
@@ -73,7 +73,7 @@ public final class RadioPanel extends LinearLayout {
   message.setText(favorites?(visible.isEmpty()?getContext().getString(R.string.radio_favorites_empty):""):loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
  private void play(RadioStation station) {beforePlay.run();androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
- private void updatePlayback() {String now=RadioPlaybackService.nowPlaying(),error=RadioPlaybackService.error();playing.setText(error.isEmpty()?now:error);stop.setVisibility(now.isEmpty()?GONE:VISIBLE);}
+ private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String now=RadioPlaybackService.nowPlaying(),error=RadioPlaybackService.error();playing.setText(error.isEmpty()?now:error);stop.setVisibility(now.isEmpty()?GONE:VISIBLE);}
  private void rename(RadioStation station) {
   EditText name=new EditText(getContext());name.setSingleLine();name.setText(station.displayName());
   AlertDialog dialog=new AlertDialog.Builder(getContext()).setTitle(R.string.rename_radio).setView(name).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
@@ -88,8 +88,9 @@ public final class RadioPanel extends LinearLayout {
    RadioStation station=getItem(position);LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(4),dp(8));row.setBackgroundColor(0xFF1D1D1D);
    ImageView logo=new ImageView(getContext());logo.setScaleType(ImageView.ScaleType.FIT_CENTER);row.addView(logo,new LayoutParams(dp(48),dp(48)));
    TextView name=text(station.displayName(),16);name.setMaxLines(2);row.addView(name,new LayoutParams(0,-2,1));
-   String local=logos.find(station.displayName());Glide.with(RadioPanel.this).load(local==null?station.logo:local).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(logo);
+   String local=logos.find(station.displayName());Glide.with(RadioPanel.this).load(local==null?station.logo:local).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(getContext())).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(logo);
    if(!favorites) {boolean favorite=library.get().findRadio(station.id)!=null;ImageButton star=new ImageButton(getContext());star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);star.setContentDescription(getContext().getString(favorite?R.string.remove_favorite:R.string.add_favorite,station.displayName()));star.setFocusable(false);star.setBackgroundColor(Color.TRANSPARENT);row.addView(star,new LayoutParams(dp(48),dp(48)));star.setOnClickListener(v->{save.apply(()->{if(library.get().findRadio(station.id)==null) library.get().addRadio(station);else library.get().removeRadio(station.id);});filter();});}
+   NowPlayingIndicator.show(NowPlayingIndicator.addTo(row),station.id.equals(RadioPlaybackService.audibleStationId()));
    row.setAlpha(list.isPicked(position)?0.6f:1f);return row;
   }
  }

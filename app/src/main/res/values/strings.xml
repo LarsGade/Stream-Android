@@ -91,7 +91,7 @@
  <string name="radio_widget_description">Afspil en station fra Radio-Favoritter</string>
  <string name="radio_widget_choose">Vælg radiostation</string>
  <string name="radio_start">Afspil</string>
- <string name="radio_pause">Pause</string>
  <string name="radio_stop">Stop radio</string>
  <string name="radio_error">Radiostationen kunne ikke afspilles. Prøv igen eller vælg en anden station.</string>
+ <string name="now_playing">Afspilles nu</string>
 </resources>
