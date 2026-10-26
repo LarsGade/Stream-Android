@@ -8,7 +8,7 @@ Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
 
 I **☰ → Radio-Favoritter**: Hold og slip en station for at vælge **Omdøb** eller **Fjern fra favoritter**; hold og træk for at ændre rækkefølgen. Navn og rækkefølge gemmes separat fra **TV-Favoritter**. Et lokalt navn som **DR P1**, **DR P3** eller **Nova** bruger det tilsvarende indbyggede logo fra de uploadede filer, når der findes et match. Det oprindelige stations-id og stream-link bevares ved omdøbning.
 
-Tilføj en widget på Androids startskærm: Hold på et tomt område → **Widgets → Stream Radio**, og vælg en station fra Radio-Favoritter. Hver widget kan have sin egen station. Widgetten er som standard to felter bred med et stort logo. Tryk **Afspil/Stop** på widgetten uden at åbne appen; tryk på navnet for at vælge en anden favorit. Ændrede favoritnavne og indbyggede logoer opdateres på widgets. Hvis en favorit slettes, beder widgetten om en ny station. Radio kræver internet, og en station kan være utilgængelig, selvom den findes i Radio Browser.
+Tilføj en widget på Androids startskærm: Hold på et tomt område → **Widgets → Stream Radio**, og vælg en station fra Radio-Favoritter. Hver widget kan have sin egen station. Widgetten er 2 × 1 felter og viser kun logo samt afspil/stop-ikon. Tryk **Afspil/Stop** på widgetten uden at åbne appen; tryk på logoet for at vælge en anden favorit. Ændrede favoritnavne og indbyggede logoer opdateres på widgets. Hvis en favorit slettes, beder widgetten om en ny station. Radio kræver internet, og en station kan være utilgængelig, selvom den findes i Radio Browser.
 
 ## Brug
 
@@ -97,3 +97,5 @@ Version 1.7.1 åbner en kildevælger ved tryk på Streamingtjeneste i burgermenu
 Version 1.8.0 omdøber Favoritter til TV-Favoritter, tilføjer Radio og Radio-Favoritter lige nedenunder i burgermenuen samt konfigurerbare Radio-widgets med afspil/pause. Radio-favoritter gemmes krypteret sammen med det eksisterende bibliotek. Stationerne kommer fra den offentlige Radio Browser-tjeneste.
 
 Version 1.8.1 fjerner Radio Browser-teksten nederst i Radio, markerer faktisk afspilning i TV- og radiolister med en hvid prik og erstatter samtlige indbyggede logoer med de 47 PNG-filer fra den nye upload. Radio-widgetten er som standard 2 × 2 felter med større logo, navn og afspil/stop-ikon. Bredden er fast; højden kan justeres. Eksisterende widgets kan bevare deres tidligere størrelse i launcheren: fjern dem og tilføj dem igen for at bruge den nye standardstørrelse.
+
+Version 1.8.2 fordobler afspilningsprikkens diameter fra 8 til 16 dp. Radio-widgets er nu 2 × 1 felter uden stationsnavn, med logo og afspil/stop-ikon ved siden af hinanden. Tryk på logoet for at vælge en anden favorit. Fjern og tilføj eksisterende widgets igen for at få den nye størrelse.

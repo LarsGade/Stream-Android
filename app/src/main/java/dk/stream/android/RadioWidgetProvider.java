@@ -21,14 +21,14 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
  }
  static RemoteViews views(Context context,int widgetId,RadioStation station) {
   RemoteViews views=new RemoteViews(context.getPackageName(),R.layout.radio_widget);
-  views.setTextViewText(R.id.widget_name,station==null?context.getString(R.string.radio_widget_choose):station.displayName());
+  views.setContentDescription(R.id.widget_logo,station==null?context.getString(R.string.radio_widget_choose):station.displayName());
   views.setImageViewResource(R.id.widget_logo,R.drawable.ic_channel);
   if(station!=null) {
    String local=LocalChannelLogos.load(context).find(station.displayName());
    if(local!=null) try(java.io.InputStream in=context.getAssets().open(local.substring("file:///android_asset/".length()))) {views.setImageViewBitmap(R.id.widget_logo,BitmapFactory.decodeStream(in));} catch(java.io.IOException ignored) { }
   }
   Intent configure=new Intent(context,RadioWidgetConfigureActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId).setData(Uri.parse("stream://radio-widget/config/"+widgetId));
-  PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setOnClickPendingIntent(R.id.widget_name,config);
+  PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setOnClickPendingIntent(R.id.widget_logo,config);
   if(station!=null) {
    boolean playing=RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_stop:R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.radio_stop:R.string.radio_start));
    Intent toggle=new Intent(context,RadioPlaybackService.class).setAction(RadioPlaybackService.WIDGET_TOGGLE).setData(Uri.parse("stream://radio-widget/play/"+widgetId)).putExtra("favoriteId",station.id);
