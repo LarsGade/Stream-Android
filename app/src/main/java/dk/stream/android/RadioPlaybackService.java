@@ -67,7 +67,12 @@ public final class RadioPlaybackService extends MediaLibraryService {
   if(session==null) return;boolean playing=player.getPlayWhenReady();
   java.util.List<CommandButton> buttons=playing?java.util.Collections.singletonList(new CommandButton.Builder(CommandButton.ICON_STOP).setIconResId(R.drawable.ic_stop).setDisplayName(getString(R.string.stop_action)).setSessionCommand(CarRadioCallback.STOP_LIVE).build()):java.util.Collections.emptyList();
   session.setCustomLayout(buttons);session.setMediaButtonPreferences(buttons);
-  for(MediaSession.ControllerInfo controller:session.getConnectedControllers()) session.setAvailableCommands(controller,CarRadioCallback.sessionCommands(),CarRadioCallback.playerCommands(playing));
+  for(MediaSession.ControllerInfo controller:session.getConnectedControllers()) {
+   session.setAvailableCommands(controller,CarRadioCallback.sessionCommands(),CarRadioCallback.playerCommands(playing));
+   // Media3 1.5 global layout setters do not republish the framework PlaybackState.
+   // Targeting the notification controller updates both its layout and the phone/lock-screen session.
+   session.setCustomLayout(controller,buttons);session.setMediaButtonPreferences(controller,buttons);
+  }
  }
  private void foreground() {startForeground(2001,notification(session));}
  private void loadArtwork(RadioStation station) {

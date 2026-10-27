@@ -28,7 +28,10 @@ public final class LiveRadioPlayer extends ForwardingPlayer {
    @Override public boolean isLoading() {int state=getPlaybackState();return state!=STATE_IDLE && state!=STATE_ENDED && super.isLoading();}
   });}
   @Override protected State getState() {
-   State state=super.getState();Commands.Builder commands=state.availableCommands.buildUpon().remove(COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM).remove(COMMAND_SEEK_BACK).remove(COMMAND_SEEK_FORWARD).remove(COMMAND_SET_SPEED_AND_PITCH);
+   State state=super.getState();Commands.Builder commands=state.availableCommands.buildUpon().remove(COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM).remove(COMMAND_SEEK_BACK).remove(COMMAND_SEEK_FORWARD).remove(COMMAND_SET_SPEED_AND_PITCH)
+    .remove(COMMAND_SEEK_TO_DEFAULT_POSITION).remove(COMMAND_SEEK_TO_MEDIA_ITEM)
+    .remove(COMMAND_SEEK_TO_PREVIOUS).remove(COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+    .remove(COMMAND_SEEK_TO_NEXT).remove(COMMAND_SEEK_TO_NEXT_MEDIA_ITEM);
    if(state.playWhenReady) commands.remove(COMMAND_PLAY_PAUSE);
    return state.buildUpon().setAvailableCommands(commands.build()).build();
   }

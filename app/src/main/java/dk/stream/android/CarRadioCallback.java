@@ -17,8 +17,10 @@ public final class CarRadioCallback implements MediaLibrarySession.Callback {
  public CarRadioCallback(CarRadioCatalog catalog) {this.catalog=catalog;}
  public void close() {worker.shutdownNow();}
  public static SessionCommands sessionCommands() {return MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(STOP_LIVE).build();}
- public static Player.Commands playerCommands(boolean playing) {Player.Commands.Builder commands=MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon();if(playing) commands.remove(Player.COMMAND_PLAY_PAUSE);return commands.build();}
- @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {return MediaSession.ConnectionResult.accept(sessionCommands(),playerCommands(session.getPlayer().getPlayWhenReady()));}
+ public static Player.Commands playerCommands(boolean playing) {Player.Commands.Builder commands=MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+  .remove(Player.COMMAND_SEEK_TO_PREVIOUS).remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+  .remove(Player.COMMAND_SEEK_TO_NEXT).remove(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM);if(playing) commands.remove(Player.COMMAND_PLAY_PAUSE);return commands.build();}
+ @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {return new MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(sessionCommands()).setAvailablePlayerCommands(playerCommands(session.getPlayer().getPlayWhenReady())).setCustomLayout(session.getCustomLayout()).setMediaButtonPreferences(session.getMediaButtonPreferences()).build();}
  @Override public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,MediaSession.ControllerInfo controller,SessionCommand command,Bundle args) {
   if(command.equals(STOP_LIVE)) {session.getPlayer().stop();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}return Futures.immediateFuture(new SessionResult(SessionError.ERROR_NOT_SUPPORTED));
  }
