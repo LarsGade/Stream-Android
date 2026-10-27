@@ -91,6 +91,7 @@
  <string name="radio_widget_choose">Vælg radiostation</string>
  <string name="radio_start">Afspil</string>
  <string name="radio_stop">Stop radio</string>
+ <string name="radio_live">Live</string>
  <string name="radio_error">Radiostationen kunne ikke afspilles. Prøv igen eller vælg en anden station.</string>
  <string name="now_playing">Afspilles nu</string>
  <string name="car_danish_radio">Danske radiostationer</string>

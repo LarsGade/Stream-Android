@@ -29,6 +29,18 @@ public class RadioUiTest {
  }
  @After public void close() throws Exception {panel.close();controller.pause().stop().destroy();server.shutdown();}
  private List<TextView> texts(View view) {List<TextView> result=new ArrayList<>();if(view instanceof TextView) result.add((TextView)view);if(view instanceof ViewGroup) for(int i=0;i<((ViewGroup)view).getChildCount();i++) result.addAll(texts(((ViewGroup)view).getChildAt(i)));return result;}
+ @Test public void liveIsBesideStopAndRemainsAvailableWhenRadioIsPaused() throws Exception {
+  panel.open(true);Button stop=ReflectionHelpers.getField(panel,"stop"),live=ReflectionHelpers.getField(panel,"live");
+  assertEquals(View.GONE,live.getVisibility());assertEquals(stop.getParent(),live.getParent());assertEquals(LinearLayout.HORIZONTAL,((LinearLayout)live.getParent()).getOrientation());assertEquals("Live",live.getText().toString());
+  org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
+  try {
+   server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));RadioPlaybackService service=serviceController.get();
+   service.onStartCommand(RadioPlaybackService.playIntent(service,new RadioStation("station","DR P1",server.url("/radio.mp3").toString(),"")),0,1);
+   service.onGetSession(null).getPlayer().pause();panel.open(true);assertEquals(View.VISIBLE,stop.getVisibility());assertEquals(View.VISIBLE,live.getVisibility());
+   live.performClick();Intent command=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertNotNull(command);assertEquals(RadioPlaybackService.LIVE,command.getAction());assertNotNull(command.getStringExtra("command_token"));
+  } finally {serviceController.destroy();}
+  panel.open(true);assertEquals(View.GONE,live.getVisibility());assertEquals(View.GONE,stop.getVisibility());
+ }
  @Test public void browseCanAddFavoriteAndFavoritesCanRenameReorderAndRemove() throws Exception {
   server.enqueue(new MockResponse().setBody("[{\"stationuuid\":\"a\",\"name\":\"Station\",\"countrycode\":\"DK\",\"url\":\"https://example.com/radio\"}]"));panel.open(false);
   ReflectionHelpers.<ExecutorService>getField(panel,"worker").submit(()->{}).get(10,TimeUnit.SECONDS);Shadows.shadowOf(Looper.getMainLooper()).idle();

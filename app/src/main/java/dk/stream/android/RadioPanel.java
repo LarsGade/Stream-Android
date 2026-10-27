@@ -27,7 +27,7 @@ public final class RadioPanel extends LinearLayout {
  private final FavoriteListView list;
  private final TextView title,message,playing;
  private final EditText search;
- private final Button refresh,stop;
+ private final Button refresh,stop,live;
  private final Adapter adapter=new Adapter();
  private List<RadioStation> stations=new ArrayList<>(),visible=new ArrayList<>();
  private boolean favorites,loading,loaded,closed;
@@ -54,7 +54,10 @@ public final class RadioPanel extends LinearLayout {
    public void commit() {List<RadioStation> order=new ArrayList<>(visible);save.apply(()->library.get().reorderRadio(order));filter();}
    public void cancel() {filter();}
   });
-  playing=text("",13);addView(playing);stop=new Button(context);stop.setText(R.string.radio_stop);addView(stop);stop.setOnClickListener(v->{context.stopService(new Intent(context,RadioPlaybackService.class));postDelayed(this::updatePlayback,100);});
+  playing=text("",13);addView(playing);stop=new Button(context);stop.setText(R.string.radio_stop);
+  LinearLayout controls=new LinearLayout(context);controls.setOrientation(HORIZONTAL);addView(controls);
+  controls.addView(stop,new LayoutParams(0,-2,1));live=new Button(context);live.setText(R.string.radio_live);controls.addView(live,new LayoutParams(0,-2,1));
+  live.setOnClickListener(v->{beforePlay.run();context.startService(RadioPlaybackService.internalIntent(context,RadioPlaybackService.LIVE));postDelayed(this::updatePlayback,300);});stop.setOnClickListener(v->{context.stopService(new Intent(context,RadioPlaybackService.class));postDelayed(this::updatePlayback,100);});
  }
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private TextView text(String value,int size) {TextView view=new TextView(getContext());view.setText(value);view.setTextSize(size);view.setTextColor(Color.WHITE);view.setPadding(dp(4),dp(6),dp(4),dp(6));return view;}
@@ -73,7 +76,7 @@ public final class RadioPanel extends LinearLayout {
   message.setText(favorites?(visible.isEmpty()?getContext().getString(R.string.radio_favorites_empty):""):loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
  private void play(RadioStation station) {beforePlay.run();androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
- private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String now=RadioPlaybackService.nowPlaying(),error=RadioPlaybackService.error();playing.setText(error.isEmpty()?now:error);stop.setVisibility(now.isEmpty()?GONE:VISIBLE);}
+ private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String now=RadioPlaybackService.nowPlaying(),error=RadioPlaybackService.error();playing.setText(error.isEmpty()?now:error);stop.setVisibility(now.isEmpty()?GONE:VISIBLE);live.setVisibility(now.isEmpty()?GONE:VISIBLE);}
  private void rename(RadioStation station) {
   EditText name=new EditText(getContext());name.setSingleLine();name.setText(station.displayName());
   AlertDialog dialog=new AlertDialog.Builder(getContext()).setTitle(R.string.rename_radio).setView(name).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();

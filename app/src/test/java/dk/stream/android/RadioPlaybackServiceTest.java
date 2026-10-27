@@ -94,6 +94,25 @@ public class RadioPlaybackServiceTest {
   while(!future.isDone() && System.nanoTime()<deadline) {Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();Thread.sleep(10);}
   return future.get(1,java.util.concurrent.TimeUnit.SECONDS);
  }
+ @Test public void liveReloadsPausedStreamAtZeroWithoutChangingStationOrStandardControls() throws Exception {
+  try(MockWebServer server=new MockWebServer()) {
+   server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+   ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+   try {
+    RadioStation station=new RadioStation("station","DR P1",server.url("/live.mp3").toString(),"");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);
+    Player player=service.onGetSession(null).getPlayer();player.seekTo(95000);player.pause();assertFalse(player.getPlayWhenReady());assertEquals(95000,player.getCurrentPosition());
+    // Exported service ignores a forged Live command just like the other private transport intents.
+    service.onStartCommand(new Intent(service,RadioPlaybackService.class).setAction(RadioPlaybackService.LIVE),0,2);assertFalse(player.getPlayWhenReady());assertEquals(95000,player.getCurrentPosition());
+    androidx.media3.common.MediaItem before=player.getCurrentMediaItem();service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.LIVE),0,3);
+    assertTrue(player.getPlayWhenReady());assertEquals(0,player.getCurrentPosition());assertEquals(before,player.getCurrentMediaItem());assertEquals("DR P1",RadioPlaybackService.nowPlaying());assertTrue(player.isCommandAvailable(Player.COMMAND_PLAY_PAUSE));
+    player.seekTo(45000);service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.LIVE),0,4);assertEquals(0,player.getCurrentPosition());assertTrue(player.getPlayWhenReady());
+   } finally {controller.destroy();}
+  }
+ }
+ @Test public void liveWithoutStationStopsCleanly() {
+  ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();
+  try {RadioPlaybackService service=controller.get();service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.LIVE),0,1);assertEquals("",RadioPlaybackService.nowPlaying());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());} finally {controller.destroy();}
+ }
  @Test public void invalidStationStopsCleanly() {
   ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
   try {service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.PLAY).putExtra("station","not-json"),0,1);assertEquals("",RadioPlaybackService.nowPlaying());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());} finally {controller.destroy();}

@@ -12,7 +12,7 @@ import org.json.JSONObject;
 /** Radio owns a foreground media session, so launcher widgets also work after the UI closes. */
 @androidx.media3.common.util.UnstableApi
 public final class RadioPlaybackService extends MediaLibraryService {
- public static final String PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
+ public static final String LIVE="dk.stream.android.RADIO_LIVE",PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
  private static RadioPlaybackService active;
  private ExoPlayer player;
  private RadioSessionPlayer sessionPlayer;
@@ -79,7 +79,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   super.onStartCommand(intent,flags,startId);
   if(intent==null) return START_NOT_STICKY;
   String action=intent.getAction();
-  if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
+  if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE,LIVE).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
   if(android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH.equals(action)) {
    String query=intent.getStringExtra(android.app.SearchManager.QUERY);if(query==null||query.trim().isEmpty()) return START_NOT_STICKY;
    foreground();MediaItem request=new MediaItem.Builder().setRequestMetadata(new MediaItem.RequestMetadata.Builder().setSearchQuery(query).build()).build();
@@ -89,6 +89,14 @@ public final class RadioPlaybackService extends MediaLibraryService {
    },androidx.core.content.ContextCompat.getMainExecutor(this));return START_NOT_STICKY;
   }
   if(STOP.equals(action)) {artworkGeneration++;sessionPlayer.stop();current=null;error="";RadioWidgetProvider.refresh(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();return START_NOT_STICKY;}
+  if(LIVE.equals(action)) {
+   MediaItem item=player.getCurrentMediaItem();
+   if(current==null || item==null) {if(current==null) stopSelf();return START_NOT_STICKY;}
+   foreground();error="";
+   // Reload the item instead of resuming its paused buffer, including non-seekable MP3/AAC radio.
+   sessionPlayer.stop();player.setMediaItem(item,true);player.prepare();player.play();
+   RadioWidgetProvider.refresh(this);return START_NOT_STICKY;
+  }
   if(TRANSPORT_TOGGLE.equals(action)) {if(current==null) {stopSelf();return START_NOT_STICKY;}if(player.getPlayWhenReady()) sessionPlayer.pause();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
   if(!PLAY.equals(action) && !TOGGLE.equals(action) && !WIDGET_TOGGLE.equals(action)) return START_NOT_STICKY;
   // A foreground-service PendingIntent must promptly show a notification even if the favorite was removed.
