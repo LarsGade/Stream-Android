@@ -11,25 +11,12 @@ import java.util.*;
 /** All disk and Radio Browser work happens outside the media session's main thread. */
 @androidx.media3.common.util.UnstableApi
 public final class CarRadioCallback implements MediaLibrarySession.Callback {
- public static final SessionCommand STOP_LIVE=new SessionCommand("dk.stream.android.STOP_LIVE",Bundle.EMPTY);
  private final CarRadioCatalog catalog;
  private final ListeningExecutorService worker=MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newSingleThreadExecutor());
  public CarRadioCallback(CarRadioCatalog catalog) {this.catalog=catalog;}
  public void close() {worker.shutdownNow();}
- public static SessionCommands sessionCommands() {return MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(STOP_LIVE).build();}
- public static Player.Commands playerCommands(boolean playing) {Player.Commands.Builder commands=MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
-  .remove(Player.COMMAND_SEEK_TO_PREVIOUS).remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
-  .remove(Player.COMMAND_SEEK_TO_NEXT).remove(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM);if(playing) commands.remove(Player.COMMAND_PLAY_PAUSE);return commands.build();}
- @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {return new MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(sessionCommands()).setAvailablePlayerCommands(playerCommands(session.getPlayer().getPlayWhenReady())).setCustomLayout(session.getCustomLayout()).setMediaButtonPreferences(session.getMediaButtonPreferences()).build();}
- @Override public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,MediaSession.ControllerInfo controller,SessionCommand command,Bundle args) {
-  if(command.equals(STOP_LIVE)) {session.getPlayer().stop();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}return Futures.immediateFuture(new SessionResult(SessionError.ERROR_NOT_SUPPORTED));
- }
- @Override public boolean onMediaButtonEvent(MediaSession session,MediaSession.ControllerInfo controller,android.content.Intent intent) {
-  android.view.KeyEvent key=intent.getParcelableExtra(android.content.Intent.EXTRA_KEY_EVENT);if(key==null || key.getAction()!=android.view.KeyEvent.ACTION_DOWN) return false;
-  int code=key.getKeyCode();Player player=session.getPlayer();
-  if(code==android.view.KeyEvent.KEYCODE_MEDIA_PAUSE || code==android.view.KeyEvent.KEYCODE_MEDIA_STOP) {player.stop();return true;}
-  if(code==android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || code==android.view.KeyEvent.KEYCODE_HEADSETHOOK) {if(player.getPlayWhenReady()) player.stop();else player.play();return true;}
-  if(code==android.view.KeyEvent.KEYCODE_MEDIA_PLAY) {player.play();return true;}return false;
+ @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {
+  return MediaSession.ConnectionResult.accept(MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
  }
  @Override public ListenableFuture<LibraryResult<MediaItem>> onGetLibraryRoot(MediaLibrarySession session,MediaSession.ControllerInfo controller,LibraryParams params) {
   Bundle extras=new Bundle();extras.putBoolean("android.media.browse.SEARCH_SUPPORTED",true);extras.putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED",true);extras.putInt("android.media.browse.CONTENT_STYLE_BROWSABLE_HINT",1);extras.putInt("android.media.browse.CONTENT_STYLE_PLAYABLE_HINT",1);
