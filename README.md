@@ -215,3 +215,9 @@ Version 1.16.1 fjerner Log på/Konto, Log ud og Opdatér fra selve Pcloud-filvis
 - Billeder kan castes og skiftes manuelt frem/tilbage. Cast klargør et JPEG/PNG på op til 1920×1080. Understøttede originalformater afhænger af telefonens billeddecoder.
 - Lyd/video-køer springer billeder over. Eksisterende billedfavoritter flyttes til billedfanen. Pcloud-billeder bruger kontoens godkendte WebDAV-forbindelse og gemmes ikke i Glides diskcache.
 - Verificeret med APK-build, lint og model-/netværkstests. Billedvisning på fysisk Android 9, rigtig Pcloud-konto og fysisk Cast-modtager er ikke afprøvet her.
+
+
+### 1.17.1 – Pcloud-menu og indstillinger
+- Regionvælgeren viser kun EU og USA. Ved login vises “Bekræft login på din mail”; hvis godkendelsen afvises, kan man bekræfte mailen og trykke Log på igen.
+- Pcloud-kontoens handlinger vises som almindelige trykbare valg i en separat dialog. Burgermenuen lukkes først, så Favoritter-knappen og indstillingerne ikke står bag kontoens valgliste.
+- Burgermenuens tre indstillinger bruger afkrydsningsfelter med samme lagrede indstillinger og funktioner.

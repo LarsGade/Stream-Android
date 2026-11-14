@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.*;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.AppCompatCheckBox;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.mediarouter.app.MediaRouteButton;
 import androidx.media3.common.MediaItem;
@@ -242,7 +242,7 @@ public final class MainActivity extends AppCompatActivity {
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
-  SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
+  AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   LinearLayout startChoice=column();navigation.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
   Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Radio","Lokale","Billeder"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(library.favoritesStartTab);startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){if(position==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(position)))startTab.setSelection(library.favoritesStartTab);}});
@@ -266,7 +266,7 @@ public final class MainActivity extends AppCompatActivity {
   return android.os.Build.VERSION.SDK_INT>=26 && getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
  }
  private void playbackPreference(LinearLayout menu,int label,boolean mini) {
-  SwitchCompat toggle=new SwitchCompat(this);toggle.setText(label);toggle.setChecked(mini?library.miniPlayer:library.autoPlayLast);toggle.setPadding(0,dp(12),0,dp(12));menu.addView(toggle);
+  AppCompatCheckBox toggle=new AppCompatCheckBox(this);toggle.setText(label);toggle.setChecked(mini?library.miniPlayer:library.autoPlayLast);toggle.setPadding(0,dp(12),0,dp(12));menu.addView(toggle);
   if(mini) toggle.setEnabled(supportsMiniPlayer());
   boolean[] restoring={false};toggle.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -362,11 +362,15 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void showPcloudMenu(View anchor){
   if(library.pcloud==null){openPcloud();return;}
-  PopupMenu menu=new PopupMenu(this,anchor);
-  menu.getMenu().add("Åbn Pcloud").setOnMenuItemClickListener(item->{openPcloud();return true;});
-  menu.getMenu().add("Opdatér").setOnMenuItemClickListener(item->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);if(pcloudMode)pcloudPanel.refresh();else openPcloud();return true;});
-  menu.getMenu().add("Redigér konto").setOnMenuItemClickListener(item->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudLogin();return true;});
-  menu.getMenu().add("Log ud").setOnMenuItemClickListener(item->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);logoutPcloud();return true;});menu.show();
+  drawer.closeDrawer(androidx.core.view.GravityCompat.START);
+  new AlertDialog.Builder(this).setTitle("Pcloud").setItems(new String[]{"Åbn Pcloud","Opdatér","Redigér konto","Log ud"},(dialog,which)->{
+   switch(which){
+    case 0:openPcloud();break;
+    case 1:if(pcloudMode)pcloudPanel.refresh();else openPcloud();break;
+    case 2:showPcloudLogin();break;
+    case 3:logoutPcloud();break;
+   }
+  }).setNegativeButton(android.R.string.cancel,null).show();
  }
  private void openPcloud(){
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();if(library.pcloud==null)showPcloudLogin();
@@ -376,7 +380,7 @@ public final class MainActivity extends AppCompatActivity {
   LocalMedia current=LocalAudioService.current();if(current!=null&&PcloudDocument.is(current.uri))stopService(new android.content.Intent(this,LocalAudioService.class));if(CastPlayback.pcloud(this))CastPlayback.stop(this);pcloudPanel.open();
  }
  private void showPcloudLogin(){
-  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=new Spinner(this);ArrayAdapter<String> regions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU – ewebdav.pcloud.com","USA – webdav.pcloud.com"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
+  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=new Spinner(this);ArrayAdapter<String> regions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU","USA"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
   EditText email=new EditText(this);email.setHint("E-mail");email.setSingleLine();email.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);email.setSaveEnabled(false);form.addView(email);
   EditText password=new EditText(this);password.setHint("Adgangskode");password.setSingleLine();password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);form.addView(password);
   if(library.pcloud!=null){region.setSelection(PcloudAccount.US.equals(library.pcloud.server)?1:0);email.setText(library.pcloud.email);}
@@ -385,8 +389,8 @@ public final class MainActivity extends AppCompatActivity {
   dialog.setOnDismissListener(ignored->{if(pcloudLoginClient!=null){pcloudLoginClient.cancel();pcloudLoginClient=null;}password.setText("");});
   dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
    PcloudAccount account;try{account=new PcloudAccount(region.getSelectedItemPosition()==1?PcloudAccount.US:PcloudAccount.EU,email.getText().toString(),password.getText().toString());}catch(IllegalArgumentException invalid){error.setText(invalid.getMessage());error.setVisibility(View.VISIBLE);return;}
-   error.setText("");error.setVisibility(View.GONE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
-   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openPcloud();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes.");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
+   error.setText("Bekræft login på din mail");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
+   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openPcloud();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText("Bekræft login på din mail\n\n"+(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes."));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
   }));dialog.show();
  }
  private void pickLocal(boolean folder) {

@@ -5,7 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.AppCompatCheckBox;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.robolectric.*;
@@ -80,7 +80,7 @@ public class MainActivityTest {
  @Test public void loadedChannelCanBeFavoritedAndSelectedAsStartupList() throws Exception {
   loadM3u();ListView list=ReflectionHelpers.getField(activity,"list");View row=list.getAdapter().getView(0,null,list);
   views(row,ImageButton.class).get(0).performClick();assertEquals(1,storage.saved.favorites.size());
-  views(activity.getWindow().getDecorView(),SwitchCompat.class).get(0).setChecked(true);assertTrue(storage.saved.favoritesOnStart);
+  views(activity.getWindow().getDecorView(),AppCompatCheckBox.class).get(0).setChecked(true);assertTrue(storage.saved.favoritesOnStart);
  }
  @Test public void favoritesHideFiltersAndCountAndShowEveryContentType() throws Exception {
   loadM3u();Library library=ReflectionHelpers.getField(activity,"library");String sourceId=library.sources.get(0).id;
@@ -186,9 +186,9 @@ public class MainActivityTest {
  @Test public void playbackTogglesSaveAndMiniPlayerRequiresDeviceSupport() {
   Shadows.shadowOf(activity.getPackageManager()).setSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE,true);
   assertTrue(ReflectionHelpers.<Boolean>callInstanceMethod(activity,"supportsMiniPlayer"));
-  List<SwitchCompat> toggles=views(activity.getWindow().getDecorView(),SwitchCompat.class);
-  SwitchCompat auto=toggles.stream().filter(v->v.getText().toString().equals(activity.getString(R.string.auto_play_last))).reduce((a,b)->b).get();
-  SwitchCompat mini=toggles.stream().filter(v->v.getText().toString().equals(activity.getString(R.string.mini_player))).reduce((a,b)->b).get();
+  List<AppCompatCheckBox> toggles=views(activity.getWindow().getDecorView(),AppCompatCheckBox.class);
+  AppCompatCheckBox auto=toggles.stream().filter(v->v.getText().toString().equals(activity.getString(R.string.auto_play_last))).reduce((a,b)->b).get();
+  AppCompatCheckBox mini=toggles.stream().filter(v->v.getText().toString().equals(activity.getString(R.string.mini_player))).reduce((a,b)->b).get();
   auto.setChecked(true);mini.setChecked(true);assertTrue(storage.saved.autoPlayLast);assertTrue(storage.saved.miniPlayer);
   auto.setChecked(false);mini.setChecked(false);assertFalse(storage.saved.autoPlayLast);assertFalse(storage.saved.miniPlayer);
   assertFalse(ReflectionHelpers.<Boolean>callInstanceMethod(activity,"enterMiniPlayer"));
@@ -329,7 +329,7 @@ public class MainActivityTest {
  @Test public void drawerContainsAllFormerSettingsAndSourceCancelIsBelowXtream() {
   View root=activity.getWindow().getDecorView();
   for(int label:new int[]{R.string.sources,R.string.tv_guide,R.string.update_all,R.string.reset_app}) assertTrue(views(root,Button.class).stream().anyMatch(button->button.getText().toString().equals(activity.getString(label))));
-  assertTrue(views(root,SwitchCompat.class).get(0).getText().toString().equals(activity.getString(R.string.start_favorites)));
+  assertTrue(views(root,AppCompatCheckBox.class).get(0).getText().toString().equals(activity.getString(R.string.start_favorites)));
   clickText(root,R.string.sources);View dialogRoot=dialog().getWindow().getDecorView();
   List<Button> actions=new ArrayList<>();for(Button button:views(dialogRoot,Button.class)) if(button.getVisibility()==View.VISIBLE && !button.getText().toString().isEmpty()) actions.add(button);
   assertEquals(3,actions.size());assertEquals(activity.getString(R.string.add_m3u),actions.get(0).getText().toString());assertEquals(activity.getString(R.string.xtream_login),actions.get(1).getText().toString());assertEquals(activity.getString(android.R.string.cancel),actions.get(2).getText().toString());
