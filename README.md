@@ -225,3 +225,7 @@ Version 1.16.1 fjerner Log på/Konto, Log ud og Opdatér fra selve Pcloud-filvis
 
 ### 1.17.2 – Favoritfaner
 Favoritter viser kun faner med indhold. Når den sidste favorit fjernes fra den valgte fane, vælges den første tilbageværende fane. Uden favoritter skjules hele fanelinjen. En tom valgt startfane falder tilsvarende tilbage til en fane med indhold; den gemte startpræference bevares.
+
+
+### 1.17.3 – Fjern billedfavoritter med langt tryk
+Billedfavoritter fjernes kun ved langt tryk på filen og valget “Fjern fra favoritter”. Billedviseren kan kun tilføje favoritter, og gemte billeder viser ingen stjerneknap i Lokale eller Pcloud.
