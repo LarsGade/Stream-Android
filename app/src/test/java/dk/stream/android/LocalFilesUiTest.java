@@ -25,7 +25,7 @@ public class LocalFilesUiTest {
  }
  @After public void close() {controller.pause().stop().destroy();}
  @Test public void localFavoritesAreToTheRightOfRadioAndSelectTheirOwnPanel() {
-  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(3,tabs.getChildCount());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());assertEquals("Lokale filer",((RadioButton)tabs.getChildAt(2)).getText().toString());
+  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(3,tabs.getChildCount());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());assertEquals("Lokale",((RadioButton)tabs.getChildAt(2)).getText().toString());
   ((RadioButton)tabs.getChildAt(2)).performClick();assertTrue(ReflectionHelpers.<Library>getField(activity,"library").favoritesLocal);assertFalse(ReflectionHelpers.<Library>getField(activity,"library").favoritesRadio);assertEquals(View.VISIBLE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());assertEquals(View.GONE,ReflectionHelpers.<RadioPanel>getField(activity,"radioPanel").getVisibility());
  }
  @Test public void pickersAskForReadOnlyPersistentLinksAndSupportMultipleFiles() {
