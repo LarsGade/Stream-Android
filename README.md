@@ -233,3 +233,7 @@ Billedfavoritter fjernes kun ved langt tryk på filen og valget “Fjern fra fav
 
 ### 1.18.0 – Favoritter efter kilde
 Favoritter har separate faner Lokale og Pcloud for alle mapper, lyd-, video- og billedfiler fra hver kilde. Den tidligere billedfane erstattes af kildeopdelingen; eksisterende favoritter bevares og fordeles efter deres URI uden flytning af filer. Pcloud-mapper kan tilføjes og åbnes direkte fra favoritter. Tomme faner skjules stadig; fjernelse sker med langt tryk i favoritlisten.
+
+
+### 1.18.1 – Almindelig skrivemåde
+Knapper og dialogknapper viser teksten uden automatisk versalisering. Menutekster bruger almindelig skrivemåde, herunder “Streaming (tv, film, serier)”, “Tv-guide” og “Kilder til streaming”. Filnavne, kanalnavne og brugernes indhold bevares.
