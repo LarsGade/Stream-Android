@@ -181,3 +181,7 @@ Kompatibilitetsgrundlaget er standard Android ACTION_VIEW og de [filtyper, Ferma
 Verifikation af version 1.15.0: APK og lint bygges med projektets konfiguration. Modeltests dækker linktyper, seriemapper, duplikater, danske navne, M3U-linjeinjektion og afvisning af lokale links uden særskilte grants. Android 9-intenttestene er tilføjet, men testkørslen blev blokeret ved hentning af Robolectrics Android 9-bibliotek (HTTP 403); de er ikke rapporteret som bestået. Der er ikke testet med en tilsluttet bil eller en installeret Fermata Auto.
 
 Version 1.15.1 gør logoet i appens top 20 % mindre end i den foregående version. Logoets visuelle skala reduceres fra 0,90 til 0,72, og topområdets højde reduceres tilsvarende fra 64 dp til cirka 51 dp. Menu- og Cast-knapperne bevarer mindst 48 × 48 dp trykflade.
+
+Version 1.15.2 fjerner menupunktet Video i bil og hele forbindelsen til eksterne bilafspillere, inklusive eksport, FileProvider og app-forespørgsler. Den eksisterende Android Auto-medietjeneste for radio bevares. TV/video tilføjes ikke til bilens radiobibliotek. Toplogoet er yderligere 10 % mindre end i version 1.15.1: visuel skala 0,648 og logoområde cirka 46 dp. Menu- og Cast-knappernes trykflader er fortsat 48 dp.
+
+Toppen i version 1.15.2 viser kun det eksisterende playmotiv fra logoet, uden Stream-teksten. Appens launcherikon ændres ikke.
