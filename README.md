@@ -229,3 +229,7 @@ Favoritter viser kun faner med indhold. Når den sidste favorit fjernes fra den 
 
 ### 1.17.3 – Fjern billedfavoritter med langt tryk
 Billedfavoritter fjernes kun ved langt tryk på filen og valget “Fjern fra favoritter”. Billedviseren kan kun tilføje favoritter, og gemte billeder viser ingen stjerneknap i Lokale eller Pcloud.
+
+
+### 1.18.0 – Favoritter efter kilde
+Favoritter har separate faner Lokale og Pcloud for alle mapper, lyd-, video- og billedfiler fra hver kilde. Den tidligere billedfane erstattes af kildeopdelingen; eksisterende favoritter bevares og fordeles efter deres URI uden flytning af filer. Pcloud-mapper kan tilføjes og åbnes direkte fra favoritter. Tomme faner skjules stadig; fjernelse sker med langt tryk i favoritlisten.

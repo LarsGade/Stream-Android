@@ -34,7 +34,7 @@ public final class MainActivity extends AppCompatActivity {
  private final Map<String,Long> epgAttempted=new HashMap<>();
  private boolean updatingAll,radioMode,favoritesPage,choosingFavoriteTab;
  private RadioGroup favoriteTabs;
- private RadioButton favoriteTv,favoriteRadio,favoriteLocal,favoriteImages;
+ private RadioButton favoriteTv,favoriteRadio,favoriteLocal,favoriteCloud;
  private LocalFilesPanel localPanel;
  private boolean localMode,pcloudMode;
  private PcloudPanel pcloudPanel;
@@ -168,7 +168,7 @@ public final class MainActivity extends AppCompatActivity {
   favoriteTv=new RadioButton(this);favoriteTv.setId(View.generateViewId());favoriteTv.setText(R.string.tv);favoriteTabs.addView(favoriteTv,new RadioGroup.LayoutParams(-2,-2));
   favoriteRadio=new RadioButton(this);favoriteRadio.setId(View.generateViewId());favoriteRadio.setText(R.string.radio);favoriteTabs.addView(favoriteRadio,new RadioGroup.LayoutParams(-2,-2));favoriteTv.setChecked(true);
   favoriteLocal=new RadioButton(this);favoriteLocal.setId(View.generateViewId());favoriteLocal.setText(R.string.local_files);favoriteTabs.addView(favoriteLocal,new RadioGroup.LayoutParams(-2,-2));
-  favoriteImages=new RadioButton(this);favoriteImages.setId(View.generateViewId());favoriteImages.setText(R.string.images);favoriteTabs.addView(favoriteImages,new RadioGroup.LayoutParams(-2,-2));
+  favoriteCloud=new RadioButton(this);favoriteCloud.setId(View.generateViewId());favoriteCloud.setText(R.string.pcloud);favoriteTabs.addView(favoriteCloud,new RadioGroup.LayoutParams(-2,-2));
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new FavoriteListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
@@ -215,7 +215,7 @@ public final class MainActivity extends AppCompatActivity {
    public void onTextChanged(CharSequence s,int start,int before,int count) { filter(); }
    public void afterTextChanged(Editable value) { }
   });
-  favoriteTabs.setOnCheckedChangeListener((group,id)->{if(choosingFavoriteTab) return;boolean radio=id==favoriteRadio.getId(),local=id==favoriteLocal.getId(),images=id==favoriteImages.getId();changeLibrary(()->{library.favoritesRadio=radio;library.favoritesLocal=local;library.favoritesImages=images;});showFavoriteTab(library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0);});
+  favoriteTabs.setOnCheckedChangeListener((group,id)->{if(choosingFavoriteTab) return;boolean radio=id==favoriteRadio.getId(),local=id==favoriteLocal.getId(),images=id==favoriteCloud.getId();changeLibrary(()->{library.favoritesRadio=radio;library.favoritesLocal=local;library.favoritesImages=images;});showFavoriteTab(library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0);});
   chooseFirstKind();rebuildGroups();loadAssignedGuides(false);if(favoritesPage) showFavoriteTab(library.favoritesStartTab);
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
   catch(Exception e) { castButton.setVisibility(View.GONE); }
@@ -244,7 +244,7 @@ public final class MainActivity extends AppCompatActivity {
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
   AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   LinearLayout startChoice=column();navigation.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
-  Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Radio","Lokale","Billeder"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(library.favoritesStartTab);startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
+  Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Radio","Lokale","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(library.favoritesStartTab);startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){if(position==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(position)))startTab.setSelection(library.favoritesStartTab);}});
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -348,9 +348,9 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void showFavoriteKind(boolean radio) {showFavoriteTab(radio?1:0);}
- private int selectedFavoriteTab(){return favoriteImages.isChecked()?3:favoriteLocal.isChecked()?2:favoriteRadio.isChecked()?1:0;}
+ private int selectedFavoriteTab(){return favoriteCloud.isChecked()?3:favoriteLocal.isChecked()?2:favoriteRadio.isChecked()?1:0;}
  private void updateFavoriteTabVisibility(){
-  RadioButton[] tabs={favoriteTv,favoriteRadio,favoriteLocal,favoriteImages};boolean any=false;
+  RadioButton[] tabs={favoriteTv,favoriteRadio,favoriteLocal,favoriteCloud};boolean any=false;
   for(int i=0;i<tabs.length;i++){boolean present=library.hasFavoriteTab(i);tabs[i].setVisibility(present?View.VISIBLE:View.GONE);any|=present;}
   ((View)favoriteTabs.getParent()).setVisibility(favoritesPage&&any?View.VISIBLE:View.GONE);
   if(!any){choosingFavoriteTab=true;favoriteTabs.clearCheck();choosingFavoriteTab=false;}
@@ -358,7 +358,7 @@ public final class MainActivity extends AppCompatActivity {
  private void showFavoriteTab(int tab) {
   tab=Math.max(0,library.availableFavoriteTab(tab));
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);exitFullscreen();list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=tab==1;localMode=tab==2||tab==3;localBack.setEnabled(false);
-  choosingFavoriteTab=true;favoriteTabs.check(tab==3?favoriteImages.getId():tab==2?favoriteLocal.getId():tab==1?favoriteRadio.getId():favoriteTv.getId());choosingFavoriteTab=false;
+  choosingFavoriteTab=true;favoriteTabs.check(tab==3?favoriteCloud.getId():tab==2?favoriteLocal.getId():tab==1?favoriteRadio.getId():favoriteTv.getId());choosingFavoriteTab=false;
   radioPanel.setVisibility(radioMode?View.VISIBLE:View.GONE);if(radioMode) radioPanel.open(true);
   localPanel.setVisibility(localMode?View.VISIBLE:View.GONE);if(localMode) localPanel.open(true,tab==3);filter();
  }
@@ -844,7 +844,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
  private long imageFavoriteVersion=ImageSession.favoriteVersion;
- @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&favoriteImages.isChecked())localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
+ @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&localMode)localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
  @Override protected void onResume() {super.onResume();if(LocalAudioService.current()!=null) syncLocalPlayback();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);

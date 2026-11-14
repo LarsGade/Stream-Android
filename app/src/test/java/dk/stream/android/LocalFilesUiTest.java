@@ -33,7 +33,7 @@ public class LocalFilesUiTest {
   Library library=ReflectionHelpers.getField(activity,"library");library.favorites.clear();library.radioFavorites.clear();library.localFavorites.clear();library.imageFavorites.clear();
   LocalMedia image=new LocalMedia("content://test/photo","Photo.jpg","image/jpeg",false);library.toggleLocalFavorite(image);
   ReflectionHelpers.callInstanceMethod(activity,"showFavoriteTab",ReflectionHelpers.ClassParameter.from(int.class,0));
-  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");for(int i=0;i<3;i++)assertEquals(View.GONE,tabs.getChildAt(i).getVisibility());assertEquals(View.VISIBLE,tabs.getChildAt(3).getVisibility());assertEquals(tabs.getChildAt(3).getId(),tabs.getCheckedRadioButtonId());
+  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");for(int i:new int[]{0,1,3})assertEquals(View.GONE,tabs.getChildAt(i).getVisibility());assertEquals(View.VISIBLE,tabs.getChildAt(2).getVisibility());assertEquals(tabs.getChildAt(2).getId(),tabs.getCheckedRadioButtonId());
   library.toggleLocalFavorite(image);ReflectionHelpers.callInstanceMethod(activity,"filter");assertEquals(View.GONE,((View)tabs.getParent()).getVisibility());assertEquals(View.GONE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());
  }
  @Test public void pickersAskForReadOnlyPersistentLinksAndSupportMultipleFiles() {

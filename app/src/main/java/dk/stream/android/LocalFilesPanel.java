@@ -23,7 +23,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private final ArrayDeque<LocalMedia> parents=new ArrayDeque<>();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private final Adapter adapter=new Adapter();
- private boolean favorites,images,closed;
+ private boolean favorites,cloudFavorites,closed;
  private int generation;
  private Future<?> folderTask;
  public LocalFilesPanel(Context context,Actions actions) {
@@ -42,18 +42,19 @@ public final class LocalFilesPanel extends LinearLayout {
    if(parents.isEmpty()&&!favorites) menu.getMenu().add("Fjern link").setOnMenuItemClickListener(item->{actions.save(()->actions.library().removeLocal(entry.uri));reload();return true;});menu.show();return true;});
  }
  public void open(boolean favorites) {open(favorites,false);}
- public void open(boolean favorites,boolean images) {this.images=images;this.favorites=favorites;parents.clear();search.setText("");if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder) {parents.add(entry);break;}reload();}
+ public void open(boolean favorites,boolean cloudFavorites) {this.cloudFavorites=cloudFavorites;this.favorites=favorites;parents.clear();search.setText("");if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder) {parents.add(entry);break;}reload();}
  public boolean back() {if(parents.isEmpty()) return false;parents.removeLast();reload();return true;}
  public List<LocalMedia> playbackEntries() {return new ArrayList<>(visible);}
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
- public void reload() {changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?(images?actions.library().imageFavorites:actions.library().localFavorites):roots);showMessage("");}else loadFolder();}
+ public void reload() {changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);adapter.notifyDataSetChanged();}
  private void loadFolder() {
   changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);showMessage("");show(Collections.emptyList());
-  if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen mediefiler i mappen.":"");});}
+  if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries;
+   if(PcloudDocument.is(folder.uri)){PcloudAccount account=actions.library().pcloud;WebDavClient client=new WebDavClient(account);try{entries=new ArrayList<>();for(WebDavClient.Entry entry:client.list(PcloudDocument.url(account,folder.uri)))entries.add(entry.media(account));}finally{client.cancel();}}else entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen mediefiler i mappen.":"");});}
    catch(Exception failure) {post(()->{if(!closed&&generation==request) showMessage("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
  }
  public void close() {closed=true;if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}

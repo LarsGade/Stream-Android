@@ -6,9 +6,19 @@ import java.util.*;
 public class LibraryTest {
  @Test public void favoriteTabsOnlyExistForPopulatedLists(){
   Library l=new Library();for(int i=0;i<4;i++)assertFalse(l.hasFavoriteTab(i));assertEquals(-1,l.availableFavoriteTab(3));
-  LocalMedia image=new LocalMedia("content://photos/1","photo.jpg","image/jpeg",false);l.toggleLocalFavorite(image);assertTrue(l.hasFavoriteTab(3));assertEquals(3,l.availableFavoriteTab(0));
-  l.addRadio(new RadioStation("one","Radio","https://example.com/radio",""));assertEquals(3,l.availableFavoriteTab(3));assertEquals(1,l.availableFavoriteTab(2));l.toggleLocalFavorite(image);assertFalse(l.hasFavoriteTab(3));assertEquals(1,l.availableFavoriteTab(3));
+  LocalMedia image=new LocalMedia("content://photos/1","photo.jpg","image/jpeg",false);l.toggleLocalFavorite(image);assertTrue(l.hasFavoriteTab(2));assertEquals(2,l.availableFavoriteTab(0));
+  l.addRadio(new RadioStation("one","Radio","https://example.com/radio",""));assertEquals(1,l.availableFavoriteTab(3));assertEquals(2,l.availableFavoriteTab(2));l.toggleLocalFavorite(image);assertFalse(l.hasFavoriteTab(3));assertEquals(1,l.availableFavoriteTab(3));
   l.toggleLocalFavorite(new LocalMedia("content://music/1","song.mp3","audio/mpeg",false));assertTrue(l.hasFavoriteTab(2));l.toggleFavorite(new Library.Entry("source",channel("TV","https://example.com/tv")));assertTrue(l.hasFavoriteTab(0));assertEquals(0,l.availableFavoriteTab(0));
+ }
+ @Test public void sourceFavoritesKeepCloudAndLocalMediaAndFoldersSeparate() throws Exception {
+  Library l=new Library();PcloudAccount account=new PcloudAccount(PcloudAccount.EU,"user@example.com","secret");
+  LocalMedia cloudFolder=new LocalMedia(PcloudDocument.uri(account,okhttp3.HttpUrl.get(account.server+"Music/"),-1),"Music","",true);
+  LocalMedia cloudImage=new LocalMedia(PcloudDocument.uri(account,okhttp3.HttpUrl.get(account.server+"Photo.jpg"),42),"Photo.jpg","image/jpeg",false);
+  LocalMedia localImage=new LocalMedia("content://local/photo","Local.jpg","image/jpeg",false),localFolder=new LocalMedia("content://local/folder","Folder","",true);
+  for(LocalMedia entry:Arrays.asList(cloudFolder,cloudImage,localImage,localFolder))l.toggleLocalFavorite(entry);
+  Library restored=Library.fromJson(l.toJson());assertEquals(2,restored.sourceFavorites(true).size());assertEquals(2,restored.sourceFavorites(false).size());assertTrue(restored.hasFavoriteTab(2));assertTrue(restored.hasFavoriteTab(3));
+  for(LocalMedia entry:restored.sourceFavorites(true))assertTrue(PcloudDocument.is(entry.uri));for(LocalMedia entry:restored.sourceFavorites(false))assertFalse(PcloudDocument.is(entry.uri));
+  restored.toggleLocalFavorite(cloudFolder);restored.toggleLocalFavorite(cloudImage);assertFalse(restored.hasFavoriteTab(3));assertTrue(restored.hasFavoriteTab(2));assertEquals(2,restored.availableFavoriteTab(3));
  }
  private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
  @Test public void radioFavoritesAreIndependentOrderedAndAliasesSurviveReload() throws Exception {
