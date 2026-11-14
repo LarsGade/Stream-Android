@@ -15,7 +15,8 @@ public final class LocalFilesPanel extends LinearLayout {
  private final Actions actions;
  private final EditText search;
  private final ArrayList<LocalMedia> entries=new ArrayList<>();
- private final Button up,changeFolder;
+ private final Button changeFolder;
+ private final ImageButton up;
  private final TextView path,message;
  private final ListView list;
  private final ArrayList<LocalMedia> visible=new ArrayList<>();
@@ -30,7 +31,7 @@ public final class LocalFilesPanel extends LinearLayout {
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence value,int start,int count,int after) {}public void onTextChanged(CharSequence value,int start,int before,int count) {filter();}public void afterTextChanged(android.text.Editable value) {}});
   changeFolder=new Button(context);changeFolder.setText("Vælg kildemappe");addView(changeFolder);changeFolder.setOnClickListener(v->{LocalMedia root=parents.peekFirst();if(root!=null) actions.changeFolder(root);else actions.pickFolder();});
-  up=new Button(context);up.setText("Tilbage");addView(up);up.setOnClickListener(v->back());
+  up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams backParams=new LayoutParams(backSize,backSize);backParams.gravity=Gravity.LEFT;addView(up,backParams);up.setOnClickListener(v->back());
   path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);addView(path);
   message=new TextView(context);message.setTextColor(Color.LTGRAY);addView(message);
   list=new ListView(context);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
@@ -49,7 +50,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);adapter.notifyDataSetChanged();}
  private void loadFolder() {
-  changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);message.setText("Indlæser …");show(Collections.emptyList());
+  changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);message.setText("");show(Collections.emptyList());
   if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);message.setText(entries.isEmpty()?"Ingen lyd- eller videofiler i mappen.":"");});}
    catch(Exception failure) {post(()->{if(!closed&&generation==request) message.setText("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
  }
