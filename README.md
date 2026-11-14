@@ -159,3 +159,5 @@ Version 1.14.1 bruger en venstrepil uden synlig tekst til Tilbage i lokale mappe
 Version 1.14.2 fjerner favoritstjernen fra lokale favoritlister, som allerede var skjult i TV- og radiofavoritter. Hold på en favorit og vælg **Fjern fra favoritter** for at fjerne den. Stjernen bevares i almindelige kildelister til tilføjelse af favoritter. Cast-knappen i den fulde afspiller bruger nu 48 dp frem for et fast pixelmål, har ekstra margen til højre og tager højde for skærmens udskæring.
 
 Version 1.14.3 viser kun **Udviklet af Lars Gade** nederst i burgermenuen. Krediteringen er fjernet fra appens øvrige sider. Menuen ruller fortsat på mindre skærme; ved ekstra plads skubbes krediteringen til bunden.
+
+Version 1.14.4 giver Favoritter-knappen i burgermenuen en blå baggrund med hvid tekst og omdøber Kilder til **Kilder til streamingtjeneste**.
