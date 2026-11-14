@@ -185,3 +185,5 @@ Version 1.15.1 gør logoet i appens top 20 % mindre end i den foregående versio
 Version 1.15.2 fjerner menupunktet Video i bil og hele forbindelsen til eksterne bilafspillere, inklusive eksport, FileProvider og app-forespørgsler. Den eksisterende Android Auto-medietjeneste for radio bevares. TV/video tilføjes ikke til bilens radiobibliotek. Toplogoet er yderligere 10 % mindre end i version 1.15.1: visuel skala 0,648 og logoområde cirka 46 dp. Menu- og Cast-knappernes trykflader er fortsat 48 dp.
 
 Toppen i version 1.15.2 viser kun det eksisterende playmotiv fra logoet, uden Stream-teksten. Appens launcherikon ændres ikke.
+
+Version 1.15.3 omdøber menupunktet Streamingtjeneste til **Streaming (TV, Film, Serier)**.
