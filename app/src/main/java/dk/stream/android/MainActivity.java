@@ -178,7 +178,6 @@ public final class MainActivity extends AppCompatActivity {
    public void play(LocalMedia entry) {playLocal(entry);}
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
-  TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(6),0,dp(4));root.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
    public String title(){return selected==null?"":selected.name;}
    public boolean playing(){return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
@@ -247,7 +246,9 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.tv_guide,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
   button(R.string.update_all,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
   button(R.string.reset_app,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
-  ScrollView menu=new ScrollView(this);menu.addView(navigation);
+  navigation.addView(new Space(this),new LinearLayout.LayoutParams(-1,0,1));
+  TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(16),0,0);navigation.addView(credit,new LinearLayout.LayoutParams(-1,-2));
+  ScrollView menu=new ScrollView(this);menu.setFillViewport(true);menu.addView(navigation);
   DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(menu,params);
  }
  @androidx.annotation.ChecksSdkIntAtLeast(api=26)
