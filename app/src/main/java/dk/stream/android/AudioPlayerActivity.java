@@ -40,7 +40,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   CharSequence name=p.getMediaMetadata().displayTitle;if(name==null) name=p.getMediaMetadata().title;title.setText(name);
   long duration=p.getDuration(),position=p.getCurrentPosition();boolean seekable=duration>0&&duration!=C.TIME_UNSET&&p.isCurrentMediaItemSeekable();progress.setEnabled(seekable);
   if(!tracking) progress.setProgress(seekable?(int)Math.min(1000,position*1000/duration):0);
-  time.setText(format(position)+(duration>0?" / "+format(duration):""));toggle.setText(p.getPlayWhenReady()&&p.getPlaybackState()!=Player.STATE_ENDED?"Pause":"Afspil");
+  toggle.setCompoundDrawablesWithIntrinsicBounds(p.getPlayWhenReady()&&p.getPlaybackState()!=Player.STATE_ENDED?R.drawable.ic_pause:R.drawable.ic_play,0,0,0);time.setText(format(position)+(duration>0?" / "+format(duration):""));toggle.setText(p.getPlayWhenReady()&&p.getPlaybackState()!=Player.STATE_ENDED?"Pause":"Afspil");
  }
  @Override protected void onStart() {super.onStart();handler.post(tick);}
  @Override protected void onStop() {handler.removeCallbacks(tick);super.onStop();}

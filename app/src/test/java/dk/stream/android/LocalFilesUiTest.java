@@ -63,8 +63,7 @@ public class LocalFilesUiTest {
  @Test public void recursiveViewIncludesDeepFilesAndStopsProviderCycles() {
   NestedDocuments provider=Robolectric.buildContentProvider(NestedDocuments.class).create().get();org.robolectric.shadows.ShadowContentResolver.registerProviderInternal("nested.test",provider);
   LocalMedia root=new LocalMedia("content://nested.test/tree/root/document/root","Root","",true);
-  List<LocalMedia> direct=LocalMedia.contents(activity,root,false);assertEquals(2,direct.size());
-  List<LocalMedia> all=LocalMedia.contents(activity,root,true);assertEquals(3,all.size());assertEquals("First / Second / Deep.mp3",all.get(2).name);assertEquals("content://nested.test/tree/root/document/b%2Fsong",all.get(2).uri);
+  List<LocalMedia> all=LocalMedia.contents(activity,root);assertEquals(3,all.size());assertEquals("First / Second / Deep.mp3",all.get(2).name);assertEquals("content://nested.test/tree/root/document/b%2Fsong",all.get(2).uri);
  }
  @Test public void rowChildrenDoNotStealFolderOrPlaybackClicks() {
   Library library=new Library();LocalMedia root=new LocalMedia("content://local.test/tree/root/document/root","Root","",true),song=new LocalMedia("content://local.test/song","Song.mp3","audio/mpeg",false);library.addLocal(root);library.addLocal(song);
@@ -81,13 +80,26 @@ public class LocalFilesUiTest {
   } finally {panel.close();}
  }
 
- @Test public void fileSelectionRoutesAudioAndVideoToTheirPlayersWithOriginalUris() {
-  LocalMedia audio=new LocalMedia("content://local.test/tree/root/document/root%2FTrack.mp3","Track.mp3","audio/mpeg",false);
-  ReflectionHelpers.callInstanceMethod(activity,"playLocal",ReflectionHelpers.ClassParameter.from(LocalMedia.class,audio));
-  Intent intent=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(LocalAudioService.PLAY,intent.getAction());assertEquals(audio.uri,intent.getStringExtra("uri"));
-  LocalMedia video=new LocalMedia("content://local.test/tree/root/document/root%2FMovie.mp4","Movie.mp4","video/mp4",false);
-  ReflectionHelpers.callInstanceMethod(activity,"playLocal",ReflectionHelpers.ClassParameter.from(LocalMedia.class,video));
-  androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");assertNotNull(player);assertEquals(Uri.parse(video.uri),player.getCurrentMediaItem().localConfiguration.uri);assertTrue(player.getPlayWhenReady());
+ @Test public void bothFileTypesStartTheSameQueueServiceWithoutPassingTheFolderThroughBinder() {
+  for(LocalMedia file:Arrays.asList(new LocalMedia("content://local.test/song","Song.mp3","audio/mpeg",false),new LocalMedia("content://local.test/movie","Movie.mp4","video/mp4",false))) {
+   ReflectionHelpers.callInstanceMethod(activity,"playLocal",ReflectionHelpers.ClassParameter.from(LocalMedia.class,file));
+   Intent intent=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(LocalAudioService.PLAY,intent.getAction());assertEquals(file.uri,intent.getStringExtra("uri"));assertNotNull(intent.getStringExtra("queue"));assertEquals(5,intent.getExtras().size());
+  }
+ }
+ @Test public void playbackServiceAdvancesThroughMixedQueueAndSurvivesScreenChanges() {
+  LocalMedia first=new LocalMedia("content://local.test/first","First.mp4","video/mp4",false),second=new LocalMedia("content://local.test/second","Second.mp3","audio/mpeg",false),third=new LocalMedia("content://local.test/third","Third.mp4","video/mp4",false);
+  org.robolectric.android.controller.ServiceController<LocalAudioService> serviceController=Robolectric.buildService(LocalAudioService.class).create();
+  try {
+   LocalAudioService service=serviceController.get();service.onStartCommand(LocalAudioService.playIntent(activity,first,Arrays.asList(first,second,third)),0,1);
+   androidx.media3.exoplayer.ExoPlayer player=LocalAudioService.player();assertEquals(3,player.getMediaItemCount());assertEquals(first.uri,LocalAudioService.current().uri);assertEquals(androidx.media3.common.Player.REPEAT_MODE_OFF,player.getRepeatMode());assertFalse(player.getShuffleModeEnabled());
+   ReflectionHelpers.callInstanceMethod(activity,"syncLocalPlayback");assertSame(player,ReflectionHelpers.getField(activity,"player"));
+   controller.pause().stop();assertSame(player,LocalAudioService.player());assertEquals(3,player.getMediaItemCount());assertTrue(player.getPlayWhenReady());
+   controller.start().resume();assertSame(player,ReflectionHelpers.getField(activity,"player"));
+   player.seekToNextMediaItem();assertEquals(second.uri,LocalAudioService.current().uri);assertTrue(LocalAudioService.playing(second.uri));
+   service.onStartCommand(LocalAudioService.command(activity,LocalAudioService.TOGGLE),0,2);assertFalse(LocalAudioService.playing(second.uri));
+   service.onStartCommand(LocalAudioService.command(activity,LocalAudioService.TOGGLE),0,3);assertTrue(LocalAudioService.playing(second.uri));
+   player.seekToNextMediaItem();assertEquals(third.uri,LocalAudioService.current().uri);assertFalse(player.hasNextMediaItem());
+  } finally {serviceController.destroy();}
  }
 
 }

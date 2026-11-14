@@ -42,9 +42,8 @@ public final class LocalMedia {
   Collections.sort(result,(a,b)->a.folder!=b.folder?(a.folder?-1:1):a.name.compareToIgnoreCase(b.name));return result;
  }
  /** Iterative traversal includes every depth and guards against provider cycles. */
- public static List<LocalMedia> contents(Context context,LocalMedia root,boolean recursive) {
+ public static List<LocalMedia> contents(Context context,LocalMedia root) {
   List<LocalMedia> direct=children(context,root);
-  if(!recursive) return direct;
   List<LocalMedia> result=new ArrayList<>(direct);
   ArrayDeque<LocalMedia> pending=new ArrayDeque<>();Set<String> visited=new HashSet<>();visited.add(root.uri);
   for(LocalMedia entry:direct) if(entry.folder) pending.add(entry);

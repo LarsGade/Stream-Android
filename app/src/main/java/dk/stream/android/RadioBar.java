@@ -25,15 +25,15 @@ public final class RadioBar extends LinearLayout {
   toggle=new Button(context);addView(toggle,new LayoutParams(-2,-2));toggle.setOnClickListener(v->transport());
   live=new Button(context);live.setText(R.string.radio_live);addView(live,new LayoutParams(-2,-2));
   live.setOnClickListener(v->{beforePlay.run();getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.LIVE));post(this::refresh);});
-  setOnClickListener(v->getContext().startActivity(new android.content.Intent(getContext(),AudioPlayerActivity.class).putExtra("local",LocalAudioService.current()!=null)));refresh();
+  setOnClickListener(v->{LocalMedia entry=LocalAudioService.current();getContext().startActivity(entry!=null&&!entry.audio()?new android.content.Intent(getContext(),MainActivity.class):new android.content.Intent(getContext(),AudioPlayerActivity.class).putExtra("local",entry!=null));});refresh();
  }
  void refresh() {
   LocalMedia audio=LocalAudioService.current();
   if(audio!=null) {
    setVisibility(VISIBLE);if(!artworkKey.equals("local:"+audio.uri)) {artworkKey="local:"+audio.uri;Glide.with(getContext()).clear(logo);logo.setImageResource(android.R.drawable.ic_media_play);}logo.setContentDescription(audio.name);name.setText(audio.name);live.setVisibility(GONE);
-   boolean running=LocalAudioService.player().getPlayWhenReady()&&LocalAudioService.player().getPlaybackState()!=androidx.media3.common.Player.STATE_ENDED;toggle.setText(running?"Stop":"Afspil");toggle.setEnabled(true);toggle.setContentDescription((running?"Stop ":"Afspil ")+audio.name);return;
+   boolean running=LocalAudioService.player().getPlayWhenReady()&&LocalAudioService.player().getPlaybackState()!=androidx.media3.common.Player.STATE_ENDED;logo.setImageResource(running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setText(running?"Pause":"Afspil");toggle.setCompoundDrawablesWithIntrinsicBounds(running?R.drawable.ic_pause:R.drawable.ic_play,0,0,0);toggle.setEnabled(true);toggle.setContentDescription((running?"Pause ":"Afspil ")+audio.name);return;
   }
-  RadioStation station=RadioPlaybackService.selectedStation();setVisibility(station==null?GONE:VISIBLE);
+  toggle.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);RadioStation station=RadioPlaybackService.selectedStation();setVisibility(station==null?GONE:VISIBLE);
   if(station!=null) {
    String local=logos.find(station.displayName()),source=local==null?station.logo:local;
    String key=station.id+"|"+source;
@@ -47,7 +47,7 @@ public final class RadioBar extends LinearLayout {
   toggle.setContentDescription((running?"Stop ":"Afspil ")+(station==null?"radio":station.displayName()));
  }
  private void transport() {
-  if(LocalAudioService.current()!=null) {androidx.media3.common.Player p=LocalAudioService.player();boolean running=p.getPlayWhenReady()&&p.getPlaybackState()!=androidx.media3.common.Player.STATE_ENDED;getContext().startService(LocalAudioService.command(getContext(),running?LocalAudioService.STOP:LocalAudioService.TOGGLE));post(this::refresh);return;}
+  if(LocalAudioService.current()!=null) {androidx.media3.common.Player p=LocalAudioService.player();boolean running=p.getPlayWhenReady()&&p.getPlaybackState()!=androidx.media3.common.Player.STATE_ENDED;getContext().startService(LocalAudioService.command(getContext(),LocalAudioService.TOGGLE));post(this::refresh);return;}
   RadioStation station=RadioPlaybackService.selectedStation();if(station==null) return;
   if(RadioPlaybackService.playing(station.id)) getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.STOP));
   else {beforePlay.run();androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));}

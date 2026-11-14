@@ -37,6 +37,7 @@ public final class MainActivity extends AppCompatActivity {
  private RadioButton favoriteTv,favoriteRadio,favoriteLocal;
  private LocalFilesPanel localPanel;
  private boolean localMode;
+ private boolean localPlayerAttached,activityStarted,acceptLocalPlayback=true;
  private String replacingLocalFolder;
  private final ExecutorService localWorker=Executors.newSingleThreadExecutor();
  private androidx.activity.OnBackPressedCallback localBack;
@@ -73,7 +74,7 @@ public final class MainActivity extends AppCompatActivity {
  private static final String VIDEO_TOGGLE="dk.stream.android.VIDEO_TOGGLE",VIDEO_STOP="dk.stream.android.VIDEO_STOP";
  private final androidx.activity.result.ActivityResultLauncher<String> notificationPermission=registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),granted->{});
  private final android.content.BroadcastReceiver videoTransport=new android.content.BroadcastReceiver() {
-  @Override public void onReceive(android.content.Context context,android.content.Intent intent) {if(VIDEO_STOP.equals(intent.getAction())) stopPlaybackState();else if(VIDEO_TOGGLE.equals(intent.getAction())) togglePlaybackState();}
+  @Override public void onReceive(android.content.Context context,android.content.Intent intent) {if(LocalAudioService.CHANGED.equals(intent.getAction())) {if(activityStarted) syncLocalPlayback();}else if(VIDEO_STOP.equals(intent.getAction())) stopPlaybackState();else if(VIDEO_TOGGLE.equals(intent.getAction())) togglePlaybackState();}
  };
  private long resumePosition;
  private boolean resumeLocalPlayback,pipLayout,pipWasFullscreen;
@@ -88,8 +89,8 @@ public final class MainActivity extends AppCompatActivity {
  private CastContext cast;
  private Playlist.Channel selected;
  private final SessionManagerListener<CastSession> sessions=new SessionManagerListener<CastSession>() {
-  public void onSessionStarted(CastSession s,String id) { if(selected!=null) play(selected); }
-  public void onSessionResumed(CastSession s,boolean suspended) { if(selected!=null) play(selected); }
+  public void onSessionStarted(CastSession s,String id) { if(selected!=null&&!selected.url.startsWith("content:")) play(selected); }
+  public void onSessionResumed(CastSession s,boolean suspended) { if(selected!=null&&!selected.url.startsWith("content:")) play(selected); }
   public void onSessionEnded(CastSession s,int error) {watchRemote();if(playbackPanel!=null) playbackPanel.refresh();if(adapter!=null) adapter.notifyDataSetChanged();status.setText(R.string.cast_ended); }
   public void onSessionStarting(CastSession s) { }
   public void onSessionStartFailed(CastSession s,int error) { status.setText(R.string.cast_failed); }
@@ -102,7 +103,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
   super.onCreate(state);if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
-  android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
+  android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);transport.addAction(LocalAudioService.CHANGED);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
    library=store.load();
@@ -147,7 +148,7 @@ public final class MainActivity extends AppCompatActivity {
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
    public void volumeFailed() {Toast.makeText(MainActivity.this,R.string.volume_failed,Toast.LENGTH_SHORT).show();}
-   public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.getPlayWhenReady();}
+   public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.getPlayWhenReady() && player.getPlaybackState()!=Player.STATE_ENDED && player.getPlayerError()==null;}
    public boolean fullscreen() {return fullscreen;}
    public CastSession castSession() {return connectedCast();}
   });
@@ -254,7 +255,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void restoreLastPlayback() {
   if(LocalAudioService.current()!=null || !RadioPlaybackService.nowPlaying().isEmpty() || !storageReadable || !library.autoPlayLast || library.lastPlayed==null || library.lastPlayed.url.isEmpty()) return;
-  selected=library.lastPlayed;resumePosition=library.lastPlayedPosition;play(selected);
+  selected=library.lastPlayed;resumePosition=library.lastPlayedPosition;if(selected.url.startsWith("content:")) playLocal(new LocalMedia(selected.url,selected.name,"video/*",false),resumePosition);else play(selected);
  }
  private void rememberPlayback() {
   if(selected==null) return;
@@ -354,9 +355,31 @@ public final class MainActivity extends AppCompatActivity {
    boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(replace!=null) library.replaceLocalFolder(replace,entry);else library.addLocal(entry);}});if(localMode) {if(replace!=null&&!linked.isEmpty()) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
   });
  }
- private void playLocal(LocalMedia entry) {
-  if(entry.audio()) {requestNotificationPermission();if(selected!=null) stopPlaybackState();stopService(new android.content.Intent(this,RadioPlaybackService.class));androidx.core.content.ContextCompat.startForegroundService(this,LocalAudioService.playIntent(this,entry));}
-  else play(new Playlist.Channel(entry.name,entry.uri,"",Playlist.Kind.FILM,null));
+ private void playLocal(LocalMedia entry) {playLocal(entry,0);}
+ private void playLocal(LocalMedia entry,long position) {
+  LocalMedia current=LocalAudioService.current();
+  if(current!=null&&current.uri.equals(entry.uri)) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
+  requestNotificationPermission();
+  if(player!=null&&!localPlayerAttached) {stopPlaybackState();if(videoSession!=null) {videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);}
+  acceptLocalPlayback=true;resumeLocalPlayback=false;
+  stopService(new android.content.Intent(this,RadioPlaybackService.class));
+  try {androidx.core.content.ContextCompat.startForegroundService(this,LocalAudioService.playIntent(this,entry,localPanel.playbackEntries()).putExtra("position",position));}
+  catch(RuntimeException error) {android.util.Log.e("StreamLocalPlayback","Could not start media service",error);Toast.makeText(this,"Afspilningen kunne ikke startes. Prøv igen, mens appen er åben.",Toast.LENGTH_LONG).show();}
+ }
+ private void detachLocalPlayback() {
+  if(!localPlayerAttached) return;
+  video.setPlayer(null);player=null;selected=null;localPlayerAttached=false;video.setKeepScreenOn(false);
+ }
+ private void syncLocalPlayback() {
+  if(localPanel!=null) localPanel.playbackChanged();
+  LocalMedia entry=LocalAudioService.current();ExoPlayer shared=LocalAudioService.player();
+  if(entry==null||shared==null) {if(localPlayerAttached) {detachLocalPlayback();exitFullscreen();playbackPanel.setVisibility(View.GONE);updateMiniBack();}return;}
+  if(!acceptLocalPlayback) return;
+  if(player!=null&&!localPlayerAttached) {if(videoSession!=null) {videoSession.release();videoSession=null;}player.release();}
+  player=shared;localPlayerAttached=true;resumeLocalPlayback=false;
+  if(entry.audio()) {selected=null;video.setPlayer(null);video.setKeepScreenOn(false);exitFullscreen();playbackPanel.setVisibility(View.GONE);}
+  else {selected=new Playlist.Channel(entry.name,entry.uri,"",Playlist.Kind.FILM,null);video.setPlayer(player);video.setVisibility(View.VISIBLE);playbackPanel.setTitle(entry.name);playbackPanel.setVisibility(View.VISIBLE);video.setKeepScreenOn(player.isPlaying());}
+  playbackPanel.refresh();updateMiniBack();hideFullscreenSystemBars();
  }
  private void openRadio(boolean favorites) {
   localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
@@ -648,6 +671,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private static final class Row {ImageView logo;TextView name,group;ImageButton star;View indicator;}
  private void play(Playlist.Channel channel) {
+  acceptLocalPlayback=false;detachLocalPlayback();
   requestNotificationPermission();
   stopService(new android.content.Intent(this,RadioPlaybackService.class));stopService(new android.content.Intent(this,LocalAudioService.class));
   status.setVisibility(View.VISIBLE);
@@ -693,6 +717,7 @@ public final class MainActivity extends AppCompatActivity {
   watchedRemote=remote;if(watchedRemote!=null) watchedRemote.registerCallback(remoteUpdates);
  }
  private void togglePlaybackState() {
+  if(localPlayerAttached) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
   CastSession session=connectedCast();
   if(session!=null && session.getRemoteMediaClient()!=null) {
    var remote=session.getRemoteMediaClient();if(remote.isPlaying()) remote.pause();else remote.play();
@@ -703,7 +728,7 @@ public final class MainActivity extends AppCompatActivity {
  private void stopPlaybackState() {
   rememberPlayback();videoArtworkGeneration++;resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
-  if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
+  if(localPlayerAttached) {acceptLocalPlayback=false;startService(LocalAudioService.command(this,LocalAudioService.STOP));detachLocalPlayback();}else if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
   status.setVisibility(View.VISIBLE);status.setText(R.string.playback_stopped);
  }
  private void enterFullscreen() {
@@ -742,13 +767,14 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
- @Override protected void onResume() {super.onResume();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
+ @Override protected void onStart() {super.onStart();activityStarted=true;syncLocalPlayback();}
+ @Override protected void onResume() {super.onResume();if(LocalAudioService.current()!=null) syncLocalPlayback();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);
   if(keyCode==android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode==android.view.KeyEvent.KEYCODE_VOLUME_MUTE) getWindow().getDecorView().post(()->{if(playbackPanel!=null) playbackPanel.refresh();});
   return handled;
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
- @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
+ @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
  @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }
