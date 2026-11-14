@@ -189,3 +189,5 @@ Toppen i version 1.15.2 viser kun det eksisterende playmotiv fra logoet, uden St
 Version 1.15.3 omdøber menupunktet Streamingtjeneste til **Streaming (TV, Film, Serier)**.
 
 Version 1.15.4 indsætter et fast linjeskift i Streaming-knappen, så **(TV, Film, Serier)** står centreret på linjen under **Streaming**.
+
+Version 1.15.5 erstatter de resterende forekomster af Streamingtjeneste med **Streaming** i appen. Kildeindstillingerne hedder nu **Kilder til Streaming**, og fejlhenvisningen bruger samme navn. Streaming-knappens linjeskift og kategorier bevares.
