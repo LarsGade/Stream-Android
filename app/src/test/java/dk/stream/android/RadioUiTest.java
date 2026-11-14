@@ -29,6 +29,24 @@ public class RadioUiTest {
  }
  @After public void close() throws Exception {panel.close();controller.pause().stop().destroy();server.shutdown();}
  private List<TextView> texts(View view) {List<TextView> result=new ArrayList<>();if(view instanceof TextView) result.add((TextView)view);if(view instanceof ViewGroup) for(int i=0;i<((ViewGroup)view).getChildCount();i++) result.addAll(texts(((ViewGroup)view).getChildAt(i)));return result;}
+ @Test public void p4RegionsUseBundledLogo() {
+  LocalChannelLogos logos=LocalChannelLogos.load(activity);
+  for(String name:Arrays.asList("P4", "DR P4 København", "p4 nordjylland", "DR P4 Fyn (128 kbps)")) assertEquals("file:///android_asset/channel_logos/DR P4.png",logos.find(name));
+  assertEquals("file:///android_asset/channel_logos/DR P3.png",logos.find("DR P3"));
+ }
+ @Test public void fixedBarKeepsStationAfterStopAndRestartsItsStream() {
+  RadioBar bar=new RadioBar(activity,()->{});
+  org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
+  try {
+   RadioPlaybackService service=serviceController.get();RadioStation station=new RadioStation("bar", "P4 Fyn",server.url("/radio.mp3").toString(),"");
+   service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);bar.refresh();
+   assertEquals("P4 Fyn",((TextView)bar.getChildAt(0)).getText().toString());
+   Button toggle=(Button)bar.getChildAt(1);assertEquals("Stop",toggle.getText().toString());toggle.performClick();
+   Intent stop=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.STOP,stop.getAction());
+   service.onStartCommand(stop,0,2);bar.refresh();assertEquals("Afspil",toggle.getText().toString());assertTrue(toggle.isEnabled());
+   toggle.performClick();Intent play=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.PLAY,play.getAction());assertTrue(play.getStringExtra("station").contains("P4 Fyn"));
+  } finally {serviceController.destroy();ReflectionHelpers.setStaticField(RadioPlaybackService.class,"lastStation",null);}
+ }
  @Test public void liveIsBesideStopAndRemainsAvailableWhenRadioIsPaused() throws Exception {
   panel.open(true);Button stop=ReflectionHelpers.getField(panel,"stop"),live=ReflectionHelpers.getField(panel,"live");
   assertEquals(View.GONE,live.getVisibility());assertEquals(stop.getParent(),live.getParent());assertEquals(LinearLayout.HORIZONTAL,((LinearLayout)live.getParent()).getOrientation());assertEquals("Live",live.getText().toString());

@@ -120,3 +120,5 @@ Version 1.11.2 fjerner radioens spring-frem/-tilbage-kommandoer, som kunne optag
 Version 1.11.3 gendanner standardmediebetjeningen fra før radioens Stop-tilpasninger: Afspil/Pause i telefonens mediepanel, på låseskærmen og via headset/Android Auto. Pause er igen en almindelig pause. Den særlige Stop-knap og filtreringen af systemkommandoer er fjernet. Radioens notifikation har igen standard Afspil/Pause samt Stop. Widgettens særskilte Afspil/Stop bevares. Den eksisterende Android Auto-integration og understøttelse af Android 16/17 bevares.
 
 Version 1.11.4 tilføjer **Live** ved siden af **Stop radio** på radiosiderne. Live genåbner den aktuelle radiostream med nulstillet position og afspiller igen, så en pausebuffer kasseres. Normal Afspil/Pause i telefonens medieafspiller bevares.
+
+Version 1.12.0 bruger det indbyggede DR P4-logo til alle kanalnavne med “P4”, inklusive regionale stationer. En fast radiobar nederst på appens almindelige sider viser den valgte kanal og Afspil/Stop. Stop lukker afspilningen; Afspil åbner samme station fra live igen. Før en station er valgt, er Afspil inaktiv. Fuldskærmsvideo bevarer sit rene videovindue.
