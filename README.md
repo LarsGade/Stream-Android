@@ -207,3 +207,11 @@ WebDAV-klienten bruger kun læseoperationerne PROPFIND og GET. Login sendes kun 
 pClouds officielle [WebDAV-vejledning](https://help.pcloud.com/article/connect-to-pcloud-using-webdav-and-rsync) angiver `https://ewebdav.pcloud.com/` for EU og `https://webdav.pcloud.com/` for USA. Ved 2FA kan forbindelsen skulle godkendes via en mail fra pCloud; 2FA behøver ikke slås fra. Crypto-mappen kan ikke tilgås gennem WebDAV.
 
 Version 1.16.1 fjerner Log på/Konto, Log ud og Opdatér fra selve Pcloud-filvisningen. Før login åbner Pcloud i burgermenuen login. Efter login åbner samme menupunkt handlingerne **Åbn Pcloud**, **Opdatér**, **Redigér konto** og **Log ud**. Opdatér genindlæser den aktuelle mappe, hvis Pcloud allerede er åbent. Kontoredigering viser Pcloud-visningen efter et vellykket login. Lokale mapper, lokale mappefavoritter og Pcloud-mapper bruger samme egentlige mappeikon.
+
+
+### 1.17.0 – Billeder
+- Lokale og Pcloud viser nu også billedfiler. En fuld billedviser har swipe samt forrige/næste i den viste listes rækkefølge.
+- Favoritter har fanen Billeder, som også kan vælges ved opstart. Hold på et favoritbillede for at fjerne det.
+- Billeder kan castes og skiftes manuelt frem/tilbage. Cast klargør et JPEG/PNG på op til 1920×1080. Understøttede originalformater afhænger af telefonens billeddecoder.
+- Lyd/video-køer springer billeder over. Eksisterende billedfavoritter flyttes til billedfanen. Pcloud-billeder bruger kontoens godkendte WebDAV-forbindelse og gemmes ikke i Glides diskcache.
+- Verificeret med APK-build, lint og model-/netværkstests. Billedvisning på fysisk Android 9, rigtig Pcloud-konto og fysisk Cast-modtager er ikke afprøvet her.

@@ -34,10 +34,10 @@ public final class Library {
   }
   @Override public String toString() {return name;}
  }
- public final List<LocalMedia> localFiles=new ArrayList<>(),localFavorites=new ArrayList<>();
- public boolean favoritesLocal;
+ public final List<LocalMedia> localFiles=new ArrayList<>(),localFavorites=new ArrayList<>(),imageFavorites=new ArrayList<>();
+ public boolean favoritesLocal,favoritesImages;
  public PcloudAccount pcloud;
- public boolean isLocalFavorite(String uri) {for(LocalMedia entry:localFavorites) if(entry.uri.equals(uri)) return true;return false;}
+ public boolean isLocalFavorite(String uri) {for(LocalMedia entry:localFavorites) if(entry.uri.equals(uri)) return true;for(LocalMedia entry:imageFavorites) if(entry.uri.equals(uri)) return true;return false;}
  public void addLocal(LocalMedia entry) {for(LocalMedia old:localFiles) if(old.uri.equals(entry.uri)) return;localFiles.add(entry);}
  public void setLocalSource(LocalMedia folder) {
   if(!folder.folder) throw new IllegalArgumentException("Folder required");
@@ -53,7 +53,7 @@ public final class Library {
   Set<String> seen=new HashSet<>();for(int i=0;i<localFavorites.size();) {if(seen.add(localFavorites.get(i).uri)) i++;else localFavorites.remove(i);}
  }
  public void removeLocal(String uri) {for(int i=localFiles.size()-1;i>=0;i--) if(localFiles.get(i).uri.equals(uri)) localFiles.remove(i);}
- public void toggleLocalFavorite(LocalMedia entry) {for(int i=0;i<localFavorites.size();i++) if(localFavorites.get(i).uri.equals(entry.uri)) {localFavorites.remove(i);return;}localFavorites.add(entry);}
+ public void toggleLocalFavorite(LocalMedia entry) {List<LocalMedia> target=entry.image()?imageFavorites:localFavorites;for(int i=0;i<target.size();i++)if(target.get(i).uri.equals(entry.uri)){target.remove(i);return;}target.add(entry);}
  public final List<RadioStation> radioFavorites=new ArrayList<>();
  public RadioStation findRadio(String id) {for(RadioStation station:radioFavorites) if(station.id.equals(id)) return station;return null;}
  public void addRadio(RadioStation station) {if(findRadio(station.id)==null) radioFavorites.add(station);}
@@ -86,7 +86,7 @@ public final class Library {
  public final List<Entry> favorites=new ArrayList<>();
  public boolean favoritesOnStart,favoritesRadio,autoPlayLast,miniPlayer;
  public int favoritesStartTab;
- public void setFavoritesStartTab(int tab){if(tab<0||tab>2)throw new IllegalArgumentException("Unknown favorites tab");favoritesStartTab=tab;}
+ public void setFavoritesStartTab(int tab){if(tab<0||tab>3)throw new IllegalArgumentException("Unknown favorites tab");favoritesStartTab=tab;}
  public Playlist.Channel lastPlayed;
  public long lastPlayedPosition;
  public String lastSourceId="";
@@ -157,8 +157,9 @@ public final class Library {
  }
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
-  JSONObject root=new JSONObject();if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);
+  JSONObject root=new JSONObject();if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
+  JSONArray photos=new JSONArray();for(LocalMedia photo:imageFavorites)photos.put(photo.json());root.put("imageFavorites",photos);
   root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
    JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
@@ -181,8 +182,9 @@ public final class Library {
   Library library=new Library();JSONObject root=new JSONObject(json);
   if(root.optJSONObject("pcloud")!=null)library.pcloud=PcloudAccount.from(root.getJSONObject("pcloud"));
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
-  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");library.favoritesStartTab=Math.max(0,Math.min(2,root.optInt("favoritesStartTab",library.favoritesLocal?2:library.favoritesRadio?1:0)));
-  JSONArray locals=root.optJSONArray("localFiles"),localStars=root.optJSONArray("localFavorites");if(locals!=null) for(int i=0;i<locals.length();i++) library.addLocal(LocalMedia.from(locals.getJSONObject(i)));if(localStars!=null) for(int i=0;i<localStars.length();i++) {LocalMedia entry=LocalMedia.from(localStars.getJSONObject(i));if(!library.isLocalFavorite(entry.uri)) library.localFavorites.add(entry);}
+  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");library.favoritesImages=root.optBoolean("favoritesImages");library.favoritesStartTab=Math.max(0,Math.min(3,root.optInt("favoritesStartTab",library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0)));
+  JSONArray locals=root.optJSONArray("localFiles"),localStars=root.optJSONArray("localFavorites");if(locals!=null) for(int i=0;i<locals.length();i++) library.addLocal(LocalMedia.from(locals.getJSONObject(i)));if(localStars!=null) for(int i=0;i<localStars.length();i++) {LocalMedia entry=LocalMedia.from(localStars.getJSONObject(i));if(!library.isLocalFavorite(entry.uri))(entry.image()?library.imageFavorites:library.localFavorites).add(entry);}
+  JSONArray photos=root.optJSONArray("imageFavorites");if(photos!=null)for(int i=0;i<photos.length();i++){LocalMedia photo=LocalMedia.from(photos.getJSONObject(i));if(photo.image()&&!library.isLocalFavorite(photo.uri))library.imageFavorites.add(photo);}
   library.lastSourceId=root.optString("lastSourceId","");
   library.autoPlayLast=root.optBoolean("autoPlayLast");library.miniPlayer=root.optBoolean("miniPlayer");library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
   JSONObject last=root.optJSONObject("lastPlayed");

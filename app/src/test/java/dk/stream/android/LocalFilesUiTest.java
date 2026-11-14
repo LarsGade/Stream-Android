@@ -25,13 +25,13 @@ public class LocalFilesUiTest {
  }
  @After public void close() {controller.pause().stop().destroy();}
  @Test public void localFavoritesAreToTheRightOfRadioAndSelectTheirOwnPanel() {
-  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(3,tabs.getChildCount());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());assertEquals("Lokale",((RadioButton)tabs.getChildAt(2)).getText().toString());
+  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(4,tabs.getChildCount());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());assertEquals("Lokale",((RadioButton)tabs.getChildAt(2)).getText().toString());
   ((RadioButton)tabs.getChildAt(2)).performClick();assertTrue(ReflectionHelpers.<Library>getField(activity,"library").favoritesLocal);assertFalse(ReflectionHelpers.<Library>getField(activity,"library").favoritesRadio);assertEquals(View.VISIBLE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());assertEquals(View.GONE,ReflectionHelpers.<RadioPanel>getField(activity,"radioPanel").getVisibility());
  }
  @Test public void pickersAskForReadOnlyPersistentLinksAndSupportMultipleFiles() {
   ReflectionHelpers.callInstanceMethod(activity,"pickLocal",ReflectionHelpers.ClassParameter.from(boolean.class,false));
   Intent files=Shadows.shadowOf(activity).getNextStartedActivityForResult().intent;
-  assertEquals(Intent.ACTION_OPEN_DOCUMENT,files.getAction());assertTrue(files.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE,false));assertArrayEquals(new String[]{"audio/*","video/*"},files.getStringArrayExtra(Intent.EXTRA_MIME_TYPES));assertTrue((files.getFlags()&Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)!=0);assertEquals(0,files.getFlags()&Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+  assertEquals(Intent.ACTION_OPEN_DOCUMENT,files.getAction());assertTrue(files.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE,false));assertArrayEquals(new String[]{"audio/*","video/*","image/*"},files.getStringArrayExtra(Intent.EXTRA_MIME_TYPES));assertTrue((files.getFlags()&Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)!=0);assertEquals(0,files.getFlags()&Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
   ReflectionHelpers.callInstanceMethod(activity,"pickLocal",ReflectionHelpers.ClassParameter.from(boolean.class,true));
   Intent folder=Shadows.shadowOf(activity).getNextStartedActivityForResult().intent;assertEquals(Intent.ACTION_OPEN_DOCUMENT_TREE,folder.getAction());assertTrue((folder.getFlags()&Intent.FLAG_GRANT_READ_URI_PERMISSION)!=0);
  }

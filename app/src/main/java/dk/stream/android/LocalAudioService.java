@@ -70,6 +70,7 @@ public final class LocalAudioService extends MediaSessionService {
   else if(PLAY.equals(intent.getAction())) {
    try {
     LocalMedia entry=new LocalMedia(intent.getStringExtra("uri"),intent.getStringExtra("name"),intent.getStringExtra("mime"),false);
+    if(entry.image())throw new IllegalArgumentException("Use image viewer");
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
     this.queue=queue.entries;pendingQueue=null;pendingToken=null;stopService(new Intent(this,RadioPlaybackService.class));
     List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){items.add(item(file));network|=PcloudDocument.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);

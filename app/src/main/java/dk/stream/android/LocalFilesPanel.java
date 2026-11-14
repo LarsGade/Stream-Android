@@ -23,7 +23,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private final ArrayDeque<LocalMedia> parents=new ArrayDeque<>();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private final Adapter adapter=new Adapter();
- private boolean favorites,closed;
+ private boolean favorites,images,closed;
  private int generation;
  private Future<?> folderTask;
  public LocalFilesPanel(Context context,Actions actions) {
@@ -41,18 +41,19 @@ public final class LocalFilesPanel extends LinearLayout {
    if(parents.isEmpty()&&!favorites&&entry.folder) menu.getMenu().add("Skift kildemappe").setOnMenuItemClickListener(item->{actions.changeFolder(entry);return true;});
    if(parents.isEmpty()&&!favorites) menu.getMenu().add("Fjern link").setOnMenuItemClickListener(item->{actions.save(()->actions.library().removeLocal(entry.uri));reload();return true;});menu.show();return true;});
  }
- public void open(boolean favorites) {this.favorites=favorites;parents.clear();search.setText("");if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder) {parents.add(entry);break;}reload();}
+ public void open(boolean favorites) {open(favorites,false);}
+ public void open(boolean favorites,boolean images) {this.images=images;this.favorites=favorites;parents.clear();search.setText("");if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder) {parents.add(entry);break;}reload();}
  public boolean back() {if(parents.isEmpty()) return false;parents.removeLast();reload();return true;}
  public List<LocalMedia> playbackEntries() {return new ArrayList<>(visible);}
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
- public void reload() {changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().localFavorites:roots);showMessage("");}else loadFolder();}
+ public void reload() {changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?(images?actions.library().imageFavorites:actions.library().localFavorites):roots);showMessage("");}else loadFolder();}
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);adapter.notifyDataSetChanged();}
  private void loadFolder() {
   changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);showMessage("");show(Collections.emptyList());
-  if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen lyd- eller videofiler i mappen.":"");});}
+  if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen mediefiler i mappen.":"");});}
    catch(Exception failure) {post(()->{if(!closed&&generation==request) showMessage("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
  }
  public void close() {closed=true;if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}
@@ -60,7 +61,7 @@ public final class LocalFilesPanel extends LinearLayout {
   public int getCount(){return visible.size();}public LocalMedia getItem(int p){return visible.get(p);}public long getItemId(int p){return p;}
   public View getView(int p,View recycled,ViewGroup parent) {
    LocalMedia entry=getItem(p);LinearLayout row=new LinearLayout(getContext());row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);row.setGravity(Gravity.CENTER_VERTICAL);int pad=Math.round(8*getResources().getDisplayMetrics().density);row.setPadding(pad,pad,pad,pad);
-   ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:(actions.playing(entry)||CastPlayback.playingLocal(getContext(),entry.uri))?R.drawable.ic_pause:R.drawable.ic_play);icon.setContentDescription(entry.folder?"Åbn mappe":(actions.playing(entry)||CastPlayback.playingLocal(getContext(),entry.uri))?"Pause":"Afspil");row.addView(icon,new LayoutParams(pad*5,pad*5));
+   ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:entry.image()?R.drawable.ic_image:(actions.playing(entry)||CastPlayback.playingLocal(getContext(),entry.uri))?R.drawable.ic_pause:R.drawable.ic_play);icon.setContentDescription(entry.folder?"Åbn mappe":entry.image()?"Vis billede":(actions.playing(entry)||CastPlayback.playingLocal(getContext(),entry.uri))?"Pause":"Afspil");row.addView(icon,new LayoutParams(pad*5,pad*5));
    TextView name=new TextView(getContext());name.setText(entry.displayName());name.setTextColor(Color.WHITE);name.setTextSize(16);name.setPadding(pad,0,pad,0);row.addView(name,new LayoutParams(0,-2,1));
    if(!favorites) {ImageButton star=new ImageButton(getContext());boolean favorite=actions.library().isLocalFavorite(entry.uri);star.setFocusable(false);star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);star.setBackgroundColor(Color.TRANSPARENT);star.setContentDescription((favorite?"Fjern fra favoritter: ":"Tilføj til favoritter: ")+entry.name);row.addView(star,new LayoutParams(pad*6,pad*6));star.setOnClickListener(v->{actions.save(()->actions.library().toggleLocalFavorite(entry));reload();});}return row;
   }

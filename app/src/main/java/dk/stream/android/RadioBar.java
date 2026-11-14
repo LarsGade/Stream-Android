@@ -29,9 +29,10 @@ public final class RadioBar extends LinearLayout {
   else if(LocalAudioService.current()!=null){LocalMedia file=LocalAudioService.current();title=file.displayName();running=LocalAudioService.playing(file.uri);}
   else if(video!=null&&!video.title().isEmpty()){title=video.title();running=video.playing();}
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();}}
-  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(running?"Pause":"Afspil");toggle.setEnabled(!title.isEmpty());live.setVisibility(isLive?VISIBLE:GONE);
+  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?"Pause":"Afspil");toggle.setEnabled(!title.isEmpty());live.setVisibility(isLive?VISIBLE:GONE);
  }
  private void transport(){
+  if(CastPlayback.image(getContext())){open();return;}
   if(CastPlayback.hasMedia(getContext())){CastPlayback.toggle(getContext());return;}
   if(LocalAudioService.current()!=null){getContext().startService(LocalAudioService.command(getContext(),LocalAudioService.TOGGLE));return;}
   if(video!=null&&!video.title().isEmpty()){video.toggle();return;}
@@ -39,6 +40,7 @@ public final class RadioBar extends LinearLayout {
   getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.TRANSPORT_TOGGLE));post(this::refresh);
  }
  private void open(){
+  if(CastPlayback.image(getContext())){getContext().startActivity(ImageViewerActivity.reopenIntent(getContext()));return;}
   if(CastPlayback.hasMedia(getContext())){getContext().startActivity(new Intent(getContext(),AudioPlayerActivity.class).putExtra("cast",true));return;}
   LocalMedia file=LocalAudioService.current();
   if(file!=null&&!file.audio()||file==null&&video!=null&&!video.title().isEmpty()){if(video!=null)video.open();return;}

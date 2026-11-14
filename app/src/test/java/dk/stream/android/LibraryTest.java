@@ -107,13 +107,13 @@ public class LibraryTest {
   assertEquals(2,library.favorites.size());assertTrue(library.isFavorite(two));
  }
  @Test public void startFavoriteTabIsSavedIndependentlyOfTheLastViewedTab() throws Exception {
-  for(int tab=0;tab<3;tab++) {Library library=new Library();library.favoritesOnStart=true;library.setFavoritesStartTab(tab);library.favoritesRadio=tab!=1;library.favoritesLocal=tab!=2;Library restored=Library.fromJson(library.toJson());assertEquals(tab,restored.favoritesStartTab);assertTrue(restored.favoritesOnStart);}
+  for(int tab=0;tab<4;tab++) {Library library=new Library();library.favoritesOnStart=true;library.setFavoritesStartTab(tab);library.favoritesRadio=tab!=1;library.favoritesLocal=tab!=2;Library restored=Library.fromJson(library.toJson());assertEquals(tab,restored.favoritesStartTab);assertTrue(restored.favoritesOnStart);}
  }
  @Test public void oldStartPreferenceKeepsPreviouslyChosenFavoritesTab() throws Exception {
   Library library=new Library();library.favoritesLocal=true;org.json.JSONObject old=new org.json.JSONObject(library.toJson());old.remove("favoritesStartTab");assertEquals(2,Library.fromJson(old.toString()).favoritesStartTab);old.put("favoritesLocal",false).put("favoritesRadio",true);assertEquals(1,Library.fromJson(old.toString()).favoritesStartTab);
  }
  @Test public void invalidSavedStartTabIsClampedToAnAvailableTab() throws Exception {
-  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(2,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
+  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(3,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
  }
 
 }

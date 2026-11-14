@@ -98,4 +98,5 @@
  <string name="radio_playing_via">Afspilles via Stream</string>
  <string name="local_files">Lokale</string>
  <string name="pcloud">Pcloud</string>
+ <string name="images">Billeder</string>
 </resources>

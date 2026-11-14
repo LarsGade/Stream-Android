@@ -16,9 +16,10 @@ public final class LocalMedia {
   if(!"content".equals(java.net.URI.create(uri).getScheme())) throw new IllegalArgumentException("Document URI required");
   this.uri=uri;this.name=name==null?"Mediefil":name;this.mime=mime==null?"":mime;this.folder=folder;
  }
- public String displayName() {if(folder) return name;return name.replaceFirst("(?i)\\.(mp3|m4a|m4b|aac|flac|wav|ogg|opus|wma|aiff|alac|mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts)$","");}
- public boolean audio() {return mime.startsWith("audio/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp3|m4a|aac|flac|wav|ogg|opus|wma|aiff|alac)$");}
- public boolean supported() {return folder || audio() || mime.startsWith("video/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts)$");}
+ public String displayName() {if(folder) return name;return name.replaceFirst("(?i)\\.(mp3|m4a|m4b|aac|flac|wav|ogg|opus|wma|aiff|alac|mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts|jpg|jpeg|png|gif|webp|bmp|heic|heif|avif|svg|tif|tiff|ico)$","");}
+ public boolean image() {return !folder&&(mime.startsWith("image/")||name.toLowerCase(Locale.ROOT).matches(".*\\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|avif|svg|tif|tiff|ico)$"));}
+ public boolean audio() {return !image()&&(mime.startsWith("audio/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp3|m4a|aac|flac|wav|ogg|opus|wma|aiff|alac)$"));}
+ public boolean supported() {return folder || image() || audio() || mime.startsWith("video/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts)$");}
  public JSONObject json() throws JSONException {return new JSONObject().put("uri",uri).put("name",name).put("mime",mime).put("folder",folder);}
  public static LocalMedia from(JSONObject value) throws JSONException {return new LocalMedia(value.getString("uri"),value.getString("name"),value.optString("mime",""),value.optBoolean("folder"));}
  public static LocalMedia describe(Context context,Uri uri,boolean tree) {
