@@ -34,6 +34,12 @@ public final class Library {
   }
   @Override public String toString() {return name;}
  }
+ public final List<LocalMedia> localFiles=new ArrayList<>(),localFavorites=new ArrayList<>();
+ public boolean favoritesLocal;
+ public boolean isLocalFavorite(String uri) {for(LocalMedia entry:localFavorites) if(entry.uri.equals(uri)) return true;return false;}
+ public void addLocal(LocalMedia entry) {for(LocalMedia old:localFiles) if(old.uri.equals(entry.uri)) return;localFiles.add(entry);}
+ public void removeLocal(String uri) {for(int i=localFiles.size()-1;i>=0;i--) if(localFiles.get(i).uri.equals(uri)) localFiles.remove(i);}
+ public void toggleLocalFavorite(LocalMedia entry) {for(int i=0;i<localFavorites.size();i++) if(localFavorites.get(i).uri.equals(entry.uri)) {localFavorites.remove(i);return;}localFavorites.add(entry);}
  public final List<RadioStation> radioFavorites=new ArrayList<>();
  public RadioStation findRadio(String id) {for(RadioStation station:radioFavorites) if(station.id.equals(id)) return station;return null;}
  public void addRadio(RadioStation station) {if(findRadio(station.id)==null) radioFavorites.add(station);}
@@ -135,7 +141,8 @@ public final class Library {
  }
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
-  JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesRadio",favoritesRadio);root.put("lastSourceId",lastSourceId);
+  JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);
+  JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
    JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
@@ -157,7 +164,9 @@ public final class Library {
  public static Library fromJson(String json) throws JSONException {
   Library library=new Library();JSONObject root=new JSONObject(json);
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
-  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.lastSourceId=root.optString("lastSourceId","");
+  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");
+  JSONArray locals=root.optJSONArray("localFiles"),localStars=root.optJSONArray("localFavorites");if(locals!=null) for(int i=0;i<locals.length();i++) library.addLocal(LocalMedia.from(locals.getJSONObject(i)));if(localStars!=null) for(int i=0;i<localStars.length();i++) {LocalMedia entry=LocalMedia.from(localStars.getJSONObject(i));if(!library.isLocalFavorite(entry.uri)) library.localFavorites.add(entry);}
+  library.lastSourceId=root.optString("lastSourceId","");
   library.autoPlayLast=root.optBoolean("autoPlayLast");library.miniPlayer=root.optBoolean("miniPlayer");library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
   JSONObject last=root.optJSONObject("lastPlayed");
   if(last!=null) {

@@ -126,3 +126,13 @@ Version 1.12.0 bruger det indbyggede DR P4-logo til alle kanalnavne med “P4”
 Version 1.12.1 viser stationens logo til venstre for navnet i radiobaren og skjuler baren efter Stop. Radioens medieoplysninger viser kanalnavnet med “Afspilles via Stream” som undertekst, inklusive Android Auto. Bilens endelige layout bestemmes af dens medieafspiller.
 
 Version 1.12.2 fjerner de gamle Stop/Live-kontroller fra radiolisterne. Kun den faste radiobar bruges. Live vises efter pause i mediebetjeningen og forbliver synlig ved genoptagelse af den gamle buffer. Live genåbner streamen fra live-positionen og skjuler knappen igen; valg af en station på ny gør det samme. Stop skjuler hele baren.
+
+## Lokale filer
+
+**☰ → Lokale filer** ligger lige under Radio. Brug **Tilføj filer** til at vælge en eller flere lyd-/videofiler eller **Tilføj mappe** til at tilknytte en mappe via Androids filvælger. Appen gemmer kun dokumentlinks, navne, medietyper og varig læseadgang i det krypterede bibliotek. Mediefiler kopieres ikke til appens lager. Mapper indlæses fra deres oprindelige placering, så nye filer i en tilknyttet mappe kan ses, når mappen åbnes igen. Undermapper kan åbnes; brug Tilbage-knappen eller knappen til overordnet mappe for at gå op. Filvælgerens tilladte placeringer bestemmes af Android.
+
+Brug stjernen ved en fil eller mappe for at tilføje/fjerne den under **Favoritter → Lokale filer**, til højre for Radio. Også enkelte filer og undermapper inde i en tilknyttet mappe kan tilføjes. Hold på et link på hovedsiden for at vælge **Fjern link**; dette sletter aldrig filen eller mappen på enheden og fjerner ikke en separat favorit.
+
+Lyd afspilles med en baggrundsmediesession og den fælles bundbar. Tryk på navnet/barren for at åbne den fulde lydafspiller med tidslinje, Pause/Afspil og Stop. Stop skjuler baren. Videofiler bruger den samme afspiller og fuldskærmsvisning som TV, med spoling for søgbare filer. Lokale dokumentlinks afspilles på telefonen; de sendes ikke til en Cast-modtager. Radio, lokal lyd og video starter ikke samtidig.
+
+Filerne skal fortsat findes på den oprindelige placering, og appen skal have adgang. Flyttede/slettede filer, frakoblede drev eller tilbagekaldt adgang kræver, at filen/mappen tilføjes igen. Understøttede codecs afhænger af enheden. Version 1.13.0 tilføjer denne funktion og bevarer eksisterende TV-/radiofavoritter.
