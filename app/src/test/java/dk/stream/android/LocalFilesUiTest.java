@@ -66,17 +66,17 @@ public class LocalFilesUiTest {
   List<LocalMedia> all=LocalMedia.contents(activity,root);assertEquals(3,all.size());assertEquals("First / Second / Deep.mp3",all.get(2).name);assertEquals("content://nested.test/tree/root/document/b%2Fsong",all.get(2).uri);
  }
  @Test public void rowChildrenDoNotStealFolderOrPlaybackClicks() {
-  Library library=new Library();LocalMedia root=new LocalMedia("content://local.test/tree/root/document/root","Root","",true),song=new LocalMedia("content://local.test/song","Song.mp3","audio/mpeg",false);library.addLocal(root);library.addLocal(song);
+  Library library=new Library();LocalMedia root=new LocalMedia("content://local.test/tree/root/document/root","Root","",true),song=new LocalMedia("content://local.test/song","Song.mp3","audio/mpeg",false);library.setLocalSource(root);library.toggleLocalFavorite(root);library.toggleLocalFavorite(song);
   LocalMedia[] played={null},changed={null};
   LocalFilesPanel panel=new LocalFilesPanel(activity,new LocalFilesPanel.Actions() {
    public Library library(){return library;}public boolean save(Runnable action){action.run();return true;}public void pickFiles(){}public void pickFolder(){}public void play(LocalMedia entry){played[0]=entry;}public void changeFolder(LocalMedia entry){changed[0]=entry;}
   });
   try {
-   panel.open(false);ListView list=ReflectionHelpers.getField(panel,"list");
+   panel.open(true);ListView list=ReflectionHelpers.getField(panel,"list");
    View row=list.getAdapter().getView(1,null,list);assertFalse(row.hasFocusable());list.performItemClick(row,1,1);assertEquals(song,played[0]);
    Documents provider=Robolectric.buildContentProvider(Documents.class).create().get();org.robolectric.shadows.ShadowContentResolver.registerProviderInternal("local.test",provider);
    list.performItemClick(list.getAdapter().getView(0,null,list),0,0);assertEquals(root,ReflectionHelpers.<ArrayDeque<LocalMedia>>getField(panel,"parents").peekLast());
-   Button change=ReflectionHelpers.getField(panel,"changeFolder");assertEquals(View.VISIBLE,change.getVisibility());change.performClick();assertEquals(root,changed[0]);assertTrue(panel.back());
+   panel.open(false);Button change=ReflectionHelpers.getField(panel,"changeFolder");assertEquals(View.VISIBLE,change.getVisibility());change.performClick();assertEquals(root,changed[0]);assertTrue(panel.back());
   } finally {panel.close();}
  }
 
@@ -100,6 +100,11 @@ public class LocalFilesUiTest {
    service.onStartCommand(LocalAudioService.command(activity,LocalAudioService.TOGGLE),0,3);assertTrue(LocalAudioService.playing(second.uri));
    player.seekToNextMediaItem();assertEquals(third.uri,LocalAudioService.current().uri);assertFalse(player.hasNextMediaItem());
   } finally {serviceController.destroy();}
+ }
+
+ @Test public void localFavoritesCanBeSearchedByVisibleName() {
+  Library library=ReflectionHelpers.getField(activity,"library");library.toggleLocalFavorite(new LocalMedia("content://docs/a","Alpha.mp3","audio/mpeg",false));library.toggleLocalFavorite(new LocalMedia("content://docs/b","Beta.mp4","video/mp4",false));
+  LocalFilesPanel panel=ReflectionHelpers.getField(activity,"localPanel");panel.open(true);EditText search=ReflectionHelpers.getField(panel,"search");search.setText("beta");ListView list=ReflectionHelpers.getField(panel,"list");assertEquals(1,list.getAdapter().getCount());assertEquals("Beta",((LocalMedia)list.getAdapter().getItem(0)).displayName());
  }
 
 }

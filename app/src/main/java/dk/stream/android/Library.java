@@ -38,6 +38,10 @@ public final class Library {
  public boolean favoritesLocal;
  public boolean isLocalFavorite(String uri) {for(LocalMedia entry:localFavorites) if(entry.uri.equals(uri)) return true;return false;}
  public void addLocal(LocalMedia entry) {for(LocalMedia old:localFiles) if(old.uri.equals(entry.uri)) return;localFiles.add(entry);}
+ public void setLocalSource(LocalMedia folder) {
+  if(!folder.folder) throw new IllegalArgumentException("Folder required");
+  localFiles.clear();localFiles.add(folder);
+ }
  public void replaceLocalFolder(String oldUri,LocalMedia replacement) {
   if(!replacement.folder) throw new IllegalArgumentException("Folder required");
   int index=-1;for(int i=0;i<localFiles.size();i++) if(localFiles.get(i).uri.equals(oldUri)&&localFiles.get(i).folder) {index=i;break;}

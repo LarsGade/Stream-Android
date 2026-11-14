@@ -39,6 +39,8 @@ public final class MainActivity extends AppCompatActivity {
  private boolean localMode;
  private boolean localPlayerAttached,activityStarted,acceptLocalPlayback=true;
  private String replacingLocalFolder;
+ private MediaRouteButton castRouteButton;
+ private LocalMedia pendingCastFile;private long pendingCastPosition;
  private final ExecutorService localWorker=Executors.newSingleThreadExecutor();
  private androidx.activity.OnBackPressedCallback localBack;
  private RadioPanel radioPanel;
@@ -102,7 +104,7 @@ public final class MainActivity extends AppCompatActivity {
 
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
-  super.onCreate(state);if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
+  super.onCreate(state);CastPlayback.init(this);if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
   android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);transport.addAction(LocalAudioService.CHANGED);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
@@ -131,7 +133,7 @@ public final class MainActivity extends AppCompatActivity {
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(56)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
   ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.header_banner);brand.setScaleX(0.9f);brand.setScaleY(0.9f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));header.addView(brand,new LinearLayout.LayoutParams(0,dp(64),1));
-  MediaRouteButton castButton=new MediaRouteButton(this);header.addView(castButton,new LinearLayout.LayoutParams(dp(48),dp(56)));
+  MediaRouteButton castButton=new MediaRouteButton(this){@Override public boolean performClick(){if(LocalAudioService.current()!=null&&android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};castRouteButton=castButton;header.addView(castButton,new LinearLayout.LayoutParams(dp(48),dp(56)));
   createDrawer();
   androidx.activity.OnBackPressedCallback closeDrawer=new androidx.activity.OnBackPressedCallback(false) {
    @Override public void handleOnBackPressed() {drawer.closeDrawer(androidx.core.view.GravityCompat.START);}
@@ -177,10 +179,15 @@ public final class MainActivity extends AppCompatActivity {
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(6),0,dp(4));root.addView(credit,new LinearLayout.LayoutParams(-1,-2));
-  root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();}),new LinearLayout.LayoutParams(-1,-2));
+  root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
+   public String title(){return selected==null?"":selected.name;}
+   public boolean playing(){return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
+   public void toggle(){togglePlaybackState();}
+   public void open(){if(LocalAudioService.current()!=null)syncLocalPlayback();enterFullscreen();}
+  }),new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
-   public boolean enabled() {return favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
+   public boolean enabled() {return search.getText().toString().trim().isEmpty()&&favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
    public void showActions(int position,View anchor) {
     if(!favoritesMode||position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
@@ -344,6 +351,7 @@ public final class MainActivity extends AppCompatActivity {
   try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {Toast.makeText(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
  }
  @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);super.onSaveInstanceState(state);}
+ @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
   super.onActivityResult(request,result,data);if((request!=7201&&request!=7202)||result!=RESULT_OK||data==null) return;
   boolean folder=request==7202;String replace=folder?replacingLocalFolder:null;replacingLocalFolder=null;List<android.net.Uri> uris=new ArrayList<>();
@@ -352,11 +360,12 @@ public final class MainActivity extends AppCompatActivity {
   localWorker.execute(()->{
    List<LocalMedia> linked=new ArrayList<>();boolean failed=false;
    for(android.net.Uri uri:uris) try {if(grants==0) throw new SecurityException("Read grant missing");getContentResolver().takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);LocalMedia entry=LocalMedia.describe(this,uri,folder);if(!entry.supported()) throw new IllegalArgumentException("Unsupported media");linked.add(entry);}catch(Exception error) {failed=true;}
-   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(replace!=null) library.replaceLocalFolder(replace,entry);else library.addLocal(entry);}});if(localMode) {if(replace!=null&&!linked.isEmpty()) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
+   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(folder) library.setLocalSource(entry);else library.addLocal(entry);}});if(localMode) {if(folder&&!linked.isEmpty()) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
   });
  }
  private void playLocal(LocalMedia entry) {playLocal(entry,0);}
  private void playLocal(LocalMedia entry,long position) {
+  if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){CastPlayback.toggle(this);return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,localPanel.playbackEntries(),position);return;}
   LocalMedia current=LocalAudioService.current();
   if(current!=null&&current.uri.equals(entry.uri)) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
   requestNotificationPermission();
@@ -423,8 +432,8 @@ public final class MainActivity extends AppCompatActivity {
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
   sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
-  search.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
-  if(favoritesMode) visible=new ArrayList<>(library.favorites);
+  search.setVisibility(View.VISIBLE);
+  if(favoritesMode) {visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(Library.Entry entry:library.favorites) if(entry.channel.name.toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);}
   else {
    visible=new ArrayList<>();
    if(activeSource!=null) for(Playlist.Channel channel:catalog.filter(currentKind,group,search.getText().toString())) visible.add(new Library.Entry(activeSource.id,channel));
@@ -630,7 +639,11 @@ public final class MainActivity extends AppCompatActivity {
     List<Playlist.Channel> episodes=new XtreamClient(source.server,source.username,source.password).episodes(series);
     runOnUiThread(()->{
      if(isDestroyed()) return;
-     new AlertDialog.Builder(this).setTitle(series.name).setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,episodes),(dialog,position)->play(episodes.get(position))).setNegativeButton(android.R.string.cancel,null).show();
+     LinearLayout choices=column();EditText query=new EditText(this);query.setSingleLine();query.setHint(R.string.search_hint);choices.addView(query);
+     ListView episodeList=new ListView(this);ArrayAdapter<Playlist.Channel> episodeAdapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes));episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
+     AlertDialog dialog=new AlertDialog.Builder(this).setTitle(series.name).setView(choices).setNegativeButton(android.R.string.cancel,null).create();
+     query.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence value,int start,int count,int after){}public void onTextChanged(CharSequence value,int start,int before,int count){episodeAdapter.getFilter().filter(value);}public void afterTextChanged(Editable value){}});
+     episodeList.setOnItemClickListener((parent,view,position,id)->{Playlist.Channel episode=episodeAdapter.getItem(position);if(episode!=null){dialog.dismiss();play(episode);}});dialog.show();
      status.setVisibility(View.GONE);
     });
    } catch(Exception e) {runOnUiThread(()->{if(!isDestroyed()) showError(e);});}
@@ -677,16 +690,17 @@ public final class MainActivity extends AppCompatActivity {
   status.setVisibility(View.VISIBLE);
   boolean same=selected!=null && selected.url.equals(channel.url);
   if(!same) resumePosition=0;
-  if(channel.url.startsWith("content:")) {CastSession previous=connectedCast();if(previous!=null&&previous.getRemoteMediaClient()!=null) previous.getRemoteMediaClient().stop();}
+  if(channel.url.startsWith("content:")){playLocal(new LocalMedia(channel.url,channel.name,"video/*",false));return;}
   selected=channel;long savedPosition=channel.kind==Playlist.Kind.TV?0:resumePosition;changeLibrary(()->{library.lastPlayed=channel;library.lastPlayedPosition=savedPosition;});CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
    exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null) player.pause();video.setPlayer(null);watchRemote();playbackPanel.refresh();
    MediaMetadata metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);
    if(!channel.logoUrl.isEmpty()) metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
    String path=Playlist.httpUrl(channel.url).encodedPath().toLowerCase(Locale.ROOT);
-   String type=path.endsWith(".m3u8")?"application/x-mpegURL":path.endsWith(".mpd")?"application/dash+xml":path.endsWith(".mp4")?"video/mp4":path.endsWith(".mkv")?"video/x-matroska":path.endsWith(".avi")?"video/x-msvideo":"video/mp2t";
+   String type=path.endsWith(".m3u8")?"application/x-mpegURL":path.endsWith(".mpd")?"application/dash+xml":path.endsWith(".mp4")?"video/mp4":path.endsWith(".mkv")?"video/x-matroska":path.endsWith(".avi")?"video/x-msvideo":path.endsWith(".mp3")?"audio/mpeg":path.endsWith(".aac")?"audio/aac":path.endsWith(".m4a")?"audio/mp4":path.endsWith(".flac")?"audio/flac":path.endsWith(".wav")?"audio/wav":path.endsWith(".ogg")?"audio/ogg":"video/mp2t";
+   if(type.startsWith("audio/")){metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);metadata.putString(MediaMetadata.KEY_ARTIST,"Afspilles via Stream");}
    MediaInfo media=new MediaInfo.Builder(channel.url).setContentType(type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
-   session.getRemoteMediaClient().load(new MediaLoadRequestData.Builder().setMediaInfo(media).setAutoplay(true).build()).setResultCallback(result->{if(!isDestroyed()) status.setText(result.getStatus().isSuccess()?getString(R.string.casting,channel.name):getString(R.string.cast_stream_failed));});
+   session.getRemoteMediaClient().load(new MediaLoadRequestData.Builder().setMediaInfo(media).setAutoplay(true).build()).setResultCallback(result->{if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);if(!isDestroyed()) status.setText(result.getStatus().isSuccess()?getString(R.string.casting,channel.name):getString(R.string.cast_stream_failed));});
   } else {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
@@ -707,7 +721,7 @@ public final class MainActivity extends AppCompatActivity {
   }
  }
  private CastSession connectedCast() {
-  if(selected!=null && selected.url.startsWith("content:")) return null;
+
   CastSession session=cast==null?null:cast.getSessionManager().getCurrentCastSession();return session!=null && session.isConnected()?session:null;
  }
  private void watchRemote() {

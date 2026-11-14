@@ -33,4 +33,11 @@ public class LocalMediaTest {
   Library restored=Library.fromJson(library.toJson());assertEquals(2,restored.localFiles.size());assertEquals(next.uri,restored.localFiles.get(0).uri);assertEquals(song.uri,restored.localFiles.get(1).uri);assertEquals(2,restored.localFavorites.size());assertFalse(restored.isLocalFavorite(old.uri));assertTrue(restored.isLocalFavorite(next.uri));assertTrue(restored.isLocalFavorite(song.uri));
  }
 
+ @Test public void localDisplayNamesHideMediaExtensionsWithoutChangingUris() {
+  LocalMedia file=new LocalMedia("content://docs/song.MP3","Artist / My.song.MP3","audio/mpeg",false);assertEquals("Artist / My.song",file.displayName());assertTrue(file.uri.endsWith(".MP3"));assertEquals("Folder.mp3",new LocalMedia("content://docs/root","Folder.mp3","",true).displayName());
+ }
+ @Test public void selectingOneSourceReplacesOldRootsAndKeepsFavorites() {
+  Library library=new Library();LocalMedia file=new LocalMedia("content://docs/song","Song.mp3","audio/mpeg",false),root=new LocalMedia("content://docs/root","Root","",true),next=new LocalMedia("content://docs/next","Next","",true);library.addLocal(root);library.addLocal(file);library.toggleLocalFavorite(file);library.setLocalSource(next);assertEquals(1,library.localFiles.size());assertSame(next,library.localFiles.get(0));assertTrue(library.isLocalFavorite(file.uri));
+ }
+
 }

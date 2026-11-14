@@ -17,6 +17,8 @@ public final class LocalAudioService extends MediaSessionService {
  private ExoPlayer player;
  private MediaSession session;
  private LocalMedia current;
+ private List<LocalMedia> queue=Collections.emptyList();
+ public static List<LocalMedia> queue(){return active==null?Collections.emptyList():new ArrayList<>(active.queue);}
  public static ExoPlayer player() {return active==null?null:active.player;}
  public static LocalMedia current() {return active==null?null:active.current;}
  public static boolean playing(String uri) {return current()!=null&&current().uri.equals(uri)&&player()!=null&&player().getPlayWhenReady()&&player().getPlaybackState()!=Player.STATE_ENDED&&player().getPlayerError()==null;}
@@ -29,8 +31,8 @@ public final class LocalAudioService extends MediaSessionService {
   return command(context,PLAY).putExtra("queue",pendingToken).putExtra("uri",entry.uri).putExtra("name",entry.name).putExtra("mime",entry.mime);
  }
  public static MediaItem item(LocalMedia entry) {
-  android.os.Bundle extras=new android.os.Bundle();extras.putString("mime",entry.mime);
-  MediaMetadata metadata=new MediaMetadata.Builder().setTitle(entry.name).setArtist("Afspilles via Stream").setMediaType(entry.audio()?MediaMetadata.MEDIA_TYPE_MUSIC:MediaMetadata.MEDIA_TYPE_VIDEO).setExtras(extras).build();
+  android.os.Bundle extras=new android.os.Bundle();extras.putString("mime",entry.mime);extras.putString("name",entry.name);
+  MediaMetadata metadata=new MediaMetadata.Builder().setTitle(entry.displayName()).setArtist("Afspilles via Stream").setMediaType(entry.audio()?MediaMetadata.MEDIA_TYPE_MUSIC:MediaMetadata.MEDIA_TYPE_VIDEO).setExtras(extras).build();
   return new MediaItem.Builder().setMediaId(entry.uri).setUri(entry.uri).setMediaMetadata(metadata).build();
  }
  private void changed() {sendBroadcast(new Intent(CHANGED).setPackage(getPackageName()));}
@@ -48,7 +50,7 @@ public final class LocalAudioService extends MediaSessionService {
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
     if(item==null) {current=null;changed();return;}
     android.os.Bundle extras=item.mediaMetadata.extras;
-    current=new LocalMedia(item.mediaId,String.valueOf(item.mediaMetadata.title),extras==null?"":extras.getString("mime",""),false);
+    current=new LocalMedia(item.mediaId,extras==null?String.valueOf(item.mediaMetadata.title):extras.getString("name",String.valueOf(item.mediaMetadata.title)),extras==null?"":extras.getString("mime",""),false);
     Intent screen=current.audio()?new Intent(LocalAudioService.this,AudioPlayerActivity.class).putExtra("local",true):new Intent(LocalAudioService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
     session.setSessionActivity(PendingIntent.getActivity(LocalAudioService.this,30,screen,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));changed();
    }
@@ -69,7 +71,7 @@ public final class LocalAudioService extends MediaSessionService {
    try {
     LocalMedia entry=new LocalMedia(intent.getStringExtra("uri"),intent.getStringExtra("name"),intent.getStringExtra("mime"),false);
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
-    pendingQueue=null;pendingToken=null;stopService(new Intent(this,RadioPlaybackService.class));
+    this.queue=queue.entries;pendingQueue=null;pendingToken=null;stopService(new Intent(this,RadioPlaybackService.class));
     List<MediaItem> items=new ArrayList<>();for(LocalMedia file:queue.entries) items.add(item(file));
     player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",0)));
     // Establish foreground immediately, before asynchronous file/decoder preparation.

@@ -34,7 +34,7 @@ public class RadioUiTest {
   for(String name:Arrays.asList("P4", "DR P4 København", "p4 nordjylland", "DR P4 Fyn (128 kbps)")) assertEquals("file:///android_asset/channel_logos/DR P4.png",logos.find(name));
   assertEquals("file:///android_asset/channel_logos/DR P3.png",logos.find("DR P3"));
  }
- @Test public void fixedBarShowsLogoAndHidesAfterStop() {
+ @Test public void fixedBarHasOneIconAndHidesAfterStop() {
   RadioBar bar=new RadioBar(activity,()->{});assertEquals(View.GONE,bar.getVisibility());
   org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
   try {
@@ -43,12 +43,12 @@ public class RadioUiTest {
    service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);bar.refresh();
    androidx.media3.common.Player player=service.onGetSession(null).getPlayer();
    assertEquals("P4 Fyn",player.getMediaMetadata().title);assertEquals("Afspilles via Stream",player.getMediaMetadata().artist);assertEquals("Afspilles via Stream",player.getMediaMetadata().subtitle);
-   player.pause();bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals("Afspil",((Button)bar.getChildAt(2)).getText().toString());player.play();bar.refresh();
+   player.pause();bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals("Afspil",bar.getChildAt(0).getContentDescription());player.play();bar.refresh();
    assertEquals("P4 Fyn",((TextView)bar.getChildAt(1)).getText().toString());
    assertEquals(View.VISIBLE,bar.getVisibility());assertTrue(bar.getChildAt(0) instanceof ImageView);
-   Button toggle=(Button)bar.getChildAt(2);assertEquals("Stop",toggle.getText().toString());toggle.performClick();
-   Intent stop=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.STOP,stop.getAction());
-   service.onStartCommand(stop,0,2);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
+   ImageButton toggle=(ImageButton)bar.getChildAt(0);assertEquals("Pause",toggle.getContentDescription());toggle.performClick();
+   Intent stop=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.TRANSPORT_TOGGLE,stop.getAction());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,2);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
   } finally {serviceController.destroy();}
  }
  @Test public void onlyFixedBarHasControlsAndLiveIsOffUntilPaused() {
