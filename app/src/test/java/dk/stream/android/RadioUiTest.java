@@ -34,18 +34,22 @@ public class RadioUiTest {
   for(String name:Arrays.asList("P4", "DR P4 København", "p4 nordjylland", "DR P4 Fyn (128 kbps)")) assertEquals("file:///android_asset/channel_logos/DR P4.png",logos.find(name));
   assertEquals("file:///android_asset/channel_logos/DR P3.png",logos.find("DR P3"));
  }
- @Test public void fixedBarKeepsStationAfterStopAndRestartsItsStream() {
-  RadioBar bar=new RadioBar(activity,()->{});
+ @Test public void fixedBarShowsLogoAndHidesAfterStop() {
+  RadioBar bar=new RadioBar(activity,()->{});assertEquals(View.GONE,bar.getVisibility());
   org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
   try {
+   server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
    RadioPlaybackService service=serviceController.get();RadioStation station=new RadioStation("bar", "P4 Fyn",server.url("/radio.mp3").toString(),"");
    service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);bar.refresh();
-   assertEquals("P4 Fyn",((TextView)bar.getChildAt(0)).getText().toString());
-   Button toggle=(Button)bar.getChildAt(1);assertEquals("Stop",toggle.getText().toString());toggle.performClick();
+   androidx.media3.common.Player player=service.onGetSession(null).getPlayer();
+   assertEquals("P4 Fyn",player.getMediaMetadata().title);assertEquals("Afspilles via Stream",player.getMediaMetadata().artist);assertEquals("Afspilles via Stream",player.getMediaMetadata().subtitle);
+   player.pause();bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals("Afspil",((Button)bar.getChildAt(2)).getText().toString());player.play();bar.refresh();
+   assertEquals("P4 Fyn",((TextView)bar.getChildAt(1)).getText().toString());
+   assertEquals(View.VISIBLE,bar.getVisibility());assertTrue(bar.getChildAt(0) instanceof ImageView);
+   Button toggle=(Button)bar.getChildAt(2);assertEquals("Stop",toggle.getText().toString());toggle.performClick();
    Intent stop=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.STOP,stop.getAction());
-   service.onStartCommand(stop,0,2);bar.refresh();assertEquals("Afspil",toggle.getText().toString());assertTrue(toggle.isEnabled());
-   toggle.performClick();Intent play=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.PLAY,play.getAction());assertTrue(play.getStringExtra("station").contains("P4 Fyn"));
-  } finally {serviceController.destroy();ReflectionHelpers.setStaticField(RadioPlaybackService.class,"lastStation",null);}
+   service.onStartCommand(stop,0,2);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
+  } finally {serviceController.destroy();}
  }
  @Test public void liveIsBesideStopAndRemainsAvailableWhenRadioIsPaused() throws Exception {
   panel.open(true);Button stop=ReflectionHelpers.getField(panel,"stop"),live=ReflectionHelpers.getField(panel,"live");

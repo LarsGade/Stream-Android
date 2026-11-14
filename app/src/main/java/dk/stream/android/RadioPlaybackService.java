@@ -14,8 +14,7 @@ import org.json.JSONObject;
 public final class RadioPlaybackService extends MediaLibraryService {
  public static final String LIVE="dk.stream.android.RADIO_LIVE",PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
  private static RadioPlaybackService active;
- private static RadioStation lastStation;
- public static RadioStation selectedStation() {return active!=null && active.current!=null?active.current:lastStation;}
+ public static RadioStation selectedStation() {return active!=null && active.player!=null && active.player.getPlaybackState()!=Player.STATE_IDLE?active.current:null;}
  private ExoPlayer player;
  private RadioSessionPlayer sessionPlayer;
  private MediaLibrarySession session;
@@ -53,7 +52,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   player.addListener(new Player.Listener() {
    @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(ready) error="";}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
-    if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {current=station;lastStation=station;error="";loadArtwork(station);}}
+    if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {current=station;error="";loadArtwork(station);}}
    }
    @Override public void onEvents(Player source,Player.Events events) {RadioWidgetProvider.refresh(RadioPlaybackService.this);}
    @Override public void onPlayerError(PlaybackException failure) {error=getString(R.string.radio_error);sessionPlayer.stop();RadioWidgetProvider.refresh(RadioPlaybackService.this);}
@@ -114,8 +113,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
    if(WIDGET_TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) {sessionPlayer.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
    else if(TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) sessionPlayer.pause();
    else {
-    current=station;lastStation=station;
-    MediaMetadata metadata=new MediaMetadata.Builder().setTitle(station.displayName()).setArtist(getString(R.string.app_name)).setArtworkData(PlaybackArtwork.local(this,station.displayName()),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
+    current=station;
+    MediaMetadata metadata=new MediaMetadata.Builder().setTitle(station.displayName()).setDisplayTitle(station.displayName()).setArtist(getString(R.string.radio_playing_via)).setSubtitle(getString(R.string.radio_playing_via)).setDescription(getString(R.string.radio_playing_via)).setArtworkData(PlaybackArtwork.local(this,station.displayName()),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
     player.setMediaItem(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build());player.prepare();player.play();loadArtwork(station);
    }
    RadioWidgetProvider.refresh(this);
