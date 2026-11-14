@@ -64,15 +64,16 @@ public final class RadioPanel extends LinearLayout {
   if(loading) return;loading=true;refresh.setEnabled(false);filter();
   worker.execute(()->{
    try {List<RadioStation> result=browser.loadDanish();CarRadioCatalog.writeCache(getContext(),result);main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;refresh.setEnabled(true);filter();});}
-   catch(Exception error) {main.post(()->{if(closed)return;loading=false;refresh.setEnabled(true);filter();if(!favorites) message.setText(R.string.radio_failed);});}
+   catch(Exception error) {main.post(()->{if(closed)return;loading=false;refresh.setEnabled(true);filter();if(!favorites) showMessage(getContext().getString(R.string.radio_failed));});}
   });
  }
  private void filter() {
   title.setVisibility(favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(VISIBLE);refresh.setVisibility(favorites?GONE:VISIBLE);
   visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
   for(RadioStation station:favorites?library.get().radioFavorites:stations) if(station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
-  message.setText(favorites?(visible.isEmpty()?getContext().getString(R.string.radio_favorites_empty):""):loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
+  showMessage(favorites?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
+ private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void play(RadioStation station) {beforePlay.run();if(CastPlayback.connected(getContext())) {CastPlayback.playRadio(getContext(),station);return;}androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
  private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String error=RadioPlaybackService.error();playbackError.setText(error);playbackError.setVisibility(error.isEmpty()?GONE:VISIBLE);}
 

@@ -33,7 +33,7 @@ public final class LocalFilesPanel extends LinearLayout {
   changeFolder=new Button(context);changeFolder.setText("Vælg kildemappe");addView(changeFolder);changeFolder.setOnClickListener(v->{LocalMedia root=parents.peekFirst();if(root!=null) actions.changeFolder(root);else actions.pickFolder();});
   up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams backParams=new LayoutParams(backSize,backSize);backParams.gravity=Gravity.LEFT;addView(up,backParams);up.setOnClickListener(v->back());
   path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);addView(path);
-  message=new TextView(context);message.setTextColor(Color.LTGRAY);addView(message);
+  message=new TextView(context);message.setTextColor(Color.LTGRAY);message.setVisibility(GONE);addView(message);
   list=new ListView(context);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {parents.addLast(entry);loadFolder();}else actions.play(entry);});
   list.setOnItemLongClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);PopupMenu menu=new PopupMenu(context,v);
@@ -46,13 +46,14 @@ public final class LocalFilesPanel extends LinearLayout {
  public List<LocalMedia> playbackEntries() {return new ArrayList<>(visible);}
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
- public void reload() {changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().localFavorites:roots);message.setText(visible.isEmpty()?(favorites?"Tilføj filer eller mapper til favoritter med stjernen.":"Vælg en kildemappe fra enheden."):"");}else loadFolder();}
+ public void reload() {changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().localFavorites:roots);showMessage("");}else loadFolder();}
+ private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);adapter.notifyDataSetChanged();}
  private void loadFolder() {
-  changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);message.setText("");show(Collections.emptyList());
-  if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);message.setText(entries.isEmpty()?"Ingen lyd- eller videofiler i mappen.":"");});}
-   catch(Exception failure) {post(()->{if(!closed&&generation==request) message.setText("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
+  changeFolder.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);showMessage("");show(Collections.emptyList());
+  if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen lyd- eller videofiler i mappen.":"");});}
+   catch(Exception failure) {post(()->{if(!closed&&generation==request) showMessage("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
  }
  public void close() {closed=true;if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}
  private final class Adapter extends BaseAdapter {

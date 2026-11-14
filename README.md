@@ -191,3 +191,5 @@ Version 1.15.3 omdøber menupunktet Streamingtjeneste til **Streaming (TV, Film,
 Version 1.15.4 indsætter et fast linjeskift i Streaming-knappen, så **(TV, Film, Serier)** står centreret på linjen under **Streaming**.
 
 Version 1.15.5 erstatter de resterende forekomster af Streamingtjeneste med **Streaming** i appen. Kildeindstillingerne hedder nu **Kilder til Streaming**, og fejlhenvisningen bruger samme navn. Streaming-knappens linjeskift og kategorier bevares.
+
+Version 1.15.6 fjerner faste vejledningstekster fra tomme lokale lister og radiofavoritter, herunder teksten om at bruge stjernen. Tomme tekstfelter skjules, så de ikke optager plads. Overflødige instruktioner i afsluttet Cast-status og slettebekræftelsen er også fjernet. Fejl, statusoplysninger, feltnavne og selve bekræftelsen på sletning bevares. En radio-widget uden favoritter viser kun den korte status Ingen radiofavoritter.

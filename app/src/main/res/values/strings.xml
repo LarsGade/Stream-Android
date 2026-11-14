@@ -1,5 +1,5 @@
 <resources>
-  <string name="cast_ended">Casting afsluttet. Vælg en kanal for at afspille her.</string>
+  <string name="cast_ended">Casting afsluttet.</string>
   <string name="cast_failed">Kunne ikke forbinde til Cast-enheden</string>
   <string name="app_name">Stream</string>
   <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
@@ -42,7 +42,7 @@
  <string name="save_source">Gem og indlæs</string>
  <string name="wait_loading">Vent, til indlæsningen er færdig.</string>
  <string name="remove_source">Slet kilde</string>
- <string name="remove_source_note">Vil du slette %1$s og favoritterne fra denne kilde? Tryk længe på en kilde for at slette den.</string>
+ <string name="remove_source_note">Vil du slette %1$s og favoritterne fra denne kilde?</string>
  <string name="source_missing">Kilden findes ikke længere. Tilføj den igen under Kilder til Streaming.</string>
  <string name="play_action">Afspil</string>
  <string name="pause_action">Sæt på pause</string>
@@ -83,7 +83,7 @@
  <string name="radio_loading">Henter danske radiostationer …</string>
  <string name="radio_failed">Kunne ikke hente radiostationer. Prøv igen.</string>
  <string name="radio_empty">Ingen stationer fundet</string>
- <string name="radio_favorites_empty">Tilføj radiostationer til favoritter fra Radio</string>
+ <string name="radio_favorites_empty">Ingen radiofavoritter</string>
  <string name="rename_radio">Omdøb</string>
  <string name="refresh_radio">Opdatér radio</string>
  <string name="radio_widget">Stream Radio</string>
