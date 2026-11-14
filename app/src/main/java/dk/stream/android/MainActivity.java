@@ -187,7 +187,8 @@ public final class MainActivity extends AppCompatActivity {
   }),new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
-   public boolean enabled() {return search.getText().toString().trim().isEmpty()&&favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
+   public boolean enabled() {return favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
+   public boolean canReorder(){return search.getText().toString().trim().isEmpty();}
    public void showActions(int position,View anchor) {
     if(!favoritesMode||position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);

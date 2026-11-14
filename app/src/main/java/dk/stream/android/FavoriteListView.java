@@ -7,7 +7,7 @@ import android.widget.ListView;
 /** A stationary long press opens actions on release; moving after the hold reorders rows. */
 public final class FavoriteListView extends ListView {
  public interface Listener {
-  boolean enabled();void showActions(int position,View anchor);void move(int from,int to);void commit();void cancel();
+  boolean enabled();default boolean canReorder(){return true;}void showActions(int position,View anchor);void move(int from,int to);void commit();void cancel();
  }
  private Listener listener;
  private boolean armed,dragging,touching;
@@ -52,7 +52,7 @@ public final class FavoriteListView extends ListView {
   if(!armed) {if(event.getActionMasked()==MotionEvent.ACTION_UP||event.getActionMasked()==MotionEvent.ACTION_CANCEL) touching=false;return super.onTouchEvent(event);}
   switch(event.getActionMasked()) {
    case MotionEvent.ACTION_MOVE:
-    if(!dragging && Math.abs(lastY-heldY)>slop) dragging=true;
+    if(!dragging && listener.canReorder() && Math.abs(lastY-heldY)>slop) dragging=true;
     if(dragging) {moveToPointer();removeCallbacks(autoScroll);if(lastY<edge || lastY>getHeight()-edge) post(autoScroll);}
     return true;
    case MotionEvent.ACTION_UP:

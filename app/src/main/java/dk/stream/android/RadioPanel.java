@@ -44,7 +44,8 @@ public final class RadioPanel extends LinearLayout {
   list=new FavoriteListView(context);list.setDividerHeight(dp(6));addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((parent,view,position,id)->play(visible.get(position)));
   list.setFavoriteListener(new FavoriteListView.Listener() {
-   public boolean enabled() {return favorites&&search.getText().toString().trim().isEmpty();}
+   public boolean enabled() {return favorites;}
+   public boolean canReorder(){return search.getText().toString().trim().isEmpty();}
    public void showActions(int position,View anchor) {
     if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new PopupMenu(context,anchor);
     menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
