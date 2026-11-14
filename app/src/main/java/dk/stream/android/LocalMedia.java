@@ -14,7 +14,7 @@ public final class LocalMedia {
  public final boolean folder;
  public LocalMedia(String uri,String name,String mime,boolean folder) {
   if(!"content".equals(java.net.URI.create(uri).getScheme())) throw new IllegalArgumentException("Document URI required");
-  this.uri=uri;this.name=name;this.mime=mime;this.folder=folder;
+  this.uri=uri;this.name=name==null?"Mediefil":name;this.mime=mime==null?"":mime;this.folder=folder;
  }
  public boolean audio() {return mime.startsWith("audio/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp3|m4a|aac|flac|wav|ogg|opus|wma|aiff|alac)$");}
  public boolean supported() {return folder || audio() || mime.startsWith("video/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts)$");}
@@ -40,6 +40,23 @@ public final class LocalMedia {
    }
   }
   Collections.sort(result,(a,b)->a.folder!=b.folder?(a.folder?-1:1):a.name.compareToIgnoreCase(b.name));return result;
+ }
+ /** Iterative traversal includes every depth and guards against provider cycles. */
+ public static List<LocalMedia> contents(Context context,LocalMedia root,boolean recursive) {
+  List<LocalMedia> direct=children(context,root);
+  if(!recursive) return direct;
+  List<LocalMedia> result=new ArrayList<>(direct);
+  ArrayDeque<LocalMedia> pending=new ArrayDeque<>();Set<String> visited=new HashSet<>();visited.add(root.uri);
+  for(LocalMedia entry:direct) if(entry.folder) pending.add(entry);
+  while(!pending.isEmpty()) {
+   if(Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException();
+   LocalMedia folder=pending.removeFirst();if(!visited.add(folder.uri)) continue;
+   for(LocalMedia entry:children(context,folder)) {
+    LocalMedia relative=new LocalMedia(entry.uri,folder.name+" / "+entry.name,entry.mime,entry.folder);
+    if(entry.folder) pending.addLast(relative);else result.add(relative);
+   }
+  }
+  return result;
  }
  @Override public String toString() {return name;}
 }

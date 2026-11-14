@@ -38,6 +38,15 @@ public final class Library {
  public boolean favoritesLocal;
  public boolean isLocalFavorite(String uri) {for(LocalMedia entry:localFavorites) if(entry.uri.equals(uri)) return true;return false;}
  public void addLocal(LocalMedia entry) {for(LocalMedia old:localFiles) if(old.uri.equals(entry.uri)) return;localFiles.add(entry);}
+ public void replaceLocalFolder(String oldUri,LocalMedia replacement) {
+  if(!replacement.folder) throw new IllegalArgumentException("Folder required");
+  int index=-1;for(int i=0;i<localFiles.size();i++) if(localFiles.get(i).uri.equals(oldUri)&&localFiles.get(i).folder) {index=i;break;}
+  if(index<0) throw new IllegalArgumentException("Source folder missing");
+  localFiles.set(index,replacement);
+  for(int i=localFiles.size()-1;i>=0;i--) if(i!=index&&localFiles.get(i).uri.equals(replacement.uri)) localFiles.remove(i);
+  for(int i=0;i<localFavorites.size();i++) if(localFavorites.get(i).uri.equals(oldUri)) localFavorites.set(i,replacement);
+  Set<String> seen=new HashSet<>();for(int i=0;i<localFavorites.size();) {if(seen.add(localFavorites.get(i).uri)) i++;else localFavorites.remove(i);}
+ }
  public void removeLocal(String uri) {for(int i=localFiles.size()-1;i>=0;i--) if(localFiles.get(i).uri.equals(uri)) localFiles.remove(i);}
  public void toggleLocalFavorite(LocalMedia entry) {for(int i=0;i<localFavorites.size();i++) if(localFavorites.get(i).uri.equals(entry.uri)) {localFavorites.remove(i);return;}localFavorites.add(entry);}
  public final List<RadioStation> radioFavorites=new ArrayList<>();

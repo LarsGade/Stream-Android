@@ -37,6 +37,7 @@ public final class MainActivity extends AppCompatActivity {
  private RadioButton favoriteTv,favoriteRadio,favoriteLocal;
  private LocalFilesPanel localPanel;
  private boolean localMode;
+ private String replacingLocalFolder;
  private final ExecutorService localWorker=Executors.newSingleThreadExecutor();
  private androidx.activity.OnBackPressedCallback localBack;
  private RadioPanel radioPanel;
@@ -100,7 +101,7 @@ public final class MainActivity extends AppCompatActivity {
 
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
-  super.onCreate(state);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
+  super.onCreate(state);if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
   android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
@@ -169,7 +170,8 @@ public final class MainActivity extends AppCompatActivity {
    public Library library() {return library;}
    public boolean save(Runnable change) {return changeLibrary(change);}
    public void pickFiles() {pickLocal(false);}
-   public void pickFolder() {pickLocal(true);}
+   public void pickFolder() {replacingLocalFolder=null;pickLocal(true);}
+   public void changeFolder(LocalMedia entry) {replacingLocalFolder=entry.uri;pickLocal(true);}
    public void play(LocalMedia entry) {playLocal(entry);}
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
@@ -336,18 +338,20 @@ public final class MainActivity extends AppCompatActivity {
  private void pickLocal(boolean folder) {
   android.content.Intent intent=new android.content.Intent(folder?android.content.Intent.ACTION_OPEN_DOCUMENT_TREE:android.content.Intent.ACTION_OPEN_DOCUMENT);
   intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION|android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+  if(folder && replacingLocalFolder!=null && android.os.Build.VERSION.SDK_INT>=26) intent.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI,android.net.Uri.parse(replacingLocalFolder));
   if(!folder) {intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);intent.setType("*/*");intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,new String[]{"audio/*","video/*"});intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE,true);}
   try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {Toast.makeText(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
  }
+ @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);super.onSaveInstanceState(state);}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
   super.onActivityResult(request,result,data);if((request!=7201&&request!=7202)||result!=RESULT_OK||data==null) return;
-  boolean folder=request==7202;List<android.net.Uri> uris=new ArrayList<>();
+  boolean folder=request==7202;String replace=folder?replacingLocalFolder:null;replacingLocalFolder=null;List<android.net.Uri> uris=new ArrayList<>();
   if(data.getClipData()!=null) for(int i=0;i<data.getClipData().getItemCount();i++) uris.add(data.getClipData().getItemAt(i).getUri());else if(data.getData()!=null) uris.add(data.getData());
   int grants=data.getFlags()&android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
   localWorker.execute(()->{
    List<LocalMedia> linked=new ArrayList<>();boolean failed=false;
    for(android.net.Uri uri:uris) try {if(grants==0) throw new SecurityException("Read grant missing");getContentResolver().takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);LocalMedia entry=LocalMedia.describe(this,uri,folder);if(!entry.supported()) throw new IllegalArgumentException("Unsupported media");linked.add(entry);}catch(Exception error) {failed=true;}
-   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) library.addLocal(entry);});if(localMode) localPanel.reload();if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
+   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(replace!=null) library.replaceLocalFolder(replace,entry);else library.addLocal(entry);}});if(localMode) {if(replace!=null&&!linked.isEmpty()) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
   });
  }
  private void playLocal(LocalMedia entry) {

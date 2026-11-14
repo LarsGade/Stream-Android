@@ -136,3 +136,7 @@ Brug stjernen ved en fil eller mappe for at tilføje/fjerne den under **Favoritt
 Lyd afspilles med en baggrundsmediesession og den fælles bundbar. Tryk på navnet/barren for at åbne den fulde lydafspiller med tidslinje, Pause/Afspil og Stop. Stop skjuler baren. Videofiler bruger den samme afspiller og fuldskærmsvisning som TV, med spoling for søgbare filer. Lokale dokumentlinks afspilles på telefonen; de sendes ikke til en Cast-modtager. Radio, lokal lyd og video starter ikke samtidig.
 
 Filerne skal fortsat findes på den oprindelige placering, og appen skal have adgang. Flyttede/slettede filer, frakoblede drev eller tilbagekaldt adgang kræver, at filen/mappen tilføjes igen. Understøttede codecs afhænger af enheden. Version 1.13.0 tilføjer denne funktion og bevarer eksisterende TV-/radiofavoritter.
+
+Version 1.13.1 retter tryk på lokale mapper og filer: favoritknappen tager ikke længere fokus fra rækken. Når en mappe åbnes, er **Medtag filer fra alle undermapper** slået til; filer fra dybere mapper vises med deres relative mappenavn og afspilles fra det oprindelige dokumentlink. Slå valget fra for kun at se den aktuelle mappes indhold. Gennemgangen kører i baggrunden og beskytter mod cirkulære mappehenvisninger.
+
+Åbn en tilknyttet mappe og tryk **Skift kildemappe**, eller hold på mappen på hovedsiden og vælg samme handling. Den nye mappe erstatter linket på samme plads, og en favorit til selve kildemappen opdateres. Andre links og favoritter bevares. Annullering eller en ugyldig mappe bevarer den gamle kilde. Der slettes ingen filer.

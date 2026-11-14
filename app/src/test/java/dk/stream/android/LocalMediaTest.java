@@ -26,4 +26,11 @@ public class LocalMediaTest {
  @Test public void networkUrlsAndRawPathsCannotBecomeLocalLinks() {
   for(String uri:new String[]{"https://example.com/track.mp3","file:///sdcard/track.mp3","/sdcard/track.mp3"}) try {new LocalMedia(uri,"Track","audio/mpeg",false);fail("Expected document URI validation");}catch(IllegalArgumentException expected) { }
  }
+ @Test public void replacingSourcePreservesOtherLinksAndUpdatesRootFavorite() throws Exception {
+  Library library=new Library();LocalMedia old=new LocalMedia("content://docs/tree/old/document/old","Old","",true),next=new LocalMedia("content://docs/tree/new/document/new","New","",true),song=new LocalMedia("content://docs/song","Song.mp3","audio/mpeg",false);
+  library.addLocal(old);library.addLocal(song);library.addLocal(next);library.toggleLocalFavorite(old);library.toggleLocalFavorite(next);library.toggleLocalFavorite(song);
+  library.replaceLocalFolder(old.uri,next);
+  Library restored=Library.fromJson(library.toJson());assertEquals(2,restored.localFiles.size());assertEquals(next.uri,restored.localFiles.get(0).uri);assertEquals(song.uri,restored.localFiles.get(1).uri);assertEquals(2,restored.localFavorites.size());assertFalse(restored.isLocalFavorite(old.uri));assertTrue(restored.isLocalFavorite(next.uri));assertTrue(restored.isLocalFavorite(song.uri));
+ }
+
 }

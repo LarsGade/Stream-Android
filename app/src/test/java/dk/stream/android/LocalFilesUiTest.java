@@ -50,4 +50,44 @@ public class LocalFilesUiTest {
   LocalMedia root=new LocalMedia("content://local.test/tree/root/document/root","Root",DocumentsContract.Document.MIME_TYPE_DIR,true);
   List<LocalMedia> entries=LocalMedia.children(activity,root);assertEquals(3,entries.size());assertTrue(entries.get(0).folder);assertEquals("Folder",entries.get(0).name);assertTrue(entries.get(1).uri.startsWith("content://local.test/tree/root/document/"));assertTrue(Documents.queried.toString().endsWith("/children"));assertEquals(0,Documents.streams);
  }
+ public static class NestedDocuments extends Documents {
+  @Override public Cursor query(Uri uri,String[] projection,String selection,String[] args,String sort) {
+   MatrixCursor c=new MatrixCursor(new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE});
+   String id=DocumentsContract.getDocumentId(uri);
+   if(id.equals("root")) {c.addRow(new Object[]{"a","First",DocumentsContract.Document.MIME_TYPE_DIR});c.addRow(new Object[]{"root/direct","Direct.mp4","video/mp4"});}
+   else if(id.equals("a")) {c.addRow(new Object[]{"b","Second",DocumentsContract.Document.MIME_TYPE_DIR});}
+   else if(id.equals("b")) {c.addRow(new Object[]{"b/song","Deep.mp3","audio/mpeg"});c.addRow(new Object[]{"a","Cycle",DocumentsContract.Document.MIME_TYPE_DIR});}
+   return c;
+  }
+ }
+ @Test public void recursiveViewIncludesDeepFilesAndStopsProviderCycles() {
+  NestedDocuments provider=Robolectric.buildContentProvider(NestedDocuments.class).create().get();org.robolectric.shadows.ShadowContentResolver.registerProviderInternal("nested.test",provider);
+  LocalMedia root=new LocalMedia("content://nested.test/tree/root/document/root","Root","",true);
+  List<LocalMedia> direct=LocalMedia.contents(activity,root,false);assertEquals(2,direct.size());
+  List<LocalMedia> all=LocalMedia.contents(activity,root,true);assertEquals(3,all.size());assertEquals("First / Second / Deep.mp3",all.get(2).name);assertEquals("content://nested.test/tree/root/document/b%2Fsong",all.get(2).uri);
+ }
+ @Test public void rowChildrenDoNotStealFolderOrPlaybackClicks() {
+  Library library=new Library();LocalMedia root=new LocalMedia("content://local.test/tree/root/document/root","Root","",true),song=new LocalMedia("content://local.test/song","Song.mp3","audio/mpeg",false);library.addLocal(root);library.addLocal(song);
+  LocalMedia[] played={null},changed={null};
+  LocalFilesPanel panel=new LocalFilesPanel(activity,new LocalFilesPanel.Actions() {
+   public Library library(){return library;}public boolean save(Runnable action){action.run();return true;}public void pickFiles(){}public void pickFolder(){}public void play(LocalMedia entry){played[0]=entry;}public void changeFolder(LocalMedia entry){changed[0]=entry;}
+  });
+  try {
+   panel.open(false);ListView list=ReflectionHelpers.getField(panel,"list");
+   View row=list.getAdapter().getView(1,null,list);assertFalse(row.hasFocusable());list.performItemClick(row,1,1);assertEquals(song,played[0]);
+   Documents provider=Robolectric.buildContentProvider(Documents.class).create().get();org.robolectric.shadows.ShadowContentResolver.registerProviderInternal("local.test",provider);
+   list.performItemClick(list.getAdapter().getView(0,null,list),0,0);assertEquals(root,ReflectionHelpers.<ArrayDeque<LocalMedia>>getField(panel,"parents").peekLast());
+   Button change=ReflectionHelpers.getField(panel,"changeFolder");assertEquals(View.VISIBLE,change.getVisibility());change.performClick();assertEquals(root,changed[0]);assertTrue(panel.back());
+  } finally {panel.close();}
+ }
+
+ @Test public void fileSelectionRoutesAudioAndVideoToTheirPlayersWithOriginalUris() {
+  LocalMedia audio=new LocalMedia("content://local.test/tree/root/document/root%2FTrack.mp3","Track.mp3","audio/mpeg",false);
+  ReflectionHelpers.callInstanceMethod(activity,"playLocal",ReflectionHelpers.ClassParameter.from(LocalMedia.class,audio));
+  Intent intent=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(LocalAudioService.PLAY,intent.getAction());assertEquals(audio.uri,intent.getStringExtra("uri"));
+  LocalMedia video=new LocalMedia("content://local.test/tree/root/document/root%2FMovie.mp4","Movie.mp4","video/mp4",false);
+  ReflectionHelpers.callInstanceMethod(activity,"playLocal",ReflectionHelpers.ClassParameter.from(LocalMedia.class,video));
+  androidx.media3.exoplayer.ExoPlayer player=ReflectionHelpers.getField(activity,"player");assertNotNull(player);assertEquals(Uri.parse(video.uri),player.getCurrentMediaItem().localConfiguration.uri);assertTrue(player.getPlayWhenReady());
+ }
+
 }
