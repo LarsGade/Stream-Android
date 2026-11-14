@@ -182,7 +182,7 @@ public final class MainActivity extends AppCompatActivity {
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
   pcloudPanel=new PcloudPanel(this,new PcloudPanel.Actions(){
-   public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void login(){showPcloudLogin();}public void logout(){logoutPcloud();}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
+   public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
    public String title(){return selected==null?"":selected.name;}
@@ -236,7 +236,8 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
+  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,()->{});
+  pcloudButton.setOnClickListener(view->showPcloudMenu(pcloudButton));
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
@@ -358,6 +359,14 @@ public final class MainActivity extends AppCompatActivity {
   if(favorites) {showFavoriteTab(2);return;}
   favoritesPage=false;favoritesMode=false;radioMode=false;localMode=true;radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.VISIBLE);localPanel.open(false);filter();
  }
+ private void showPcloudMenu(View anchor){
+  if(library.pcloud==null){openPcloud();return;}
+  PopupMenu menu=new PopupMenu(this,anchor);
+  menu.getMenu().add("Åbn Pcloud").setOnMenuItemClickListener(item->{openPcloud();return true;});
+  menu.getMenu().add("Opdatér").setOnMenuItemClickListener(item->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);if(pcloudMode)pcloudPanel.refresh();else openPcloud();return true;});
+  menu.getMenu().add("Redigér konto").setOnMenuItemClickListener(item->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudLogin();return true;});
+  menu.getMenu().add("Log ud").setOnMenuItemClickListener(item->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);logoutPcloud();return true;});menu.show();
+ }
  private void openPcloud(){
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();if(library.pcloud==null)showPcloudLogin();
  }
@@ -376,7 +385,7 @@ public final class MainActivity extends AppCompatActivity {
   dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
    PcloudAccount account;try{account=new PcloudAccount(region.getSelectedItemPosition()==1?PcloudAccount.US:PcloudAccount.EU,email.getText().toString(),password.getText().toString());}catch(IllegalArgumentException invalid){error.setText(invalid.getMessage());error.setVisibility(View.VISIBLE);return;}
    error.setText("");error.setVisibility(View.GONE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
-   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();pcloudPanel.open();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes.");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
+   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openPcloud();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes.");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
   }));dialog.show();
  }
  private void pickLocal(boolean folder) {
