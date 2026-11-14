@@ -28,7 +28,7 @@
  <string name="loading_catalog">Henter TV, film, serier og grupper …</string>
  <string name="loading_episodes">Henter seriens afsnit …</string>
  <string name="open_menu">Åbn menu</string>
- <string name="library">Streaming (TV, Film, Serier)</string>
+ <string name="library">Streaming\n(TV, Film, Serier)</string>
  <string name="favorites">Favoritter</string>
  <string name="sources">Kilder til streamingtjeneste</string>
  <string name="start_favorites">Vis favoritter, når appen åbner</string>

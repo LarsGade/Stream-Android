@@ -187,3 +187,5 @@ Version 1.15.2 fjerner menupunktet Video i bil og hele forbindelsen til eksterne
 Toppen i version 1.15.2 viser kun det eksisterende playmotiv fra logoet, uden Stream-teksten. Appens launcherikon ændres ikke.
 
 Version 1.15.3 omdøber menupunktet Streamingtjeneste til **Streaming (TV, Film, Serier)**.
+
+Version 1.15.4 indsætter et fast linjeskift i Streaming-knappen, så **(TV, Film, Serier)** står centreret på linjen under **Streaming**.
