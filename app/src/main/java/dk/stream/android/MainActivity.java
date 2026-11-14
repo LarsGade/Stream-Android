@@ -348,7 +348,15 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void showFavoriteKind(boolean radio) {showFavoriteTab(radio?1:0);}
+ private int selectedFavoriteTab(){return favoriteImages.isChecked()?3:favoriteLocal.isChecked()?2:favoriteRadio.isChecked()?1:0;}
+ private void updateFavoriteTabVisibility(){
+  RadioButton[] tabs={favoriteTv,favoriteRadio,favoriteLocal,favoriteImages};boolean any=false;
+  for(int i=0;i<tabs.length;i++){boolean present=library.hasFavoriteTab(i);tabs[i].setVisibility(present?View.VISIBLE:View.GONE);any|=present;}
+  ((View)favoriteTabs.getParent()).setVisibility(favoritesPage&&any?View.VISIBLE:View.GONE);
+  if(!any){choosingFavoriteTab=true;favoriteTabs.clearCheck();choosingFavoriteTab=false;}
+ }
  private void showFavoriteTab(int tab) {
+  tab=Math.max(0,library.availableFavoriteTab(tab));
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);exitFullscreen();list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=tab==1;localMode=tab==2||tab==3;localBack.setEnabled(false);
   choosingFavoriteTab=true;favoriteTabs.check(tab==3?favoriteImages.getId():tab==2?favoriteLocal.getId():tab==1?favoriteRadio.getId():favoriteTv.getId());choosingFavoriteTab=false;
   radioPanel.setVisibility(radioMode?View.VISIBLE:View.GONE);if(radioMode) radioPanel.open(true);
@@ -476,6 +484,8 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void filter() {
   if(adapter==null) return;
+  int previousFavoriteTab=selectedFavoriteTab();updateFavoriteTabVisibility();
+  if(favoritesPage){int available=Math.max(0,library.availableFavoriteTab(previousFavoriteTab));if(available!=previousFavoriteTab){showFavoriteTab(available);return;}}
   favoriteTabs.setVisibility(favoritesPage?View.VISIBLE:View.GONE);
   list.setVisibility(radioMode||localMode||pcloudMode?View.GONE:View.VISIBLE);
   if(radioMode||localMode||pcloudMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
@@ -498,7 +508,7 @@ public final class MainActivity extends AppCompatActivity {
   if(!storageReadable) {status.setText(R.string.storage_failed);return false;}
   String previous;
   try {previous=library.toJson();} catch(Exception e) {status.setText(R.string.storage_failed);return false;}
-  try {change.run();store.save(library);RadioWidgetProvider.refresh(this);return true;}
+  try {change.run();store.save(library);RadioWidgetProvider.refresh(this);if(favoriteTabs!=null&&favoritesPage)favoriteTabs.post(()->{if(!isDestroyed()&&favoritesPage)filter();});return true;}
   catch(Exception e) {
    try {library=Library.fromJson(previous);} catch(Exception ignored) {storageReadable=false;}
    status.setText(R.string.storage_failed);Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return false;
@@ -834,7 +844,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
  private long imageFavoriteVersion=ImageSession.favoriteVersion;
- @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&favoriteImages.isChecked())localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
+ @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&favoriteImages.isChecked())localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
  @Override protected void onResume() {super.onResume();if(LocalAudioService.current()!=null) syncLocalPlayback();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);

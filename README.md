@@ -221,3 +221,7 @@ Version 1.16.1 fjerner Log på/Konto, Log ud og Opdatér fra selve Pcloud-filvis
 - Regionvælgeren viser kun EU og USA. Ved login vises “Bekræft login på din mail”; hvis godkendelsen afvises, kan man bekræfte mailen og trykke Log på igen.
 - Pcloud-kontoens handlinger vises som almindelige trykbare valg i en separat dialog. Burgermenuen lukkes først, så Favoritter-knappen og indstillingerne ikke står bag kontoens valgliste.
 - Burgermenuens tre indstillinger bruger afkrydsningsfelter med samme lagrede indstillinger og funktioner.
+
+
+### 1.17.2 – Favoritfaner
+Favoritter viser kun faner med indhold. Når den sidste favorit fjernes fra den valgte fane, vælges den første tilbageværende fane. Uden favoritter skjules hele fanelinjen. En tom valgt startfane falder tilsvarende tilbage til en fane med indhold; den gemte startpræference bevares.

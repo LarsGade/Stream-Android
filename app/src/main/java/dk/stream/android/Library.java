@@ -86,6 +86,8 @@ public final class Library {
  public final List<Entry> favorites=new ArrayList<>();
  public boolean favoritesOnStart,favoritesRadio,autoPlayLast,miniPlayer;
  public int favoritesStartTab;
+ public boolean hasFavoriteTab(int tab){switch(tab){case 0:return !favorites.isEmpty();case 1:return !radioFavorites.isEmpty();case 2:return !localFavorites.isEmpty();case 3:return !imageFavorites.isEmpty();default:return false;}}
+ public int availableFavoriteTab(int preferred){if(hasFavoriteTab(preferred))return preferred;for(int tab=0;tab<4;tab++)if(hasFavoriteTab(tab))return tab;return -1;}
  public void setFavoritesStartTab(int tab){if(tab<0||tab>3)throw new IllegalArgumentException("Unknown favorites tab");favoritesStartTab=tab;}
  public Playlist.Channel lastPlayed;
  public long lastPlayedPosition;

@@ -4,6 +4,12 @@ import static org.junit.Assert.*;
 import java.util.*;
 
 public class LibraryTest {
+ @Test public void favoriteTabsOnlyExistForPopulatedLists(){
+  Library l=new Library();for(int i=0;i<4;i++)assertFalse(l.hasFavoriteTab(i));assertEquals(-1,l.availableFavoriteTab(3));
+  LocalMedia image=new LocalMedia("content://photos/1","photo.jpg","image/jpeg",false);l.toggleLocalFavorite(image);assertTrue(l.hasFavoriteTab(3));assertEquals(3,l.availableFavoriteTab(0));
+  l.addRadio(new RadioStation("one","Radio","https://example.com/radio",""));assertEquals(3,l.availableFavoriteTab(3));assertEquals(1,l.availableFavoriteTab(2));l.toggleLocalFavorite(image);assertFalse(l.hasFavoriteTab(3));assertEquals(1,l.availableFavoriteTab(3));
+  l.toggleLocalFavorite(new LocalMedia("content://music/1","song.mp3","audio/mpeg",false));assertTrue(l.hasFavoriteTab(2));l.toggleFavorite(new Library.Entry("source",channel("TV","https://example.com/tv")));assertTrue(l.hasFavoriteTab(0));assertEquals(0,l.availableFavoriteTab(0));
+ }
  private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
  @Test public void radioFavoritesAreIndependentOrderedAndAliasesSurviveReload() throws Exception {
   Library library=new Library();RadioStation one=new RadioStation("one","Original","https://example.com/one",""),two=new RadioStation("two","Two","https://example.com/two","");
