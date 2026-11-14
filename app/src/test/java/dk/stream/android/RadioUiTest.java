@@ -51,17 +51,23 @@ public class RadioUiTest {
    service.onStartCommand(stop,0,2);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
   } finally {serviceController.destroy();}
  }
- @Test public void liveIsBesideStopAndRemainsAvailableWhenRadioIsPaused() throws Exception {
-  panel.open(true);Button stop=ReflectionHelpers.getField(panel,"stop"),live=ReflectionHelpers.getField(panel,"live");
-  assertEquals(View.GONE,live.getVisibility());assertEquals(stop.getParent(),live.getParent());assertEquals(LinearLayout.HORIZONTAL,((LinearLayout)live.getParent()).getOrientation());assertEquals("Live",live.getText().toString());
+ @Test public void onlyFixedBarHasControlsAndLiveIsOffUntilPaused() {
+  panel.open(true);
+  for(TextView text:texts(panel)) if(text instanceof Button) {assertNotEquals("Live",text.getText().toString());assertNotEquals("Stop radio",text.getText().toString());}
+  RadioBar bar=new RadioBar(activity,()->{});Button live=ReflectionHelpers.getField(bar,"live");assertEquals(View.GONE,live.getVisibility());
   org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
   try {
    server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));RadioPlaybackService service=serviceController.get();
    service.onStartCommand(RadioPlaybackService.playIntent(service,new RadioStation("station","DR P1",server.url("/radio.mp3").toString(),"")),0,1);
-   service.onGetSession(null).getPlayer().pause();panel.open(true);assertEquals(View.VISIBLE,stop.getVisibility());assertEquals(View.VISIBLE,live.getVisibility());
-   live.performClick();Intent command=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertNotNull(command);assertEquals(RadioPlaybackService.LIVE,command.getAction());assertNotNull(command.getStringExtra("command_token"));
+   bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals(View.GONE,live.getVisibility());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.TRANSPORT_TOGGLE),0,2);
+   bar.refresh();assertEquals(View.VISIBLE,live.getVisibility());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.TRANSPORT_TOGGLE),0,3);
+   bar.refresh();assertEquals(View.VISIBLE,live.getVisibility()); // Resuming the old buffer is still behind live.
+   live.performClick();Intent command=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.LIVE,command.getAction());
+   service.onStartCommand(command,0,4);bar.refresh();assertEquals(View.GONE,live.getVisibility());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,5);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
   } finally {serviceController.destroy();}
-  panel.open(true);assertEquals(View.GONE,live.getVisibility());assertEquals(View.GONE,stop.getVisibility());
  }
  @Test public void browseCanAddFavoriteAndFavoritesCanRenameReorderAndRemove() throws Exception {
   server.enqueue(new MockResponse().setBody("[{\"stationuuid\":\"a\",\"name\":\"Station\",\"countrycode\":\"DK\",\"url\":\"https://example.com/radio\"}]"));panel.open(false);

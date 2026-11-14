@@ -22,6 +22,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
  private CarRadioCallback carCallback;
  private RadioStation current;
  private String error="";
+ private boolean behindLive;
+ public static boolean needsLive() {return selectedStation()!=null && active.behindLive;}
  private final java.util.concurrent.ExecutorService artworkWorker=java.util.concurrent.Executors.newSingleThreadExecutor();
  private int artworkGeneration;
  public static boolean playing(String id) {return active!=null && active.current!=null && active.current.id.equals(id) && active.player!=null && active.player.getPlayWhenReady();}
@@ -50,9 +52,10 @@ public final class RadioPlaybackService extends MediaLibraryService {
   carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog);
   session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class).putExtra("openRadio",true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
   player.addListener(new Player.Listener() {
-   @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(ready) error="";}
+   @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;}
+   @Override public void onPlaybackStateChanged(int state) {if(state==Player.STATE_IDLE) behindLive=false;}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
-    if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {current=station;error="";loadArtwork(station);}}
+    if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
    }
    @Override public void onEvents(Player source,Player.Events events) {RadioWidgetProvider.refresh(RadioPlaybackService.this);}
    @Override public void onPlayerError(PlaybackException failure) {error=getString(R.string.radio_error);sessionPlayer.stop();RadioWidgetProvider.refresh(RadioPlaybackService.this);}
@@ -95,7 +98,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    if(current==null || item==null) {if(current==null) stopSelf();return START_NOT_STICKY;}
    foreground();error="";
    // Reload the item instead of resuming its paused buffer, including non-seekable MP3/AAC radio.
-   sessionPlayer.stop();player.setMediaItem(item,true);player.prepare();player.play();
+   sessionPlayer.stop();player.setMediaItem(item,true);player.prepare();player.play();behindLive=false;
    RadioWidgetProvider.refresh(this);return START_NOT_STICKY;
   }
   if(TRANSPORT_TOGGLE.equals(action)) {if(current==null) {stopSelf();return START_NOT_STICKY;}if(player.getPlayWhenReady()) sessionPlayer.pause();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
@@ -115,7 +118,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    else {
     current=station;
     MediaMetadata metadata=new MediaMetadata.Builder().setTitle(station.displayName()).setDisplayTitle(station.displayName()).setArtist(getString(R.string.radio_playing_via)).setSubtitle(getString(R.string.radio_playing_via)).setDescription(getString(R.string.radio_playing_via)).setArtworkData(PlaybackArtwork.local(this,station.displayName()),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
-    player.setMediaItem(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build());player.prepare();player.play();loadArtwork(station);
+    player.setMediaItem(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build());player.prepare();player.play();behindLive=false;loadArtwork(station);
    }
    RadioWidgetProvider.refresh(this);
   } catch(Exception failure) {sessionPlayer.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();RadioWidgetProvider.refresh(this);}

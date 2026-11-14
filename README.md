@@ -124,3 +124,5 @@ Version 1.11.4 tilføjer **Live** ved siden af **Stop radio** på radiosiderne. 
 Version 1.12.0 bruger det indbyggede DR P4-logo til alle kanalnavne med “P4”, inklusive regionale stationer. En fast radiobar nederst på appens almindelige sider viser den valgte kanal og Afspil/Stop. Stop lukker afspilningen; Afspil åbner samme station fra live igen. Før en station er valgt, er Afspil inaktiv. Fuldskærmsvideo bevarer sit rene videovindue.
 
 Version 1.12.1 viser stationens logo til venstre for navnet i radiobaren og skjuler baren efter Stop. Radioens medieoplysninger viser kanalnavnet med “Afspilles via Stream” som undertekst, inklusive Android Auto. Bilens endelige layout bestemmes af dens medieafspiller.
+
+Version 1.12.2 fjerner de gamle Stop/Live-kontroller fra radiolisterne. Kun den faste radiobar bruges. Live vises efter pause i mediebetjeningen og forbliver synlig ved genoptagelse af den gamle buffer. Live genåbner streamen fra live-positionen og skjuler knappen igen; valg af en station på ny gør det samme. Stop skjuler hele baren.
