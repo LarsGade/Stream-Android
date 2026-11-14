@@ -242,6 +242,7 @@ public final class MainActivity extends AppCompatActivity {
    if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
    startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   });
+  button(R.string.car_video,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showCarVideo();});
   playbackPreference(navigation,R.string.auto_play_last,false);playbackPreference(navigation,R.string.mini_player,true);
   button(R.string.sources,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
   button(R.string.tv_guide,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
@@ -251,6 +252,32 @@ public final class MainActivity extends AppCompatActivity {
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(16),0,0);navigation.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   ScrollView menu=new ScrollView(this);menu.setFillViewport(true);menu.addView(navigation);
   DrawerLayout.LayoutParams params=new DrawerLayout.LayoutParams(dp(280),-1);params.gravity=androidx.core.view.GravityCompat.START;drawer.addView(menu,params);
+ }
+ private void pauseForCarPlayer() {
+  if(player!=null)player.pause();androidx.media3.common.Player local=LocalAudioService.player();if(local!=null)local.pause();androidx.media3.common.Player radio=RadioPlaybackService.audioPlayer();if(radio!=null)radio.pause();
+  if(CastPlayback.hasMedia(this))CastPlayback.remote(this).pause();if(playbackPanel!=null)playbackPanel.refresh();
+ }
+ private void showCarVideo() {
+  new AlertDialog.Builder(this).setTitle(R.string.car_video).setItems(new String[]{"Åbn aktuel video","Åbn TV- og filmfavoritter","Åbn lokale videofavoritter","Om bilafspiller"},(dialog,position)->{
+   if(position==3){CarPlayerBridge.info(this);return;}
+   if(position==0){
+    LocalMedia local=LocalAudioService.current();CarVideo video=null;long time=0;
+    try {if(local!=null&&!local.audio()){video=CarVideo.local(local);time=LocalAudioService.player().getCurrentPosition();}else if(selected!=null){video=CarVideo.channel(selected);time=player==null?resumePosition:player.getCurrentPosition();}}
+    catch(IllegalArgumentException ignored){}
+    if(video==null){Toast.makeText(this,"Vælg en TV-kanal, film eller lokal video først.",Toast.LENGTH_LONG).show();return;}
+    CarPlayerBridge.open(this,video,time,this::pauseForCarPlayer);return;
+   }
+   if(position==1){
+    List<CarVideo> favorites=CarVideo.favorites(library);if(favorites.isEmpty()){Toast.makeText(this,"Tilføj TV-kanaler eller film til favoritter først.",Toast.LENGTH_LONG).show();return;}
+    worker.execute(()->{try{CarVideo playlist=CarPlayerBridge.exportFavorites(this,favorites);runOnUiThread(()->{if(!isDestroyed())CarPlayerBridge.open(this,playlist,0,this::pauseForCarPlayer);});}catch(Exception error){runOnUiThread(()->{if(!isDestroyed())Toast.makeText(this,"Favoritterne kunne ikke åbnes i bilafspilleren.",Toast.LENGTH_LONG).show();});}});return;
+   }
+   List<CarVideo> videos=new ArrayList<>();for(LocalMedia file:library.localFavorites)try{videos.add(CarVideo.local(file));}catch(IllegalArgumentException ignored){}
+   if(videos.isEmpty()){Toast.makeText(this,"Tilføj lokale videofiler til favoritter først.",Toast.LENGTH_LONG).show();return;}
+   LinearLayout content=column();EditText search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);content.addView(search);ListView list=new ListView(this);ArrayAdapter<CarVideo> choices=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,new ArrayList<>(videos));list.setAdapter(choices);content.addView(list,new LinearLayout.LayoutParams(-1,dp(320)));
+   AlertDialog selection=new AlertDialog.Builder(this).setTitle("Lokale videofavoritter").setView(content).setNegativeButton(android.R.string.cancel,null).create();
+   search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence value,int start,int count,int after){}public void onTextChanged(CharSequence value,int start,int before,int count){choices.getFilter().filter(value);}public void afterTextChanged(Editable value){}});
+   list.setOnItemClickListener((parent,view,index,id)->{CarVideo video=choices.getItem(index);if(video!=null){selection.dismiss();CarPlayerBridge.open(this,video,0,this::pauseForCarPlayer);}});selection.show();
+  }).setNegativeButton(android.R.string.cancel,null).show();
  }
  @androidx.annotation.ChecksSdkIntAtLeast(api=26)
  private boolean supportsMiniPlayer() {

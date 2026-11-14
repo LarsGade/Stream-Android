@@ -167,3 +167,15 @@ Version 1.14.5 bruger en ren blå playtrekant som launcherikon, uden indbygget r
 Version 1.14.6 omdøber **Lokale filer** til **Lokale** i menu, favoritfane, startfanevælger og overskrift.
 
 Version 1.14.7 giver Streamingtjeneste, Radio og Lokale i burgermenuen blå baggrund med hvid tekst. Favoritter får gul baggrund med sort tekst.
+
+## Video i bil – Android 9, version 1.15.0
+
+Det praktiske forsøg på video fra en Android 9-telefon er **☰ → Video i bil**. Stream kan åbne den aktuelle TV-kanal/video i en installeret bilafspiller, overføre TV-/filmfavoritter som M3U eller åbne en lokal videofavorit med læseadgang til netop den valgte fil. Den lokale favoritliste kan søges. Stream sættes først på pause, når den valgte afspiller er startet.
+
+Der kræves en separat videoafspiller, som faktisk kan vises i brugerens Android Auto-opsætning, fx [Fermata Auto](https://github.com/AndreyPavlenko/Fermata/releases). Vælgeren prioriterer Fermata Auto og viser kun matchende videoafspillere med bilintegration eller den kendte Fermata Auto-pakke. Det er stadig Android Auto-værten, der afgør, om bilafspilleren må vises. En almindelig telefonafspiller er ikke tilstrækkelig til billede på bilens skærm. Løsningen kræver afprøvning på den konkrete telefon og bil; generel kompatibilitet og faktisk bilafspilning er ikke verificeret.
+
+Favoritlisten indeholder de gemte streamlinks, inklusive eventuelle adgangsoplysninger i linksene. Listen udleveres kun efter brugerens valg af en modtagerapp og via en ikke-eksporteret FileProvider med midlertidig læseadgang. Cacheområdet er afgrænset til `car-playlists/`; gamle eksporter fjernes ved næste eksport efter 24 timer. Lokale dokumentlinks indlejres ikke i M3U-listen, da de kræver særskilte Android-læsegrants. Intents giver aldrig skriveadgang eller varig adgang. Ingen tredjepartsafspiller eller privat Auto-SDK er pakket ind i APK'en, og Android Auto-værtens kontrol af afspillere ændres ikke.
+
+Kompatibilitetsgrundlaget er standard Android ACTION_VIEW og de [filtyper, Fermata selv registrerer](https://github.com/AndreyPavlenko/Fermata/blob/master/fermata/src/main/AndroidManifest.xml). Den eksisterende indbyggede Android Auto-radiointegration bevares. **Video i bil** er en overførsel til en ekstern bilafspiller og tilføjer ikke TV/video til Streams eget radiokatalog i bilen.
+
+Verifikation af version 1.15.0: APK og lint bygges med projektets konfiguration. Modeltests dækker linktyper, seriemapper, duplikater, danske navne, M3U-linjeinjektion og afvisning af lokale links uden særskilte grants. Android 9-intenttestene er tilføjet, men testkørslen blev blokeret ved hentning af Robolectrics Android 9-bibliotek (HTTP 403); de er ikke rapporteret som bestået. Der er ikke testet med en tilsluttet bil eller en installeret Fermata Auto.
