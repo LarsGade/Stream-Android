@@ -165,3 +165,5 @@ Version 1.14.4 giver Favoritter-knappen i burgermenuen en blå baggrund med hvid
 Version 1.14.5 bruger en ren blå playtrekant som launcherikon, uden indbygget ramme eller tekst. Android 8+ får separate adaptive baggrunds- og forgrundslag, så launcheren bestemmer formen. Baggrundsfarven kommer fra Androids neutrale systempalette på Android 12+; Android 13+ kan også bruge en separat monokrom playtrekant til tematiserede ikoner. Android 6/7 får samme playmotiv som et transparent vektorikon.
 
 Version 1.14.6 omdøber **Lokale filer** til **Lokale** i menu, favoritfane, startfanevælger og overskrift.
+
+Version 1.14.7 giver Streamingtjeneste, Radio og Lokale i burgermenuen blå baggrund med hvid tekst. Favoritter får gul baggrund med sort tekst.
