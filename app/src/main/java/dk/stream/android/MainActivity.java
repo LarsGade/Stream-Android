@@ -36,11 +36,13 @@ public final class MainActivity extends AppCompatActivity {
  private RadioGroup favoriteTabs;
  private RadioButton favoriteTv,favoriteRadio,favoriteLocal;
  private LocalFilesPanel localPanel;
- private boolean localMode;
+ private boolean localMode,pcloudMode;
+ private PcloudPanel pcloudPanel;
+ private WebDavClient pcloudLoginClient;
  private boolean localPlayerAttached,activityStarted,acceptLocalPlayback=true;
  private String replacingLocalFolder;
  private MediaRouteButton castRouteButton;
- private LocalMedia pendingCastFile;private long pendingCastPosition;
+ private LocalMedia pendingCastFile;private long pendingCastPosition;private List<LocalMedia> pendingCastQueue;
  private final ExecutorService localWorker=Executors.newSingleThreadExecutor();
  private androidx.activity.OnBackPressedCallback localBack;
  private RadioPanel radioPanel;
@@ -125,7 +127,7 @@ public final class MainActivity extends AppCompatActivity {
   getOnBackPressedDispatcher().addCallback(this,miniBack);
   fullscreenBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {exitFullscreen();}};
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
-  localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
+  localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(pcloudMode&&pcloudPanel!=null)pcloudPanel.back();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{
    androidx.core.graphics.Insets bars=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
    view.setPadding(bars.left+dp(12),bars.top+dp(8),bars.right+dp(12),bars.bottom+dp(8));return insets;
@@ -179,6 +181,9 @@ public final class MainActivity extends AppCompatActivity {
    public void play(LocalMedia entry) {playLocal(entry);}
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
+  pcloudPanel=new PcloudPanel(this,new PcloudPanel.Actions(){
+   public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void login(){showPcloudLogin();}public void logout(){logoutPcloud();}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
+  });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
    public String title(){return selected==null?"":selected.name;}
    public boolean playing(){return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
@@ -231,9 +236,9 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false));
+  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
-  for(Button primary:new Button[]{streamingButton,radioButton,localButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
+  for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
   SwitchCompat start=new SwitchCompat(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
   LinearLayout startChoice=column();navigation.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
@@ -342,15 +347,37 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void showFavoriteKind(boolean radio) {showFavoriteTab(radio?1:0);}
  private void showFavoriteTab(int tab) {
-  exitFullscreen();list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=tab==1;localMode=tab==2;localBack.setEnabled(false);
+  pcloudMode=false;pcloudPanel.setVisibility(View.GONE);exitFullscreen();list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=tab==1;localMode=tab==2;localBack.setEnabled(false);
   choosingFavoriteTab=true;favoriteTabs.check(tab==2?favoriteLocal.getId():tab==1?favoriteRadio.getId():favoriteTv.getId());choosingFavoriteTab=false;
   radioPanel.setVisibility(radioMode?View.VISIBLE:View.GONE);if(radioMode) radioPanel.open(true);
   localPanel.setVisibility(localMode?View.VISIBLE:View.GONE);if(localMode) localPanel.open(true);filter();
  }
  private void openLocal(boolean favorites) {
+  pcloudMode=false;pcloudPanel.setVisibility(View.GONE);
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();
   if(favorites) {showFavoriteTab(2);return;}
   favoritesPage=false;favoritesMode=false;radioMode=false;localMode=true;radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.VISIBLE);localPanel.open(false);filter();
+ }
+ private void openPcloud(){
+  exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();if(library.pcloud==null)showPcloudLogin();
+ }
+ private void logoutPcloud(){
+  if(!changeLibrary(()->library.pcloud=null))return;
+  LocalMedia current=LocalAudioService.current();if(current!=null&&PcloudDocument.is(current.uri))stopService(new android.content.Intent(this,LocalAudioService.class));if(CastPlayback.pcloud(this))CastPlayback.stop(this);pcloudPanel.open();
+ }
+ private void showPcloudLogin(){
+  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=new Spinner(this);ArrayAdapter<String> regions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU – ewebdav.pcloud.com","USA – webdav.pcloud.com"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
+  EditText email=new EditText(this);email.setHint("E-mail");email.setSingleLine();email.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);email.setSaveEnabled(false);form.addView(email);
+  EditText password=new EditText(this);password.setHint("Adgangskode");password.setSingleLine();password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);form.addView(password);
+  if(library.pcloud!=null){region.setSelection(PcloudAccount.US.equals(library.pcloud.server)?1:0);email.setText(library.pcloud.email);}
+  TextView error=text("",13,Color.LTGRAY);error.setVisibility(View.GONE);form.addView(error);
+  AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Pcloud · WebDAV").setView(form).setNegativeButton(android.R.string.cancel,null).setPositiveButton("Log på",null).create();
+  dialog.setOnDismissListener(ignored->{if(pcloudLoginClient!=null){pcloudLoginClient.cancel();pcloudLoginClient=null;}password.setText("");});
+  dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
+   PcloudAccount account;try{account=new PcloudAccount(region.getSelectedItemPosition()==1?PcloudAccount.US:PcloudAccount.EU,email.getText().toString(),password.getText().toString());}catch(IllegalArgumentException invalid){error.setText(invalid.getMessage());error.setVisibility(View.VISIBLE);return;}
+   error.setText("");error.setVisibility(View.GONE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
+   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();pcloudPanel.open();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes.");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
+  }));dialog.show();
  }
  private void pickLocal(boolean folder) {
   android.content.Intent intent=new android.content.Intent(folder?android.content.Intent.ACTION_OPEN_DOCUMENT_TREE:android.content.Intent.ACTION_OPEN_DOCUMENT);
@@ -360,7 +387,7 @@ public final class MainActivity extends AppCompatActivity {
   try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {Toast.makeText(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
  }
  @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);super.onSaveInstanceState(state);}
- @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
+ @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
   super.onActivityResult(request,result,data);if((request!=7201&&request!=7202)||result!=RESULT_OK||data==null) return;
   boolean folder=request==7202;String replace=folder?replacingLocalFolder:null;replacingLocalFolder=null;List<android.net.Uri> uris=new ArrayList<>();
@@ -373,15 +400,16 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void playLocal(LocalMedia entry) {playLocal(entry,0);}
- private void playLocal(LocalMedia entry,long position) {
-  if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){CastPlayback.toggle(this);return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,localPanel.playbackEntries(),position);return;}
+ private void playLocal(LocalMedia entry,long position) {playLocal(entry,position,localPanel.playbackEntries());}
+ private void playLocal(LocalMedia entry,long position,List<LocalMedia> queue) {
+  if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){CastPlayback.toggle(this);return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
   LocalMedia current=LocalAudioService.current();
   if(current!=null&&current.uri.equals(entry.uri)) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
   requestNotificationPermission();
   if(player!=null&&!localPlayerAttached) {stopPlaybackState();if(videoSession!=null) {videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);}
   acceptLocalPlayback=true;resumeLocalPlayback=false;
   stopService(new android.content.Intent(this,RadioPlaybackService.class));
-  try {androidx.core.content.ContextCompat.startForegroundService(this,LocalAudioService.playIntent(this,entry,localPanel.playbackEntries()).putExtra("position",position));}
+  try {androidx.core.content.ContextCompat.startForegroundService(this,LocalAudioService.playIntent(this,entry,queue).putExtra("position",position));}
   catch(RuntimeException error) {android.util.Log.e("StreamLocalPlayback","Could not start media service",error);Toast.makeText(this,"Afspilningen kunne ikke startes. Prøv igen, mens appen er åben.",Toast.LENGTH_LONG).show();}
  }
  private void detachLocalPlayback() {
@@ -389,7 +417,7 @@ public final class MainActivity extends AppCompatActivity {
   video.setPlayer(null);player=null;selected=null;localPlayerAttached=false;video.setKeepScreenOn(false);
  }
  private void syncLocalPlayback() {
-  if(localPanel!=null) localPanel.playbackChanged();
+  if(localPanel!=null) localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();
   LocalMedia entry=LocalAudioService.current();ExoPlayer shared=LocalAudioService.player();
   if(entry==null||shared==null) {if(localPlayerAttached) {detachLocalPlayback();exitFullscreen();playbackPanel.setVisibility(View.GONE);updateMiniBack();}return;}
   if(!acceptLocalPlayback) return;
@@ -400,7 +428,7 @@ public final class MainActivity extends AppCompatActivity {
   playbackPanel.refresh();updateMiniBack();hideFullscreenSystemBars();
  }
  private void openRadio(boolean favorites) {
-  localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
+  pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
   exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);
   if(favorites) {showFavoriteKind(true);return;}
   favoritesPage=false;favoritesMode=false;radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(false);
@@ -416,7 +444,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void navigate(boolean favorites) {
   if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoriteTab(library.favoritesLocal?2:library.favoritesRadio?1:0);return;}
-  localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
+  pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
   if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && library.sources.size()==1) last=library.sources.get(0);if(last!=null) loadSource(last);}
  }
  private void chooseFirstKind() {
@@ -434,8 +462,8 @@ public final class MainActivity extends AppCompatActivity {
  private void filter() {
   if(adapter==null) return;
   favoriteTabs.setVisibility(favoritesPage?View.VISIBLE:View.GONE);
-  list.setVisibility(radioMode||localMode?View.GONE:View.VISIBLE);
-  if(radioMode||localMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
+  list.setVisibility(radioMode||localMode||pcloudMode?View.GONE:View.VISIBLE);
+  if(radioMode||localMode||pcloudMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
   pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   pageTitle.setText(favoritesMode?"":activeSource==null?getString(R.string.library):activeSource.name);
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
@@ -606,7 +634,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
  private void loadSource(Library.Source source) {
-  localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
+  pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
   if(loading) return;
   favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
   worker.execute(()->{
@@ -799,5 +827,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

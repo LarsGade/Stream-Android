@@ -193,3 +193,15 @@ Version 1.15.4 indsætter et fast linjeskift i Streaming-knappen, så **(TV, Fil
 Version 1.15.5 erstatter de resterende forekomster af Streamingtjeneste med **Streaming** i appen. Kildeindstillingerne hedder nu **Kilder til Streaming**, og fejlhenvisningen bruger samme navn. Streaming-knappens linjeskift og kategorier bevares.
 
 Version 1.15.6 fjerner faste vejledningstekster fra tomme lokale lister og radiofavoritter, herunder teksten om at bruge stjernen. Tomme tekstfelter skjules, så de ikke optager plads. Overflødige instruktioner i afsluttet Cast-status og slettebekræftelsen er også fjernet. Fejl, statusoplysninger, feltnavne og selve bekræftelsen på sletning bevares. En radio-widget uden favoritter viser kun den korte status Ingen radiofavoritter.
+
+## Pcloud – version 1.16.0
+
+**☰ → Pcloud** åbner login og WebDAV-mapper. Vælg EU eller USA, og indtast pCloud-kontoens e-mail og adgangskode. Login gemmes først efter et vellykket WebDAV-opslag, i samme AES-GCM-krypterede bibliotek og Android Keystore som de øvrige loginoplysninger. Log ud fjerner de gemte pCloud-loginoplysninger og stopper aktiv pCloud-afspilning/casting. Der gemmes ingen adgangskode i dokumentlinks, afspilningsmetadata, Intents eller Cast-adresser.
+
+Mappevisningen viser alle undermapper og understøttede lyd-/videofiler i den aktuelle mappe. Mapper åbnes med et tryk, venstrepilen går tilbage, og Søg filtrerer den aktuelle liste. Filendelser skjules som i Lokale. En fil kan føjes til **Favoritter → Lokale**; der er fortsat tre favoritfaner. Gemte links knyttes til region og konto, så en anden konto ikke overtager dem. Links kan bruges igen efter nyt login på samme konto.
+
+Filerne streames gennem den fælles Media3-afspiller med samme bundbar, ikonknapper, fuld lydafspiller, fuldskærmsvideo, spoling og automatisk næste fil i listens rækkefølge. Hele mediefiler kopieres ikke til appens lager først. Cast af pCloud-filer bruger telefonens eksisterende lokale Cast-server, som udleverer de valgte filer via tilfældige adresser og videresender byte-ranges til WebDAV. Loginoplysninger sendes ikke til Cast-modtageren. Telefonen skal derfor fortsat være tændt og forbundet til netværket under casting.
+
+WebDAV-klienten bruger kun læseoperationerne PROPFIND og GET. Login sendes kun til den konfigurerede HTTPS-server. Mappeomdirigeringer til en anden server afvises, og ved filomdirigeringer til en CDN fjernes Authorization før forespørgslen. XML-svar med DTD afvises. Filnavne, UTF-8, XML-entiteter, kontoidentitet, fejlstatus, omdirigeringer og Range-spoling testes med lokale WebDAV-testservere; en rigtig pCloud-konto eller fysisk Cast-modtager er ikke tilgængelig i cloudmiljøet.
+
+pClouds officielle [WebDAV-vejledning](https://help.pcloud.com/article/connect-to-pcloud-using-webdav-and-rsync) angiver `https://ewebdav.pcloud.com/` for EU og `https://webdav.pcloud.com/` for USA. Ved 2FA kan forbindelsen skulle godkendes via en mail fra pCloud; 2FA behøver ikke slås fra. Crypto-mappen kan ikke tilgås gennem WebDAV.

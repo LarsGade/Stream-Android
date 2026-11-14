@@ -18,4 +18,8 @@ public class LocalCastHttpServerTest {
  @Test public void rejectsInvalidAndMultipleRanges() throws Exception {for(String range:new String[]{"bytes=10-","bytes=5-2","bytes=0-1,4-5","bytes=-0","garbage"})assertTrue(request("GET",url.getPath(),"Range: "+range+"\r\n").startsWith("HTTP/1.1 416"));assertEquals(0,opens);}
  @Test public void headAndCorsPreflightDoNotSendFileContents() throws Exception {String head=request("HEAD",url.getPath(),"");assertTrue(head.contains("Content-Length: 10"));assertTrue(head.endsWith("\r\n\r\n"));assertTrue(request("OPTIONS",url.getPath(),"").startsWith("HTTP/1.1 204"));}
  @Test public void stopsServingWhenClosed() throws Exception {server.close();try{request("GET",url.getPath(),"");fail();}catch(IOException expected){}}
+ @Test public void cloudSeekingIsForwardedToTheRemoteOpener() throws Exception {
+  long[] offset={-1};url=new URL(server.addRange(position->{offset[0]=position;return new ByteArrayInputStream("0123456789".substring((int)position).getBytes(StandardCharsets.US_ASCII));},10,"video/mp4"));String result=request("GET",url.getPath(),"Range: bytes=6-8\r\n");assertEquals(6,offset[0]);assertTrue(result.endsWith("678"));assertTrue(result.contains("Content-Range: bytes 6-8/10"));
+ }
+
 }

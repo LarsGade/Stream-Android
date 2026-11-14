@@ -9,7 +9,8 @@ import java.util.concurrent.*;
 /** Serves only explicitly queued documents under unguessable, per-session URLs. */
 public final class LocalCastHttpServer implements AutoCloseable {
  public interface Opener {InputStream open() throws IOException;}
- private static final class Resource {final Opener opener;final long size;final String mime;Resource(Opener opener,long size,String mime){this.opener=opener;this.size=size;this.mime=mime;}}
+ public interface RangeOpener {InputStream open(long position) throws IOException;}
+ private static final class Resource {final RangeOpener opener;final boolean seekable;final long size;final String mime;Resource(RangeOpener opener,long size,String mime,boolean seekable){this.opener=opener;this.size=size;this.mime=mime;this.seekable=seekable;}}
  private final Map<String,Resource> resources=new ConcurrentHashMap<>();
  private final Set<Socket> clients=Collections.newSetFromMap(new ConcurrentHashMap<Socket,Boolean>());
  private final ServerSocket server;
@@ -21,7 +22,8 @@ public final class LocalCastHttpServer implements AutoCloseable {
   server=new ServerSocket(0,16,address);String host=address.getHostAddress();origin="http://"+(host.contains(":")?"["+host+"]":host)+":"+server.getLocalPort();
   Thread accept=new Thread(()->{while(!closed) try {Socket socket=server.accept();socket.setSoTimeout(15000);clients.add(socket);try {worker.execute(()->serve(socket));}catch(RejectedExecutionException full){clients.remove(socket);socket.close();}}catch(IOException error){if(!closed) close();}},"local-cast-listener");accept.setDaemon(true);accept.start();
  }
- public String add(Opener opener,long size,String mime) {String path="/"+UUID.randomUUID()+"/media";resources.put(path,new Resource(opener,size,mime.replaceAll("[\\r\\n]","")));return origin+path;}
+ public String add(Opener opener,long size,String mime) {String path="/"+UUID.randomUUID()+"/media";resources.put(path,new Resource(position->opener.open(),size,mime.replaceAll("[\\r\\n]",""),false));return origin+path;}
+ public String addRange(RangeOpener opener,long size,String mime) {String path="/"+UUID.randomUUID()+"/media";resources.put(path,new Resource(opener,size,mime.replaceAll("[\\r\\n]",""),true));return origin+path;}
  private static String line(InputStream input) throws IOException {ByteArrayOutputStream bytes=new ByteArrayOutputStream();for(int count=0;count<8192;count++){int value=input.read();if(value<0) return bytes.size()==0?null:bytes.toString("US-ASCII");if(value=='\n') return bytes.toString("US-ASCII").replace("\r","");bytes.write(value);}throw new IOException("Header too long");}
  private static void headers(OutputStream output,int status,String extra) throws IOException {
   String reason=status==200?"OK":status==206?"Partial Content":status==204?"No Content":status==416?"Range Not Satisfiable":status==405?"Method Not Allowed":"Not Found";
@@ -41,8 +43,8 @@ public final class LocalCastHttpServer implements AutoCloseable {
     if(bounds[0].isEmpty()){long suffix=Long.parseLong(bounds[1]);if(suffix<=0)throw new IllegalArgumentException();start=Math.max(0,file.size-suffix);}else {start=Long.parseLong(bounds[0]);if(!bounds[1].isEmpty())end=Math.min(end,Long.parseLong(bounds[1]));}
     if(start<0||start>=file.size||end<start)throw new IllegalArgumentException();
    }catch(IllegalArgumentException invalid){headers(output,416,"Content-Range: bytes */"+file.size+"\r\nContent-Length: 0\r\n");return;}
-   try(InputStream media=file.opener.open()) {
-    long skip=start;while(skip>0){long moved=media.skip(skip);if(moved>0)skip-=moved;else if(media.read()<0)throw new EOFException();else skip--;}
+   try(InputStream media=file.opener.open(file.seekable?start:0)) {
+    long skip=file.seekable?0:start;while(skip>0){long moved=media.skip(skip);if(moved>0)skip-=moved;else if(media.read()<0)throw new EOFException();else skip--;}
     long length=file.size>=0?end-start+1:-1;
     String fields="Content-Type: "+file.mime+"\r\nCache-Control: no-store\r\n"+(file.size>=0?"Accept-Ranges: bytes\r\nContent-Length: "+length+"\r\n":"")+(partial?"Content-Range: bytes "+start+"-"+end+"/"+file.size+"\r\n":"");
     headers(output,partial?206:200,fields);if(method.equals("HEAD"))return;

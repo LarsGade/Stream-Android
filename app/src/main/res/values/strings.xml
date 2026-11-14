@@ -97,4 +97,5 @@
  <string name="car_danish_radio">Danske radiostationer</string>
  <string name="radio_playing_via">Afspilles via Stream</string>
  <string name="local_files">Lokale</string>
+ <string name="pcloud">Pcloud</string>
 </resources>

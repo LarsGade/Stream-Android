@@ -36,7 +36,7 @@ public final class LocalCastService extends Service {
   worker.execute(()->{try {
    InetAddress address;try(DatagramSocket route=new DatagramSocket()){route.connect(receiver,9);address=route.getLocalAddress();}
    LocalCastHttpServer next=new LocalCastHttpServer(address);if(server!=null)server.close();server=next;
-   List<String> urls=new ArrayList<>();for(LocalMedia file:queue.entries){if(generation!=request){next.close();return;}Uri uri=Uri.parse(file.uri);long size=-1;
+   List<String> urls=new ArrayList<>();for(LocalMedia file:queue.entries){if(generation!=request){next.close();return;}if(PcloudDocument.is(file.uri)){PcloudAccount account=new LibraryStore(this).load().pcloud;okhttp3.HttpUrl remote=PcloudDocument.url(account,file.uri);WebDavClient webdav=new WebDavClient(account);urls.add(next.addRange(offset->webdav.open(remote,offset),PcloudDocument.size(file.uri),CastPlayback.mime(file)));continue;}Uri uri=Uri.parse(file.uri);long size=-1;
     try(Cursor cursor=getContentResolver().query(uri,new String[]{OpenableColumns.SIZE},null,null,null)){if(cursor!=null&&cursor.moveToFirst()&&!cursor.isNull(0))size=cursor.getLong(0);}
     urls.add(next.add(()->{InputStream input=getContentResolver().openInputStream(uri);if(input==null)throw new FileNotFoundException();return input;},size,CastPlayback.mime(file)));
    }

@@ -36,6 +36,7 @@ public final class Library {
  }
  public final List<LocalMedia> localFiles=new ArrayList<>(),localFavorites=new ArrayList<>();
  public boolean favoritesLocal;
+ public PcloudAccount pcloud;
  public boolean isLocalFavorite(String uri) {for(LocalMedia entry:localFavorites) if(entry.uri.equals(uri)) return true;return false;}
  public void addLocal(LocalMedia entry) {for(LocalMedia old:localFiles) if(old.uri.equals(entry.uri)) return;localFiles.add(entry);}
  public void setLocalSource(LocalMedia folder) {
@@ -156,7 +157,7 @@ public final class Library {
  }
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
-  JSONObject root=new JSONObject(); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);
+  JSONObject root=new JSONObject();if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
@@ -178,6 +179,7 @@ public final class Library {
  }
  public static Library fromJson(String json) throws JSONException {
   Library library=new Library();JSONObject root=new JSONObject(json);
+  if(root.optJSONObject("pcloud")!=null)library.pcloud=PcloudAccount.from(root.getJSONObject("pcloud"));
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
   library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");library.favoritesStartTab=Math.max(0,Math.min(2,root.optInt("favoritesStartTab",library.favoritesLocal?2:library.favoritesRadio?1:0)));
   JSONArray locals=root.optJSONArray("localFiles"),localStars=root.optJSONArray("localFavorites");if(locals!=null) for(int i=0;i<locals.length();i++) library.addLocal(LocalMedia.from(locals.getJSONObject(i)));if(localStars!=null) for(int i=0;i<localStars.length();i++) {LocalMedia entry=LocalMedia.from(localStars.getJSONObject(i));if(!library.isLocalFavorite(entry.uri)) library.localFavorites.add(entry);}
