@@ -425,3 +425,7 @@ Den brede widgets play/stop-knap har nu gennemsigtig baggrund og større symbole
 
 ### 1.25.11 – Mindre play/stop-ikoner
 Play- og stopikonets størrelse på 2 × 1-widgetten er reduceret med 25 % i forhold til 1.25.10. Logo og widgetbaggrund bevares.
+
+
+### 1.25.12 – Play/stop yderligere 25 % mindre
+Play- og stopikonets størrelse på 2 × 1-widgetten er reduceret med yderligere 25 % i forhold til 1.25.11.
