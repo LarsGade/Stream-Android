@@ -12,7 +12,7 @@ import org.json.*;
 /** Audio-only catalog for car controllers. User TV sources and credentials are never exposed. */
 @androidx.media3.common.util.UnstableApi
 public final class CarRadioCatalog {
- public static final String ROOT="radio-root",FAVORITES="radio-favorites",DANISH="radio-danish",PREFIX="radio:";
+ public static final String ROOT="radio-root",FAVORITES="radio-favorites",DANISH="radio-danish",PREFIX="radio:",ENGLAND="radio-england",USA="radio-usa";
  private final Context context;
  private final LibraryPersistence store;
  private final RadioBrowser browser;
@@ -41,8 +41,8 @@ public final class CarRadioCatalog {
  }
  public List<MediaItem> children(String parent,int page,int pageSize) throws Exception {
   List<MediaItem> items=new ArrayList<>();
-  if(ROOT.equals(parent)) {items.add(folder(FAVORITES,context.getString(R.string.favorites)));items.add(folder(DANISH,context.getString(R.string.car_danish_radio)));}
-  else if(FAVORITES.equals(parent)||DANISH.equals(parent)) for(RadioStation station:FAVORITES.equals(parent)?favorites():danish()) items.add(item(station,false));
+  if(ROOT.equals(parent)) {items.add(folder(FAVORITES,context.getString(R.string.favorites)));items.add(folder(DANISH,"Danmark"));items.add(folder(ENGLAND,"England"));items.add(folder(USA,"USA"));}
+  else if(FAVORITES.equals(parent)||DANISH.equals(parent)||ENGLAND.equals(parent)||USA.equals(parent)) for(RadioStation station:FAVORITES.equals(parent)?favorites():danish()) {String country=ENGLAND.equals(parent)?"GB":USA.equals(parent)?"US":"DK";if(FAVORITES.equals(parent)||country.equals(station.country))items.add(item(station,false));}
   else throw new IllegalArgumentException("Unknown radio folder");
   if(page<0||pageSize<1) throw new IllegalArgumentException("Invalid page");long start=(long)page*pageSize;
   if(start>=items.size()) return Collections.emptyList();return new ArrayList<>(items.subList((int)start,(int)Math.min(items.size(),start+pageSize)));

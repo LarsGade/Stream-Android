@@ -538,3 +538,7 @@ Genåbning af gemte kataloger har sin egen arbejdskø, så Opdatér alt ikke ven
 ### 1.27.6
 
 Favoritter-knappen i burgermenuen er blå som de øvrige hovedknapper, med fed hvid tekst i 25 % større skriftstørrelse.
+
+### 1.28.0
+
+Radio har tre landemapper: Danmark (DK), England (GB i Radio Browser) og USA (US). Manuel radioopdatering henter alle tre lande og bevarer tidligere data for lande, der fejler. Favoritter bevarer deres land og vises fortsat samlet.

@@ -27,4 +27,14 @@ public class RadioBrowserTest {
  @Test public void invalidJsonProducesAnError() throws Exception {
   try(MockWebServer server=new MockWebServer()) {server.enqueue(new MockResponse().setBody("<html>unavailable</html>"));try {new RadioBrowser(Arrays.asList(server.url("/"))).loadDanish();fail();} catch(java.io.IOException expected) { }}
  }
+ @Test public void fetchesBritishAndAmericanStationsWithCountryMetadata()throws Exception{
+  try(MockWebServer server=new MockWebServer()){
+   for(String country:new String[]{"GB","US"}){
+    server.enqueue(new MockResponse().setBody("[{\"stationuuid\":\""+country+"\",\"name\":\"Station\",\"countrycode\":\""+country+"\",\"url\":\"https://example.com/radio\"},{\"stationuuid\":\"other\",\"name\":\"Other country\",\"countrycode\":\"FR\",\"url\":\"https://example.com/other\"}]"));
+    List<RadioStation> result=new RadioBrowser(Arrays.asList(server.url("/"))).loadCountry(country);assertEquals(1,result.size());assertEquals(country,result.get(0).country);assertEquals(country,RadioStation.fromJson(result.get(0).renamed("Alias").toJson()).country);assertEquals("/json/stations/bycountrycodeexact/"+country,server.takeRequest().getRequestUrl().encodedPath());
+   }
+  }
+ }
+ @Test public void legacySavedRadioDefaultsToDenmark()throws Exception{org.json.JSONObject json=new RadioStation("id","Name","https://example.com/radio","").toJson();json.remove("country");assertEquals("DK",RadioStation.fromJson(json).country);}
+
 }
