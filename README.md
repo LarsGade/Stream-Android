@@ -389,3 +389,7 @@ Stationslogo og play/pause-knap har nu hvert sit centrerede felt på 48 × 48 dp
 
 ### 1.25.2 – Widgetgrafik 30 % større
 Logo og den cirkulære play/pause-knap i 2 × 1-widgetten er øget fra 48 dp til 62,4 dp i bredde og højde. Knappens indvendige afstand er skaleret tilsvarende, så play/pause-symbolet også bliver 30 % større. Lodret indvendig margen fjernes for at give plads i én række.
+
+
+### 1.25.3 – Afrundet firkant bag widget-knappen
+Baggrunden bag play/pause i 2 × 1-widgetten er nu en mørkegrå firkant med afrundede hjørner. Størrelsen bevares.
