@@ -39,7 +39,7 @@ public final class RadioWideWidgetProvider extends AppWidgetProvider {
    public void onLoadCleared(android.graphics.drawable.Drawable placeholder){if(requests.get(id)==this){requests.remove(id);requestKeys.remove(id);}}
    private void finishRequest(){if(requests.get(id)==this){requests.remove(id);requestKeys.remove(id);}new android.os.Handler(android.os.Looper.getMainLooper()).post(()->Glide.with(app).clear(this));}
   };
-  requests.put(id,target);requestKeys.put(id,key);Glide.with(app).asBitmap().load(model).centerCrop().into(target);
+  requests.put(id,target);requestKeys.put(id,key);Glide.with(app).asBitmap().load(model).fitCenter().into(target);
  }
  private static void clearRequest(Context context,int id){CustomTarget<Bitmap> target=requests.remove(id);requestKeys.remove(id);if(target!=null)Glide.with(context.getApplicationContext()).clear(target);}
  static RemoteViews views(Context context,int id,RadioStation station,Bitmap image){

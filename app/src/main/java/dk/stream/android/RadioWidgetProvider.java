@@ -46,7 +46,7 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
   views.setImageViewResource(R.id.widget_logo,R.drawable.ic_channel);
   if(station!=null) {
    String local=LocalChannelLogos.load(context).find(PlaybackArtwork.logoName(context,station));
-   if(local!=null) try(java.io.InputStream in=context.getAssets().open(local.substring("file:///android_asset/".length()))) {views.setImageViewBitmap(R.id.widget_logo,SquareLogo.bitmap(BitmapFactory.decodeStream(in)));} catch(java.io.IOException ignored) { }
+   if(local!=null) try(java.io.InputStream in=context.getAssets().open(local.substring("file:///android_asset/".length()))) {views.setImageViewBitmap(R.id.widget_logo,BitmapFactory.decodeStream(in));} catch(java.io.IOException ignored) { }
   }
   Intent configure=new Intent(context,RadioWidgetConfigureActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId).setData(Uri.parse("stream://radio-widget/config/"+widgetId));
   PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);

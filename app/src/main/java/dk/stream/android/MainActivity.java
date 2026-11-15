@@ -176,8 +176,8 @@ public final class MainActivity extends AppCompatActivity {
    RadioButton button=new RadioButton(this);button.setId(View.generateViewId());button.setText(labels[i]);kindButtons[i]=button;sections.addView(button,new RadioGroup.LayoutParams(0,-2,1));
   }
   kindButtons[0].setChecked(true);
-  favoriteCategories=new Spinner(this);favoriteCategories.setContentDescription("Vælg favoritkategori");root.addView(favoriteCategories,new LinearLayout.LayoutParams(-1,dp(48)));
-  groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
+  favoriteCategories=dropdown();favoriteCategories.setContentDescription("Vælg favoritkategori");root.addView(favoriteCategories,new LinearLayout.LayoutParams(-1,dp(48)));
+  groups=dropdown();groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new FavoriteListView(this);MediaListStyle.apply(list);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
   radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
@@ -242,6 +242,7 @@ public final class MainActivity extends AppCompatActivity {
  private void minimizeVideo(){videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
+ private Spinner dropdown(){Spinner spinner=new Spinner(this,Spinner.MODE_DROPDOWN);spinner.setPopupBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0xFF505050));return spinner;}
  private TextView text(String value,int size,int color) {TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setTextColor(color);return view;}
  private ImageButton iconButton(int icon,String description) {
   ImageButton button=new ImageButton(this);button.setImageResource(icon);button.setContentDescription(description);button.setBackgroundColor(Color.TRANSPARENT);button.setPadding(dp(12),dp(12),dp(12),dp(12));return button;
@@ -249,7 +250,7 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));favoritesButton.setTextColor(Color.WHITE);favoritesButton.setTypeface(favoritesButton.getTypeface(),android.graphics.Typeface.BOLD);
+  Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));favoritesButton.setTextColor(Color.BLACK);favoritesButton.setTypeface(favoritesButton.getTypeface(),android.graphics.Typeface.BOLD);
   Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
@@ -259,7 +260,7 @@ public final class MainActivity extends AppCompatActivity {
   settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
   AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));settingsContent.addView(start);
   LinearLayout startChoice=column();settingsContent.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
-  Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Film","Serier","Radio","Lokale filer","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
+  Spinner startTab=dropdown();ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Film","Serier","Radio","Lokale filer","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=Library.favoriteTabOrder().get(position);if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));}});
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -416,7 +417,7 @@ public final class MainActivity extends AppCompatActivity {
   LocalMedia current=LocalAudioService.current();if(current!=null&&PcloudDocument.is(current.uri))stopService(new android.content.Intent(this,LocalAudioService.class));if(CastPlayback.pcloud(this))CastPlayback.stop(this);pcloudPanel.open();
  }
  private void showPcloudLogin(){
-  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=new Spinner(this);ArrayAdapter<String> regions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU","USA"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
+  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=dropdown();ArrayAdapter<String> regions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU","USA"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
   EditText email=new EditText(this);email.setHint("E-mail");email.setSingleLine();email.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);email.setSaveEnabled(false);form.addView(email);
   EditText password=new EditText(this);password.setHint("Adgangskode");password.setSingleLine();password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);form.addView(password);
   if(library.pcloud!=null){region.setSelection(PcloudAccount.US.equals(library.pcloud.server)?1:0);email.setText(library.pcloud.email);}
@@ -617,7 +618,7 @@ public final class MainActivity extends AppCompatActivity {
   if(password!=null) password.setSaveEnabled(false);
   form.addView(text(getString(R.string.select_epg),13,Color.LTGRAY));
   List<Library.Guide> choices=new ArrayList<>(library.guides);List<String> labels=new ArrayList<>();labels.add(getString(R.string.no_epg));for(Library.Guide guide:choices) labels.add(guide.name);
-  Spinner epg=new Spinner(this);ArrayAdapter<String> epgChoices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);epgChoices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);epg.setAdapter(epgChoices);form.addView(epg);
+  Spinner epg=dropdown();ArrayAdapter<String> epgChoices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);epgChoices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);epg.setAdapter(epgChoices);form.addView(epg);
   if(existing!=null) for(int i=0;i<choices.size();i++) if(choices.get(i).id.equals(existing.epgId)) epg.setSelection(i+1);
   ScrollView scroll=new ScrollView(this);scroll.addView(form);
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(existing!=null?R.string.edit_source:xtream?R.string.xtream_login:R.string.add_m3u).setView(scroll).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
@@ -806,7 +807,7 @@ public final class MainActivity extends AppCompatActivity {
    row.logo.setContentDescription(getString(R.string.logo_for,channel.name));
    String bundled=localLogos.find(channel.name);
    Object logoModel=bundled==null?LogoRequests.model(channel.logoUrl,source==null?null:source.server):bundled;
-   Glide.with(MainActivity.this).load(logoModel).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(MainActivity.this)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).centerCrop().into(row.logo);
+   Glide.with(MainActivity.this).load(logoModel).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(MainActivity.this)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).fitCenter().into(row.logo);
    recycled.setAlpha(list.isPicked(position)?0.6f:1f);
    boolean playing=isChannelPlaying(channel);NowPlayingIndicator.show(row.indicator,playing);row.name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);row.group.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
 

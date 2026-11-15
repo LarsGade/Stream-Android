@@ -526,3 +526,7 @@ Streaminglister gemmes nu løbende i krypteret binært format i stedet for at op
 ### 1.27.3
 
 Retter langsom lagring, som kunne få streamingopdatering til at blive stående ved fx 1/3. Krypterede kataloger skrives nu i blokke direkte til filen frem for enkeltbytes. Atomisk lagring og kryptering bevares.
+
+### 1.27.4
+
+Favoritter-knappen er hvid med fed sort tekst. Alle dropdown-menuer har samme grå baggrund som hold-menuerne. Logoer vises med deres oprindelige proportioner uden kvadratisk eller rund beskæring i lister, afspillere og widgets.
