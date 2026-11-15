@@ -24,6 +24,19 @@ public class RadioPlaybackServiceTest {
    notification.deleteIntent.send();Intent dismiss=Shadows.shadowOf(service.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.STOP,dismiss.getAction());service.onStartCommand(dismiss,0,2);assertEquals(Player.STATE_IDLE,player.getPlaybackState());assertEquals(0,player.getMediaItemCount());assertNull(RadioPlaybackService.selectedStation());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());
   }finally{controller.destroy();}
  }
+ @Test public void liveIsAvailableAsASystemSessionCommand() throws Exception {
+  ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+  try{RadioStation station=new RadioStation("station","Radio","https://example.com/radio.mp3","");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);Player player=service.onGetSession(null).getPlayer();player.pause();
+   CarRadioCallback callback=org.robolectric.util.ReflectionHelpers.getField(service,"carCallback");androidx.media3.session.SessionCommand live=new androidx.media3.session.SessionCommand(RadioPlaybackService.LIVE,android.os.Bundle.EMPTY);
+   assertTrue(callback.onConnect(service.onGetSession(null),null).availableSessionCommands.contains(live));assertEquals(androidx.media3.session.SessionResult.RESULT_SUCCESS,callback.onCustomCommand(service.onGetSession(null),null,live,android.os.Bundle.EMPTY).get().resultCode);assertTrue(player.getPlayWhenReady());assertFalse(RadioPlaybackService.needsLive());
+  }finally{controller.destroy();}
+ }
+ @Test public void pauseRepostsASwipeableCardWithoutReopeningTheShade(){
+  ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+  try{service.onStartCommand(RadioPlaybackService.playIntent(service,new RadioStation("station","Radio","https://example.com/radio.mp3","")),0,1);service.onGetSession(null).getPlayer().pause();Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+   android.app.Notification notification=Shadows.shadowOf((android.app.NotificationManager)service.getSystemService(android.content.Context.NOTIFICATION_SERVICE)).getNotification(2001);assertNotNull(notification);assertEquals(0,notification.flags&(android.app.Notification.FLAG_ONGOING_EVENT|android.app.Notification.FLAG_FOREGROUND_SERVICE));assertNotNull(notification.deleteIntent);
+  }finally{controller.destroy();}
+ }
  @Test public void serviceStartsForegroundMediaSessionWithStandardPause() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
    server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));

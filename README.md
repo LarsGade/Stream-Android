@@ -331,3 +331,7 @@ På Favoritter-siden vises kun søgefelt for Lokale og Pcloud. TV, Film, Serier 
 ### 1.22.1 – Swipe pauset afspiller væk
 Pausede afspilningsmeddelelser kan fjernes med swipe. Meddelelsens delete-intent stopper den tilhørende afspiller og rydder køen, så den ikke genopretter meddelelsen. Radiomeddelelsen og den lokale/Pcloud-afspiller understøtter dette; Media3s eksisterende transportknapper og asynkrone coveropdateringer bevares.
 Radiomeddelelsen har desuden en live-cirkel, der sender samme Live-kommando som appens afspillere. Knappens tilgængelighedstekst viser “Live” eller “Gå til live”; Android styrer selve ikonfarven i systemets medieafspiller.
+
+
+### 1.22.2 – Live i systemafspiller og swipe straks efter pause
+Radiomediesessionen registrerer Live som en rigtig custom session command med live-cirkel, så systemafspillere, der bruger sessionsknapper frem for meddelelsens actions, også kan vise den. Ved pause fjernes foreground-låsningen med det samme, og en ny pauset meddelelse indsættes uden ongoing-flag, mens afspilning og resume bevares. Det gælder radio samt lokale/Pcloud-filer. Swipe sender fortsat stop og rydder køen. Den konkrete visning og swipe skal efterprøves på brugerens telefon, da Android/Samsung SystemUI ikke kan afprøves i dette miljø.

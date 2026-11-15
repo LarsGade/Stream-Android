@@ -50,10 +50,10 @@ public final class RadioPlaybackService extends MediaLibraryService {
    public boolean handleCustomCommand(MediaSession mediaSession,String action,android.os.Bundle extras) {return false;}
   });
   sessionPlayer=new RadioSessionPlayer(player,this::foreground);
-  carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog);
-  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class).putExtra("openRadio",true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
+  carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog,()->onStartCommand(internalIntent(this,LIVE),0,0));
+  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(java.util.Collections.singletonList(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_live).setDisplayName("Live").setSessionCommand(new SessionCommand(LIVE,android.os.Bundle.EMPTY)).build())).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class).putExtra("openRadio",true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
   player.addListener(new Player.Listener() {
-   @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;}
+   @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;if(!ready)refreshPausedNotification();}
    @Override public void onPlaybackStateChanged(int state) {if(state==Player.STATE_IDLE) behindLive=false;}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
     if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
@@ -62,6 +62,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
    @Override public void onPlayerError(PlaybackException failure) {error=getString(R.string.radio_error);sessionPlayer.stop();RadioWidgetProvider.refresh(RadioPlaybackService.this);}
   });
  }
+ private void refreshPausedNotification(){PausedNotificationRefresh.update(this,session,2001,()->notification(session));}
+ @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}
  @Override public MediaLibrarySession onGetSession(MediaSession.ControllerInfo controller) {return session;}
  private Notification notification(MediaSession mediaSession) {
   PendingIntent toggle=PendingIntent.getService(this,2,internalIntent(this,TRANSPORT_TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);

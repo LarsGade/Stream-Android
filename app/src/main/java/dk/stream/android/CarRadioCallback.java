@@ -11,12 +11,17 @@ import java.util.*;
 /** All disk and Radio Browser work happens outside the media session's main thread. */
 @androidx.media3.common.util.UnstableApi
 public final class CarRadioCallback implements MediaLibrarySession.Callback {
- private final CarRadioCatalog catalog;
+ private final CarRadioCatalog catalog;private final Runnable liveAction;
  private final ListeningExecutorService worker=MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newSingleThreadExecutor());
- public CarRadioCallback(CarRadioCatalog catalog) {this.catalog=catalog;}
+ public CarRadioCallback(CarRadioCatalog catalog) {this(catalog,null);}
+ public CarRadioCallback(CarRadioCatalog catalog,Runnable liveAction){this.catalog=catalog;this.liveAction=liveAction;}
  public void close() {worker.shutdownNow();}
  @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {
-  return MediaSession.ConnectionResult.accept(MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
+  SessionCommands commands=MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS;if(liveAction!=null)commands=commands.buildUpon().add(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).build();return MediaSession.ConnectionResult.accept(commands,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
+ }
+ @Override public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,MediaSession.ControllerInfo controller,SessionCommand command,Bundle args){
+  if(liveAction!=null&&RadioPlaybackService.LIVE.equals(command.customAction)){liveAction.run();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}
+  return Futures.immediateFuture(new SessionResult(SessionError.ERROR_NOT_SUPPORTED));
  }
  @Override public ListenableFuture<LibraryResult<MediaItem>> onGetLibraryRoot(MediaLibrarySession session,MediaSession.ControllerInfo controller,LibraryParams params) {
   Bundle extras=new Bundle();extras.putBoolean("android.media.browse.SEARCH_SUPPORTED",true);extras.putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED",true);extras.putInt("android.media.browse.CONTENT_STYLE_BROWSABLE_HINT",1);extras.putInt("android.media.browse.CONTENT_STYLE_PLAYABLE_HINT",1);

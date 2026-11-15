@@ -47,6 +47,7 @@ public final class LocalAudioService extends MediaSessionService {
   player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_LOCAL);
   session=new MediaSession.Builder(this,player).setId("stream-local-playback").build();addSession(session);
   player.addListener(new Player.Listener() {
+   @Override public void onPlayWhenReadyChanged(boolean ready,int reason){if(!ready)refreshPausedNotification();}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
     if(item==null) {current=null;changed();return;}
     android.os.Bundle extras=item.mediaMetadata.extras;
@@ -62,6 +63,8 @@ public final class LocalAudioService extends MediaSessionService {
    }
   });
  }
+ private void refreshPausedNotification(){PausedNotificationRefresh.update(this,session,2003,()->{PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);PendingIntent stop=PendingIntent.getService(this,32,command(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);return PlaybackNotification.create(this,"stream_local",session,toggle,stop);});}
+ @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}
  @Override public MediaSession onGetSession(MediaSession.ControllerInfo controller) {return session;}
  @Override public int onStartCommand(Intent intent,int flags,int startId) {
   super.onStartCommand(intent,flags,startId);if(intent==null) return START_NOT_STICKY;
