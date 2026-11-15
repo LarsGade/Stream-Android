@@ -49,7 +49,7 @@ public final class RadioPanel extends LinearLayout {
    public void showActions(int position,View anchor) {
     if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new PopupMenu(context,anchor);
     menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
-    menu.getMenu().add(0,2,1,R.string.remove_from_favorites).setOnMenuItemClickListener(item->{save.apply(()->library.get().removeRadio(station.id));filter();return true;});menu.show();
+    menu.getMenu().add(0,2,1,R.string.remove_from_favorites).setOnMenuItemClickListener(item->{save.apply(()->library.get().removeRadio(station.id));filter();return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {RadioStation station=visible.remove(from);visible.add(to,station);adapter.notifyDataSetChanged();}
    public void commit() {List<RadioStation> order=new ArrayList<>(visible);save.apply(()->library.get().reorderRadio(order));filter();}

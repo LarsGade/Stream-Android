@@ -348,13 +348,13 @@ public class MainActivityTest {
   PopupMenu menu=org.robolectric.shadows.ShadowPopupMenu.getLatestPopupMenu();assertNotNull(menu);assertEquals("Fjern fra favoritter",menu.getMenu().getItem(0).getTitle().toString());menu.getMenu().performIdentifierAction(menu.getMenu().getItem(0).getItemId(),0);
   assertEquals(2,storage.saved.favorites.size());assertEquals("Two",storage.saved.favorites.get(0).channel.name);
  }
- @Test public void holdingThenDraggingReordersFavoritesAndPersistsOnRelease() throws Exception {
-  FavoriteListView list=sampleFavorites();float first=list.getChildAt(0).getTop()+list.getChildAt(0).getHeight()/2f,last=list.getChildAt(2).getTop()+list.getChildAt(2).getHeight()/2f;
-  listTouch(list,android.view.MotionEvent.ACTION_DOWN,first);list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);listTouch(list,android.view.MotionEvent.ACTION_MOVE,last);
-  assertTrue(storage.saved.favorites.isEmpty());
-  listTouch(list,android.view.MotionEvent.ACTION_UP,last);
-  assertEquals("Two",storage.saved.favorites.get(0).channel.name);assertEquals("Three",storage.saved.favorites.get(1).channel.name);assertEquals("One",storage.saved.favorites.get(2).channel.name);
-  assertEquals("One",Library.fromJson(storage.saved.toJson()).favorites.get(2).channel.name);assertNull(ReflectionHelpers.getField(activity,"player"));
+ @Test public void favoriteMenuMoveDownPersistsOrder() throws Exception {
+  FavoriteListView list=sampleFavorites();
+  list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);
+  PopupMenu menu=org.robolectric.shadows.ShadowPopupMenu.getLatestPopupMenu();assertNotNull(menu);
+  assertTrue(menu.getMenu().performIdentifierAction(8102,0));
+  assertEquals("Two",storage.saved.favorites.get(0).channel.name);assertEquals("One",storage.saved.favorites.get(1).channel.name);
+  assertEquals("One",Library.fromJson(storage.saved.toJson()).favorites.get(1).channel.name);assertNull(ReflectionHelpers.getField(activity,"player"));
  }
  @Test public void cancelledDragKeepsOriginalFavoriteOrder() {
   FavoriteListView list=sampleFavorites();float first=list.getChildAt(0).getHeight()/2f,last=list.getChildAt(2).getTop()+list.getChildAt(2).getHeight()/2f;
@@ -362,9 +362,9 @@ public class MainActivityTest {
   Library library=ReflectionHelpers.getField(activity,"library");assertEquals("One",library.favorites.get(0).channel.name);
   java.util.List<Library.Entry> visible=ReflectionHelpers.getField(activity,"visible");assertEquals("One",visible.get(0).channel.name);
  }
- @Test public void stationaryHoldAndReleaseOpensActionsWithoutStartingPlayback() {
+ @Test public void stationaryHoldOpensActionsBeforeReleaseWithoutStartingPlayback() {
   FavoriteListView list=sampleFavorites();float y=list.getChildAt(0).getTop()+list.getChildAt(0).getHeight()/2f;
-  listTouch(list,android.view.MotionEvent.ACTION_DOWN,y);list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);listTouch(list,android.view.MotionEvent.ACTION_UP,y);
+  listTouch(list,android.view.MotionEvent.ACTION_DOWN,y);list.getOnItemLongClickListener().onItemLongClick(list,list.getChildAt(0),0,0);
   PopupMenu menu=org.robolectric.shadows.ShadowPopupMenu.getLatestPopupMenu();assertNotNull(menu);assertEquals("Fjern fra favoritter",menu.getMenu().getItem(0).getTitle().toString());assertNull(ReflectionHelpers.getField(activity,"player"));
  }
 }

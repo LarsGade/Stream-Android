@@ -210,7 +210,7 @@ public final class MainActivity extends AppCompatActivity {
    public void showActions(int position,View anchor) {
     if(!favoritesMode||position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
-    menu.getMenu().add(R.string.remove_from_favorites).setOnMenuItemClickListener(item->{if(changeLibrary(()->library.removeFavorite(entry))) filter();return true;});menu.show();
+    menu.getMenu().add(R.string.remove_from_favorites).setOnMenuItemClickListener(item->{if(changeLibrary(()->library.removeFavorite(entry))) filter();return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {if(from>=0&&from<visible.size()&&to>=0&&to<visible.size()) {Library.Entry entry=visible.remove(from);visible.add(to,entry);adapter.notifyDataSetChanged();}}
    public void commit() {List<Library.Entry> ordered=new ArrayList<>(visible);changeLibrary(()->library.reorderVisibleFavorites(ordered));filter();}
@@ -375,7 +375,11 @@ public final class MainActivity extends AppCompatActivity {
   List<Integer> available=new ArrayList<>();List<String> labels=new ArrayList<>();int[] resources={R.string.tv,R.string.radio,R.string.local_files,R.string.pcloud,R.string.films,R.string.series};
   for(int tab:Library.favoriteTabOrder())if(library.hasFavoriteTab(tab)){available.add(tab);labels.add(getString(resources[tab]));}
   choosingFavoriteTab=true;
-  if(!available.equals(favoriteCategoryIds)){favoriteCategoryIds.clear();favoriteCategoryIds.addAll(available);ArrayAdapter<String> choices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);choices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);favoriteCategories.setAdapter(choices);}
+  if(!available.equals(favoriteCategoryIds)){favoriteCategoryIds.clear();favoriteCategoryIds.addAll(available);ArrayAdapter<String> choices=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){
+   private View bold(View view){if(view instanceof TextView)((TextView)view).setTypeface(null,android.graphics.Typeface.BOLD);return view;}
+   @Override public View getView(int position,View recycled,ViewGroup parent){return bold(super.getView(position,recycled,parent));}
+   @Override public View getDropDownView(int position,View recycled,ViewGroup parent){return bold(super.getDropDownView(position,recycled,parent));}
+  };choices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);favoriteCategories.setAdapter(choices);}
   int position=favoriteCategoryIds.indexOf(currentFavoriteTab);if(position>=0&&favoriteCategories.getSelectedItemPosition()!=position)favoriteCategories.setSelection(position);
   favoriteCategories.setVisibility(favoritesPage&&!available.isEmpty()?View.VISIBLE:View.GONE);choosingFavoriteTab=false;
  }

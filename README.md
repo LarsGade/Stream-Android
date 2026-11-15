@@ -458,3 +458,7 @@ Lokale filer, Pcloud og filfavoritter viser ingen play/pause-knap ved titlen. De
 ### 1.26.5
 
 Hold-menuer har grå baggrund. Sideoverskrifter i Streaming, Radio, Lokale filer og Pcloud samt mappetitler er fede. Mappetitler i Lokale filer og Pcloud har mappeikon til venstre.
+
+### 1.26.6
+
+Favoritkategoriens overskrift og dropdown-valg står med fed skrift. Hold-menuer i streaming- og radiofavoritter åbner straks ved langt tryk uden at vente på slip. Rækkefølgen kan ændres via Flyt op/Flyt ned i menuen.
