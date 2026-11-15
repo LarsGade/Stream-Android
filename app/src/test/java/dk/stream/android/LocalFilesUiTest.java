@@ -84,7 +84,7 @@ public class LocalFilesUiTest {
    View row=list.getAdapter().getView(1,null,list);assertFalse(row.hasFocusable());list.performItemClick(row,1,1);assertEquals(song,played[0]);
    Documents provider=Robolectric.buildContentProvider(Documents.class).create().get();org.robolectric.shadows.ShadowContentResolver.registerProviderInternal("local.test",provider);
    list.performItemClick(list.getAdapter().getView(0,null,list),0,0);assertEquals(root,ReflectionHelpers.<ArrayDeque<LocalMedia>>getField(panel,"parents").peekLast());
-   panel.open(false);Button change=ReflectionHelpers.getField(panel,"changeFolder");assertEquals(View.VISIBLE,change.getVisibility());change.performClick();assertEquals(root,changed[0]);assertTrue(panel.back());
+   panel.open(false);for(int i=0;i<panel.getChildCount();i++)assertFalse(panel.getChildAt(i) instanceof Button);assertTrue(panel.back());
   } finally {panel.close();}
  }
 

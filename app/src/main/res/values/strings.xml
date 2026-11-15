@@ -99,4 +99,7 @@
  <string name="local_files">Lokale</string>
  <string name="pcloud">Pcloud</string>
  <string name="images">Billeder</string>
+ <string name="local_source_folder">Kildemappe til lokale</string>
+ <string name="pcloud_account">Pcloud-konto</string>
+ <string name="import_export">Importér/Eksportér</string>
 </resources>

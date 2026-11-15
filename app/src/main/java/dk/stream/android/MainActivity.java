@@ -53,6 +53,8 @@ public final class MainActivity extends AppCompatActivity {
  private Library library=new Library();
  private LibraryPersistence store;
  private boolean storageReadable=true,loading,favoritesMode;
+ private boolean settingsTransferBusy,applyingSettings;
+ private final ExecutorService settingsWorker=Executors.newSingleThreadExecutor();
  private Catalog catalog=new Catalog();
  private Library.Source activeSource;
  private List<Library.Entry> visible=new ArrayList<>();
@@ -241,8 +243,7 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,()->{});
-  pcloudButton.setOnClickListener(view->showPcloudMenu(pcloudButton));
+  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
@@ -258,6 +259,9 @@ public final class MainActivity extends AppCompatActivity {
   playbackPreference(navigation,R.string.auto_play_last,false);playbackPreference(navigation,R.string.mini_player,true);
   button(R.string.sources,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
   button(R.string.tv_guide,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
+  button(R.string.local_source_folder,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);replacingLocalFolder=null;pickLocal(true);});
+  button(R.string.pcloud_account,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
+  button(R.string.import_export,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   button(R.string.update_all,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
   button(R.string.reset_app,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
   navigation.addView(new Space(this),new LinearLayout.LayoutParams(-1,0,1));
@@ -374,20 +378,19 @@ public final class MainActivity extends AppCompatActivity {
   if(favorites) {showFavoriteTab(2);return;}
   favoritesPage=false;favoritesMode=false;radioMode=false;localMode=true;radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.VISIBLE);localPanel.open(false);filter();
  }
- private void showPcloudMenu(View anchor){
-  if(library.pcloud==null){openPcloud();return;}
+ private void showPcloudAccount(){
+  if(library.pcloud==null){showPcloudLogin();return;}
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);
-  new AlertDialog.Builder(this).setTitle("Pcloud").setItems(new String[]{"Åbn Pcloud","Opdatér","Redigér konto","Log ud"},(dialog,which)->{
+  new AlertDialog.Builder(this).setTitle(R.string.pcloud_account).setItems(new String[]{"Redigér konto","Opdatér","Log ud"},(dialog,which)->{
    switch(which){
-    case 0:openPcloud();break;
+    case 0:showPcloudLogin();break;
     case 1:if(pcloudMode)pcloudPanel.refresh();else openPcloud();break;
-    case 2:showPcloudLogin();break;
-    case 3:logoutPcloud();break;
+    case 2:logoutPcloud();break;
    }
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
  private void openPcloud(){
-  exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();if(library.pcloud==null)showPcloudLogin();
+  exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();
  }
  private void logoutPcloud(){
   if(!changeLibrary(()->library.pcloud=null))return;
@@ -407,6 +410,40 @@ public final class MainActivity extends AppCompatActivity {
    localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openPcloud();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText("Bekræft login på din mail\n\n"+(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes."));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
   }));dialog.show();
  }
+ private void showSettingsTransfer(){
+  if(settingsTransferBusy){Toast.makeText(this,"Vent, til overførslen er færdig.",Toast.LENGTH_SHORT).show();return;}
+  new AlertDialog.Builder(this).setTitle(R.string.import_export).setItems(new String[]{"Importér opsætning","Eksportér opsætning"},(dialog,which)->{
+   android.content.Intent intent=new android.content.Intent(which==0?android.content.Intent.ACTION_OPEN_DOCUMENT:android.content.Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+   if(which==0){intent.setType("*/*");intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","application/octet-stream"});}else {intent.setType("application/json");intent.putExtra(android.content.Intent.EXTRA_TITLE,"Stream-opsætning.json");}
+   try{startActivityForResult(intent,which==0?7210:7211);}catch(android.content.ActivityNotFoundException unavailable){Toast.makeText(this,"Telefonen har ingen filvælger.",Toast.LENGTH_LONG).show();}
+  }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ private void exportSettings(android.net.Uri uri){
+  if(settingsTransferBusy)return;if(!storageReadable){Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return;}
+  byte[] bytes;try{bytes=SettingsBackup.encode(library);}catch(Exception invalid){Toast.makeText(this,"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();return;}settingsTransferBusy=true;
+  settingsWorker.execute(()->{boolean success=false;try{try(java.io.OutputStream output=getContentResolver().openOutputStream(uri,"wt")){if(output==null)throw new java.io.IOException();output.write(bytes);output.flush();}success=true;}catch(Exception failure){}boolean saved=success;runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,saved?"Opsætningen er eksporteret. JSON-filen indeholder også dine logins.":"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();});});
+ }
+ private void importSettings(android.net.Uri uri){
+  if(settingsTransferBusy)return;settingsTransferBusy=true;
+  settingsWorker.execute(()->{try{Library imported;try(java.io.InputStream input=getContentResolver().openInputStream(uri)){imported=SettingsBackup.decode(input);}runOnUiThread(()->applyImportedSettings(imported));}catch(Exception invalid){runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,"Filen kunne ikke importeres. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
+ }
+ private void applyImportedSettings(Library imported){
+  if(isDestroyed()||isFinishing())return;applyingSettings=true;
+  settingsWorker.execute(()->{try{store.save(imported);runOnUiThread(()->finishImportedSettings(imported));}catch(Exception failure){runOnUiThread(()->{if(isDestroyed())return;applyingSettings=false;settingsTransferBusy=false;Toast.makeText(this,"Opsætningen kunne ikke gemmes. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
+ }
+ private void finishImportedSettings(Library imported){
+  if(isDestroyed()||isFinishing())return;getPreferences(0).edit().remove("playlist").apply();
+  PlaybackShutdown.stop(this);stopPlaybackState();library=imported;storageReadable=true;RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
+  boolean folderAccess=hasLocalFolderAccess(imported);
+  Toast.makeText(this,folderAccess?"Opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale for at give adgang.",Toast.LENGTH_LONG).show();recreate();
+ }
+ private boolean hasLocalFolderAccess(Library settings){
+  for(LocalMedia entry:settings.localFiles)if(entry.folder&&!PcloudDocument.is(entry.uri)){
+   boolean allowed=false;android.net.Uri root=android.net.Uri.parse(entry.uri);
+   for(android.content.UriPermission grant:getContentResolver().getPersistedUriPermissions())try{if(grant.isReadPermission()&&java.util.Objects.equals(root.getAuthority(),grant.getUri().getAuthority())&&android.provider.DocumentsContract.getTreeDocumentId(root).equals(android.provider.DocumentsContract.getTreeDocumentId(grant.getUri()))){allowed=true;break;}}catch(IllegalArgumentException invalid){}
+   if(!allowed)return false;
+  }return true;
+ }
  private void pickLocal(boolean folder) {
   android.content.Intent intent=new android.content.Intent(folder?android.content.Intent.ACTION_OPEN_DOCUMENT_TREE:android.content.Intent.ACTION_OPEN_DOCUMENT);
   intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION|android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
@@ -417,14 +454,16 @@ public final class MainActivity extends AppCompatActivity {
  @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);super.onSaveInstanceState(state);}
  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
-  super.onActivityResult(request,result,data);if((request!=7201&&request!=7202)||result!=RESULT_OK||data==null) return;
+  super.onActivityResult(request,result,data);
+  if(request==7210||request==7211){if(result==RESULT_OK&&data!=null&&data.getData()!=null){if(request==7210)importSettings(data.getData());else exportSettings(data.getData());}return;}
+  if((request!=7201&&request!=7202)||result!=RESULT_OK||data==null) return;
   boolean folder=request==7202;String replace=folder?replacingLocalFolder:null;replacingLocalFolder=null;List<android.net.Uri> uris=new ArrayList<>();
   if(data.getClipData()!=null) for(int i=0;i<data.getClipData().getItemCount();i++) uris.add(data.getClipData().getItemAt(i).getUri());else if(data.getData()!=null) uris.add(data.getData());
   int grants=data.getFlags()&android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
   localWorker.execute(()->{
    List<LocalMedia> linked=new ArrayList<>();boolean failed=false;
    for(android.net.Uri uri:uris) try {if(grants==0) throw new SecurityException("Read grant missing");getContentResolver().takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);LocalMedia entry=LocalMedia.describe(this,uri,folder);if(!entry.supported()) throw new IllegalArgumentException("Unsupported media");linked.add(entry);}catch(Exception error) {failed=true;}
-   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(folder) library.setLocalSource(entry);else library.addLocal(entry);}});if(localMode) {if(folder&&!linked.isEmpty()) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
+   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(folder) library.setLocalSource(entry);else library.addLocal(entry);}});if(localMode) {if(folder&&!linked.isEmpty()&&!favoritesPage) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
   });
  }
  private void playLocal(LocalMedia entry) {playLocal(entry,0);}
@@ -511,6 +550,7 @@ public final class MainActivity extends AppCompatActivity {
   if(!loading) {status.setText("");status.setVisibility(View.GONE);}
  }
  private boolean changeLibrary(Runnable change) {
+  if(applyingSettings)return false;
   if(!storageReadable) {status.setText(R.string.storage_failed);return false;}
   String previous;
   try {previous=library.toJson();} catch(Exception e) {status.setText(R.string.storage_failed);return false;}
@@ -865,5 +905,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

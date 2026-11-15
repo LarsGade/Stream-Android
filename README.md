@@ -339,3 +339,9 @@ Radiomediesessionen registrerer Live som en rigtig custom session command med li
 
 ### 1.22.3 – Stabil pause, Live-plads og åbn fuld afspiller
 Pause opdaterer samme meddelelse uden cancel/remove eller genindsættelse. Foreground-laget frakobles, og ongoing/foreground/no-clear-flag ryddes på den pausede meddelelse. Radio registrerer Live både som custom layout og som media-button preference med en konkret knapplads; meningsløse forrige/næste-/spoleknapper for radiostationen fjernes fra systemcontrollerens kommandoer, så Live kan få plads. Tryk på radiomeddelelsen åbner fuld lydafspiller; lokal video og streamingmeddelelser beder om fuldskærmsvisning. SystemUI-visning og swipe er endnu ikke verificeret på en fysisk telefon.
+
+
+### 1.23.0 – Kildemappe, konto og JSON-opsætning
+Under TV-guide findes nu Kildemappe til lokale, Pcloud-konto og Importér/Eksportér i denne rækkefølge. Lokale og Pcloud er rene filvisninger; valg af rodmappe og konto ligger i burgermenuen.
+Eksport gemmer hele Library-opsætningen (streamingkilder inkl. logins, Pcloud-konto, TV-guides, alle favoritter, lokale mappelinks, afspilnings- og startindstillinger) som læsbar UTF-8-JSON. Import kontrollerer format/version, størrelse og kildehenvisninger, før den gemmer en erstatning i det krypterede lokale lager. Ugyldige filer eller fejl ved lagring bevarer den gamle opsætning. Aktuel afspilning stoppes ved vellykket import, og siden genoprettes med de importerede indstillinger. Ingen gamle asynkrone biblioteksskrivninger må overskrive importen.
+Filen indeholder logins i klartekst. Androids mappeadgang kan ikke flyttes med JSON; ved import på en anden telefon skal lokal kildemappe vælges igen. Systemtilladelser og Androids widget-placeringer er enhedsindstillinger. Swipe-adfærden og de nuværende live-kontroller bevares.
