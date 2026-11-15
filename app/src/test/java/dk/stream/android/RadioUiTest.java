@@ -42,7 +42,7 @@ public class RadioUiTest {
    RadioPlaybackService service=serviceController.get();RadioStation station=new RadioStation("bar", "P4 Fyn",server.url("/radio.mp3").toString(),"");
    service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);bar.refresh();
    androidx.media3.common.Player player=service.onGetSession(null).getPlayer();
-   assertEquals("P4 Fyn",player.getMediaMetadata().title);assertEquals("Afspilles via Stream",player.getMediaMetadata().artist);assertEquals("Afspilles via Stream",player.getMediaMetadata().subtitle);
+   assertEquals("P4 Fyn",player.getMediaMetadata().title);assertNull(player.getMediaMetadata().artist);assertNull(player.getMediaMetadata().subtitle);
    player.pause();bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals("Afspil",bar.getChildAt(0).getContentDescription());player.play();bar.refresh();
    assertEquals("P4 Fyn",((TextView)bar.getChildAt(1)).getText().toString());
    assertEquals(View.VISIBLE,bar.getVisibility());assertTrue(bar.getChildAt(0) instanceof ImageView);

@@ -17,6 +17,7 @@ public final class PlaybackArtwork {
    byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1) out.write(buffer,0,n);return out.toByteArray();
   } catch(IOException e) {return null;}
  }
+ public static Object radioModel(Context context,RadioStation station){String asset=LocalChannelLogos.load(context).find(station.name);if(asset==null)asset=LocalChannelLogos.load(context).find(station.displayName());return asset!=null?asset:LogoRequests.model(station.logo,null);}
  public static boolean bundled(Context context,String name) {return LocalChannelLogos.load(context).find(name)!=null;}
  public static byte[] remote(Context context,String url) {
   if(okhttp3.HttpUrl.parse(url)==null) return null;

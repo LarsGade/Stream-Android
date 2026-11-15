@@ -32,7 +32,7 @@ public final class LocalAudioService extends MediaSessionService {
  }
  public static MediaItem item(LocalMedia entry) {
   android.os.Bundle extras=new android.os.Bundle();extras.putString("mime",entry.mime);extras.putString("name",entry.name);
-  MediaMetadata metadata=new MediaMetadata.Builder().setTitle(entry.displayName()).setArtist("Afspilles via Stream").setMediaType(entry.audio()?MediaMetadata.MEDIA_TYPE_MUSIC:MediaMetadata.MEDIA_TYPE_VIDEO).setExtras(extras).build();
+  MediaMetadata metadata=new MediaMetadata.Builder().setTitle(entry.displayName()).setMediaType(entry.audio()?MediaMetadata.MEDIA_TYPE_MUSIC:MediaMetadata.MEDIA_TYPE_VIDEO).setExtras(extras).build();
   return new MediaItem.Builder().setMediaId(entry.uri).setUri(entry.uri).setMediaMetadata(metadata).build();
  }
  private void changed() {sendBroadcast(new Intent(CHANGED).setPackage(getPackageName()));}

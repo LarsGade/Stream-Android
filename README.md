@@ -306,3 +306,8 @@ Streamingsiden viser kun “Streaming” som standardoverskrift. Burgermenuen be
 ### 1.20.0 – Dropdown i Favoritter
 Favoritkategorierne TV, Film, Serier, Radio, Lokale og Pcloud vælges nu i en dropdownmenu. Kun kategorier med indhold vises, og den tomme menu skjules, hvis der ingen favoritter er. Fjernes sidste favorit fra den valgte kategori, vælges en anden kategori med indhold.
 Startvælgeren bruger samme rækkefølge: TV, Film, Serier, Radio, Lokale, Pcloud. Gemte kategori-id’er bevares.
+
+
+### 1.21.0 – Logo og cover i fuld lydafspiller
+Den fulde lydafspiller viser radiostationens lokale eller eksterne logo og lydfilens indlejrede cover fra afspillerens metadata, også ved afspilning fra Pcloud. Billeder indlæses og skaleres via Glide; uden billede eller ved fejl skjules billedfeltet. Visningen følger automatisk skift til næste fil. Stationens eller filens navn bruges i stedet for udsendelsestitler. “Afspilles via Stream” er fjernet fra media-sessioner, Android Auto og Cast-metadata. Ved casting vises modtagerens billede, stationens logo eller det kendte cover for den aktuelle fil.
+Build, lint og model-/netværkstests er kontrolleret. Robolectric-testen af coverfeltet kan ikke afvikles her, fordi download af Android-testpakken afvises af proxyen (HTTP 403). Billedvisningen er ikke afprøvet på en fysisk telefon.

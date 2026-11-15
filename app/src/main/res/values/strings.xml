@@ -96,7 +96,6 @@
  <string name="radio_error">Radiostationen kunne ikke afspilles. Prøv igen eller vælg en anden station.</string>
  <string name="now_playing">Afspilles nu</string>
  <string name="car_danish_radio">Danske radiostationer</string>
- <string name="radio_playing_via">Afspilles via Stream</string>
  <string name="local_files">Lokale</string>
  <string name="pcloud">Pcloud</string>
  <string name="images">Billeder</string>
