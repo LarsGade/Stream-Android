@@ -365,3 +365,10 @@ Lokale-siden har en fast overskrift “Lokale” over søgefeltet som på radios
 
 ### 1.23.5 – Pcloud-overskrift over søgning
 Pcloud-siden har nu en fast overskrift over søgefeltet, som Lokale og Radio. Mappestien vises fortsat ved navigation i undermapper.
+
+
+### 1.24.0 – Navigation og videobar
+- Indstillinger foldes sammen, når burgermenuen lukkes. Favoritter har blå baggrund og fed hvid tekst.
+- Ved sideskift skjules videovinduet øverst, mens afspilningen fortsætter i den nederste bar. Tryk på baren åbner videoen i fuldskærm; en tilbagepil øverst til venstre vender tilbage til siden. Baggrundsopdateringer fra den lokale afspilning åbner ikke automatisk det skjulte videovindue igen.
+- Den valgte lokale kildemappe er roden i filvisningen. Tilbage går ikke op over den; en favoritmappe kan stadig forlades for at vende tilbage til favoritlisten.
+- Søgning i lokale/Pcloud-lister viser navne uden relative stier, og mappestien skjules under søgning.

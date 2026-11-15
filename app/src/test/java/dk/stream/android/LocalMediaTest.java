@@ -5,6 +5,9 @@ import static org.junit.Assert.*;
 
 /** Pure model checks: only URI references are persisted, separate from TV and radio. */
 public class LocalMediaTest {
+ @org.junit.Test public void searchLabelsHideRelativePathAndExtension(){LocalMedia file=new LocalMedia("content://test/file","Music / Album / Æble.mp3","audio/mpeg",false);org.junit.Assert.assertEquals("Æble",file.displayFileName());org.junit.Assert.assertEquals("Music / Album / Æble",file.displayName());}
+ @org.junit.Test public void searchFolderLabelsKeepFolderName(){LocalMedia folder=new LocalMedia("content://test/folder","Music / Album.v1","",true);org.junit.Assert.assertEquals("Album.v1",folder.displayFileName());}
+
  @Test public void linksAndFavoritesSurviveRoundTripWithoutChangingUris() throws Exception {
   String tree="content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic";
   String file="content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2FTrack%201.mp3";

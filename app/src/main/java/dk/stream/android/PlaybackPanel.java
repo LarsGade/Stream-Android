@@ -17,12 +17,12 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}
+  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}default boolean pictureInPicture(){return false;}
  }
  public final PlayerView video;
  private final Actions actions;
  private final AudioManager audio;
- private final ImageButton play,mute,fullscreen,rewind,forward,settings;
+ private final ImageButton play,mute,fullscreen,rewind,forward,settings,back;
  private final SeekBar timeline;
  private final TextView title,time;
  private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
@@ -59,9 +59,10 @@ public final class PlaybackPanel extends FrameLayout {
   });
   settings=new ImageButton(context);settings.setImageResource(R.drawable.ic_settings);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackground(controlBackground());settings.setContentDescription(context.getString(R.string.player_settings));settings.setPadding(dp(8),dp(8),dp(8),dp(8));buttons.addView(settings,new LinearLayout.LayoutParams(0,-1,1));settings.setOnClickListener(this::showSettings);
   addView(controls,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
+  back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setImageTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));back.setBackgroundColor(0x66000000);back.setPadding(dp(12),dp(12),dp(12),dp(12));FrameLayout.LayoutParams backPosition=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.START);backPosition.setMargins(dp(8),dp(8),dp(8),dp(8));addView(back,backPosition);back.setVisibility(GONE);back.setOnClickListener(view->{if(actions.fullscreen())actions.toggleFullscreen();});
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this,(view,insets)->{
    androidx.core.graphics.Insets cutout=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout());
-   controls.setPadding(fullscreenMode?cutout.left:0,0,fullscreenMode?cutout.right:0,fullscreenMode?cutout.bottom:0);return insets;
+   controls.setPadding(fullscreenMode?cutout.left:0,0,fullscreenMode?cutout.right:0,fullscreenMode?cutout.bottom:0);FrameLayout.LayoutParams position=(FrameLayout.LayoutParams)back.getLayoutParams();position.setMarginStart(dp(8)+cutout.left);position.topMargin=dp(8)+cutout.top;back.setLayoutParams(position);return insets;
   });
   restoreVolume=Math.max(1,audio.getStreamVolume(AudioManager.STREAM_MUSIC));hideControls();refresh();setVisibility(GONE);
  }
@@ -148,6 +149,7 @@ public final class PlaybackPanel extends FrameLayout {
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));
  }
  public void refresh() {
+  back.setVisibility(fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
   boolean playing=actions.playing();play.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?R.string.pause_action:R.string.play_action));
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));
   try {

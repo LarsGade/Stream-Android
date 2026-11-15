@@ -67,6 +67,8 @@ public final class MainActivity extends AppCompatActivity {
  private FavoriteListView list;
  private ChannelAdapter adapter;
  private DrawerLayout drawer;
+ private Button settingsToggle;private LinearLayout settingsContent;
+ private boolean videoMinimized;
  private ExoPlayer player;
  private PlayerView video;
  private PlaybackPanel playbackPanel;
@@ -109,7 +111,7 @@ public final class MainActivity extends AppCompatActivity {
 
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
-  super.onCreate(state);CastPlayback.init(this);if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
+  super.onCreate(state);CastPlayback.init(this);videoMinimized=state!=null?state.getBoolean("videoMinimized",false):LocalAudioService.current()!=null;if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
   android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);transport.addAction(LocalAudioService.CHANGED);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
@@ -147,7 +149,7 @@ public final class MainActivity extends AppCompatActivity {
   getOnBackPressedDispatcher().addCallback(this,closeDrawer);
   drawer.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
    @Override public void onDrawerOpened(View view) {closeDrawer.setEnabled(true);}
-   @Override public void onDrawerClosed(View view) {closeDrawer.setEnabled(false);}
+   @Override public void onDrawerClosed(View view) {closeDrawer.setEnabled(false);collapseSettings();}
   });
   pageTitle=text("",20,Color.WHITE);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
   status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
@@ -157,6 +159,7 @@ public final class MainActivity extends AppCompatActivity {
    public void togglePlayback() {togglePlaybackState();}
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
+   public boolean pictureInPicture(){return android.os.Build.VERSION.SDK_INT>=26&&isInPictureInPictureMode();}
    public void volumeFailed() {Toast.makeText(MainActivity.this,R.string.volume_failed,Toast.LENGTH_SHORT).show();}
    public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.getPlayWhenReady() && player.getPlaybackState()!=Player.STATE_ENDED && player.getPlayerError()==null;}
    public boolean fullscreen() {return fullscreen;}
@@ -210,7 +213,7 @@ public final class MainActivity extends AppCompatActivity {
    public void cancel() {filter();}
   });
   list.setOnItemClickListener((parent,view,position,id)->open(visible.get(position)));
-  sections.setOnCheckedChangeListener((group,id)->{ for(int i=0;i<kindButtons.length;i++) if(kindButtons[i].getId()==id) currentKind=Playlist.Kind.values()[i];rebuildGroups(); });
+  sections.setOnCheckedChangeListener((group,id)->{ minimizeVideo();for(int i=0;i<kindButtons.length;i++) if(kindButtons[i].getId()==id) currentKind=Playlist.Kind.values()[i];rebuildGroups(); });
   groups.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
    public void onItemSelected(AdapterView<?> parent,View view,int position,long id) { filter(); }
    public void onNothingSelected(AdapterView<?> parent) { }
@@ -234,6 +237,8 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
  private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
+ private void collapseSettings(){if(settingsContent==null||settingsToggle==null)return;settingsContent.setVisibility(View.GONE);settingsToggle.setSelected(false);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");}
+ private void minimizeVideo(){videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
  private TextView text(String value,int size,int color) {TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setTextColor(color);return view;}
@@ -243,12 +248,12 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
-  Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
+  Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));favoritesButton.setTextColor(Color.WHITE);favoritesButton.setTypeface(favoritesButton.getTypeface(),android.graphics.Typeface.BOLD);
   Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
-  Button settingsToggle=button(R.string.settings,navigation,()->{});
-  LinearLayout settingsContent=column();settingsContent.setPadding(dp(8),0,dp(8),0);settingsContent.setVisibility(View.GONE);navigation.addView(settingsContent,new LinearLayout.LayoutParams(-1,-2));
+  settingsToggle=button(R.string.settings,navigation,()->{});
+  settingsContent=column();settingsContent.setPadding(dp(8),0,dp(8),0);settingsContent.setVisibility(View.GONE);navigation.addView(settingsContent,new LinearLayout.LayoutParams(-1,-2));
   settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");
   settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
   AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));settingsContent.addView(start);
@@ -325,13 +330,14 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onPictureInPictureModeChanged(boolean inPip,android.content.res.Configuration config) {
   super.onPictureInPictureModeChanged(inPip,config);
   if(inPip && !pipLayout) {
-   pipLayout=true;pipWasFullscreen=fullscreen;drawer.closeDrawers();
+   pipLayout=true;pipWasFullscreen=fullscreen;collapseSettings();drawer.closeDrawers();
    if(!fullscreen) {content.removeView(playbackPanel);fullscreenHost.addView(playbackPanel,new FrameLayout.LayoutParams(-1,-1));}
-   drawer.setVisibility(View.GONE);fullscreenHost.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(true);
+   drawer.setVisibility(View.GONE);fullscreenHost.setVisibility(View.VISIBLE);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(true);
   } else if(!inPip && pipLayout) {
    pipLayout=false;
-   if(!pipWasFullscreen) {fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(false);}
+   if(!pipWasFullscreen) {fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);playbackPanel.fullscreenLayout(false);playbackPanel.setVisibility(videoMinimized?View.GONE:View.VISIBLE);}
   }
+  playbackPanel.refresh();
  }
  private void requestNotificationPermission() {
   if(android.os.Build.VERSION.SDK_INT>=33 && androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED && !getPreferences(0).getBoolean("notifications_requested",false)) {
@@ -370,6 +376,7 @@ public final class MainActivity extends AppCompatActivity {
   favoriteCategories.setVisibility(favoritesPage&&!available.isEmpty()?View.VISIBLE:View.GONE);choosingFavoriteTab=false;
  }
  private void showFavoriteTab(int tab) {
+  minimizeVideo();
   tab=Math.max(0,library.availableFavoriteTab(tab));
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);exitFullscreen();list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=tab==1;localMode=tab==2||tab==3;localBack.setEnabled(false);
   currentFavoriteTab=tab;
@@ -377,6 +384,7 @@ public final class MainActivity extends AppCompatActivity {
   localPanel.setVisibility(localMode?View.VISIBLE:View.GONE);if(localMode) localPanel.open(true,tab==3);filter();
  }
  private void openLocal(boolean favorites) {
+  minimizeVideo();
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();
   if(favorites) {showFavoriteTab(2);return;}
@@ -394,6 +402,7 @@ public final class MainActivity extends AppCompatActivity {
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
  private void openPcloud(){
+  minimizeVideo();
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();
  }
  private void logoutPcloud(){
@@ -455,7 +464,7 @@ public final class MainActivity extends AppCompatActivity {
   if(!folder) {intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);intent.setType("*/*");intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,new String[]{"audio/*","video/*","image/*"});intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE,true);}
   try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {Toast.makeText(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
  }
- @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);super.onSaveInstanceState(state);}
+ @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);state.putBoolean("videoMinimized",videoMinimized);super.onSaveInstanceState(state);}
  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
   super.onActivityResult(request,result,data);
@@ -477,7 +486,7 @@ public final class MainActivity extends AppCompatActivity {
   if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){CastPlayback.toggle(this);return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
   LocalMedia current=LocalAudioService.current();
   if(current!=null&&current.uri.equals(entry.uri)) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
-  requestNotificationPermission();
+  videoMinimized=false;requestNotificationPermission();
   if(player!=null&&!localPlayerAttached) {stopPlaybackState();if(videoSession!=null) {videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);}
   acceptLocalPlayback=true;resumeLocalPlayback=false;
   stopService(new android.content.Intent(this,RadioPlaybackService.class));
@@ -496,16 +505,18 @@ public final class MainActivity extends AppCompatActivity {
   if(player!=null&&!localPlayerAttached) {if(videoSession!=null) {videoSession.release();videoSession=null;}player.release();}
   player=shared;localPlayerAttached=true;resumeLocalPlayback=false;
   if(entry.audio()) {selected=null;video.setPlayer(null);video.setKeepScreenOn(false);exitFullscreen();playbackPanel.setVisibility(View.GONE);}
-  else {selected=new Playlist.Channel(entry.name,entry.uri,"",Playlist.Kind.FILM,null);video.setPlayer(player);video.setVisibility(View.VISIBLE);playbackPanel.setTitle(entry.name);playbackPanel.setVisibility(View.VISIBLE);video.setKeepScreenOn(player.isPlaying());}
+  else {selected=new Playlist.Channel(entry.name,entry.uri,"",Playlist.Kind.FILM,null);video.setPlayer(player);video.setVisibility(View.VISIBLE);playbackPanel.setTitle(entry.name);playbackPanel.setVisibility(fullscreen||pipLayout||!videoMinimized?View.VISIBLE:View.GONE);video.setKeepScreenOn((fullscreen||pipLayout||!videoMinimized)&&player.isPlaying());}
   playbackPanel.refresh();updateMiniBack();hideFullscreenSystemBars();
  }
  private void openRadio(boolean favorites) {
+  minimizeVideo();
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
   exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);
   if(favorites) {showFavoriteKind(true);return;}
   favoritesPage=false;favoritesMode=false;radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(false);
  }
  private void openStreamingService() {
+  minimizeVideo();
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);
   if(library.sources.size()>1) {
    List<Library.Source> sources=new ArrayList<>(library.sources);
@@ -515,6 +526,7 @@ public final class MainActivity extends AppCompatActivity {
   } else navigate(false);
  }
  private void navigate(boolean favorites) {
+  minimizeVideo();
   if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoriteTab(library.favoritesCurrentTab);return;}
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
   if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && library.sources.size()==1) last=library.sources.get(0);if(last!=null) loadSource(last);}
@@ -709,6 +721,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
  private void loadSource(Library.Source source) {
+  minimizeVideo();
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
   if(loading) return;
   favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
@@ -796,6 +809,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private static final class Row {ImageView logo;TextView name,group;ImageButton star;View indicator;}
  private void play(Playlist.Channel channel) {
+  videoMinimized=false;
   acceptLocalPlayback=false;detachLocalPlayback();
   requestNotificationPermission();
   stopService(new android.content.Intent(this,RadioPlaybackService.class));stopService(new android.content.Intent(this,LocalAudioService.class));
@@ -864,8 +878,9 @@ public final class MainActivity extends AppCompatActivity {
   status.setVisibility(View.VISIBLE);status.setText(R.string.playback_stopped);
  }
  private void enterFullscreen() {
-  if(fullscreen || connectedCast()!=null || playbackPanel.getVisibility()!=View.VISIBLE) return;
-  drawer.closeDrawer(androidx.core.view.GravityCompat.START);fullscreen=true;previousOrientation=getRequestedOrientation();
+  if(fullscreen || connectedCast()!=null || selected==null || player==null) return;
+  playbackPanel.setVisibility(View.VISIBLE);video.setKeepScreenOn(player.isPlaying());
+  collapseSettings();drawer.closeDrawer(androidx.core.view.GravityCompat.START);fullscreen=true;previousOrientation=getRequestedOrientation();
   if(android.os.Build.VERSION.SDK_INT>=28) previousCutoutMode=getWindow().getAttributes().layoutInDisplayCutoutMode;
   content.removeView(playbackPanel);fullscreenHost.addView(playbackPanel,new FrameLayout.LayoutParams(-1,-1));fullscreenHost.setVisibility(View.VISIBLE);drawer.setVisibility(View.GONE);
   playbackPanel.fullscreenLayout(true);fullscreenBack.setEnabled(true);androidx.core.view.ViewCompat.requestApplyInsets(fullscreenHost);
@@ -877,7 +892,7 @@ public final class MainActivity extends AppCompatActivity {
  private void exitFullscreen() {
   if(!fullscreen) return;
   fullscreen=false;fullscreenHost.removeView(playbackPanel);content.addView(playbackPanel,panelIndex,new LinearLayout.LayoutParams(-1,-2));fullscreenHost.setVisibility(View.GONE);drawer.setVisibility(View.VISIBLE);
-  playbackPanel.fullscreenLayout(false);fullscreenBack.setEnabled(false);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+  playbackPanel.fullscreenLayout(false);playbackPanel.setVisibility(videoMinimized?View.GONE:View.VISIBLE);video.setKeepScreenOn(!videoMinimized&&player!=null&&player.isPlaying());fullscreenBack.setEnabled(false);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
   if(android.os.Build.VERSION.SDK_INT>=28) {android.view.WindowManager.LayoutParams params=getWindow().getAttributes();params.layoutInDisplayCutoutMode=previousCutoutMode;getWindow().setAttributes(params);}
   androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.systemBars());setRequestedOrientation(previousOrientation);hideFullscreenSystemBars();
  }

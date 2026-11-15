@@ -84,7 +84,7 @@ public class LocalFilesUiTest {
    View row=list.getAdapter().getView(1,null,list);assertFalse(row.hasFocusable());list.performItemClick(row,1,1);assertEquals(song,played[0]);
    Documents provider=Robolectric.buildContentProvider(Documents.class).create().get();org.robolectric.shadows.ShadowContentResolver.registerProviderInternal("local.test",provider);
    list.performItemClick(list.getAdapter().getView(0,null,list),0,0);assertEquals(root,ReflectionHelpers.<ArrayDeque<LocalMedia>>getField(panel,"parents").peekLast());
-   panel.open(false);for(int i=0;i<panel.getChildCount();i++)assertFalse(panel.getChildAt(i) instanceof Button);assertTrue(panel.back());
+   panel.open(false);for(int i=0;i<panel.getChildCount();i++)assertFalse(panel.getChildAt(i) instanceof Button);assertFalse(panel.back());
   } finally {panel.close();}
  }
 
@@ -101,6 +101,8 @@ public class LocalFilesUiTest {
    LocalAudioService service=serviceController.get();service.onStartCommand(LocalAudioService.playIntent(activity,first,Arrays.asList(first,second,third)),0,1);
    androidx.media3.exoplayer.ExoPlayer player=LocalAudioService.player();assertEquals(3,player.getMediaItemCount());assertEquals(first.uri,LocalAudioService.current().uri);assertEquals(androidx.media3.common.Player.REPEAT_MODE_OFF,player.getRepeatMode());assertFalse(player.getShuffleModeEnabled());
    ReflectionHelpers.callInstanceMethod(activity,"syncLocalPlayback");assertSame(player,ReflectionHelpers.getField(activity,"player"));
+   PlaybackPanel viewport=ReflectionHelpers.getField(activity,"playbackPanel");ReflectionHelpers.callInstanceMethod(activity,"openPcloud");assertEquals(View.GONE,viewport.getVisibility());assertTrue(player.getPlayWhenReady());ReflectionHelpers.callInstanceMethod(activity,"syncLocalPlayback");assertEquals(View.GONE,viewport.getVisibility());
+   ReflectionHelpers.callInstanceMethod(activity,"openNotificationPlayer");assertTrue(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));assertEquals(View.VISIBLE,viewport.getVisibility());ReflectionHelpers.<ImageButton>getField(viewport,"back").performClick();assertFalse(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));assertEquals(View.GONE,viewport.getVisibility());
    controller.pause().stop();assertSame(player,LocalAudioService.player());assertEquals(3,player.getMediaItemCount());assertTrue(player.getPlayWhenReady());
    controller.start().resume();assertSame(player,ReflectionHelpers.getField(activity,"player"));
    player.seekToNextMediaItem();assertEquals(second.uri,LocalAudioService.current().uri);assertTrue(LocalAudioService.playing(second.uri));
