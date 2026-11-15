@@ -349,3 +349,7 @@ Filen indeholder logins i klartekst. Androids mappeadgang kan ikke flyttes med J
 
 ### 1.23.1 – Foldbare indstillinger
 Favoritter står øverst i burgermenuen. Alle afkrydsningsfelter, startfanevælgeren og de grå menupunkter ligger under Indstillinger, som starter foldet sammen og åbnes/lukkes ved tryk. Menupunktet TV-guide hedder nu Kilder til TV-Guide. Krediteringen står fortsat nederst uden for indstillingerne.
+
+
+### 1.23.2 – Rød nulstillingsknap
+Nulstil app under Indstillinger har nu rød baggrund og hvid tekst.

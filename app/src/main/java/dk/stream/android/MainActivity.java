@@ -267,7 +267,7 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.pcloud_account,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
   button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
-  button(R.string.reset_app,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
+  Button resetButton=button(R.string.reset_app,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});resetButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFD32F2F));resetButton.setTextColor(Color.WHITE);
   navigation.addView(new Space(this),new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(16),0,0);navigation.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   ScrollView menu=new ScrollView(this);menu.setFillViewport(true);menu.addView(navigation);
