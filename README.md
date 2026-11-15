@@ -293,3 +293,7 @@ Play-logoets bredde og højde er reduceret med yderligere 5 % i forhold til 1.19
 
 ### 1.19.11 – Logo yderligere 5 % mindre
 Play-logoets bredde og højde er reduceret med yderligere 5 % i forhold til 1.19.10. Baggrunden bevares.
+
+
+### 1.19.12 – Logo yderligere 8 % mindre
+Play-logoets bredde og højde er reduceret med yderligere 8 % i forhold til 1.19.11. Baggrunden bevares.
