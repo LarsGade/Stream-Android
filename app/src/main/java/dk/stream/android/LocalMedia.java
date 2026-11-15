@@ -42,7 +42,7 @@ public final class LocalMedia {
     if(entry.supported()) result.add(entry);
    }
   }
-  Collections.sort(result,(a,b)->a.folder!=b.folder?(a.folder?-1:1):a.name.compareToIgnoreCase(b.name));return result;
+  Collections.sort(result,NaturalNameOrder.MEDIA);return result;
  }
  /** Iterative traversal includes every depth and guards against provider cycles. */
  public static List<LocalMedia> contents(Context context,LocalMedia root) {

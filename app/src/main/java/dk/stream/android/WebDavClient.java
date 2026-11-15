@@ -67,7 +67,7 @@ public final class WebDavClient {
     }depth--;}
    }
    if(!anySuccess)throw new IOException("Pcloud gav ikke adgang til mappen.");
-   Collections.sort(entries,(a,b)->a.folder!=b.folder?(a.folder?-1:1):a.name.compareToIgnoreCase(b.name));return entries;
+   Collections.sort(entries,(a,b)->a.folder!=b.folder?(a.folder?-1:1):NaturalNameOrder.compare(a.name,b.name));return entries;
   }catch(XmlPullParserException|IndexOutOfBoundsException error){throw new IOException("Pcloud returnerede et ugyldigt WebDAV-svar.",error);}
  }
 }

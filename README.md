@@ -442,3 +442,7 @@ Kanaler med P5 eller P6 i navnet bruger nu henholdsvis P5.png og P6.png fra appe
 
 ### 1.26.1 – Samme mappestruktur som kildemappen
 Lokale filer viser nu kun den aktuelle mappes direkte undermapper og mediefiler. Indhold fra dybere undermapper blandes ikke ind i listen. Åbn en undermappe for at se dens indhold; tilbage går stadig højst til den valgte kildemappe.
+
+
+### 1.26.2 – Naturlig navnesortering
+Mapper og filer i Lokale filer, Pcloud og deres favoritlister sorteres nu efter navn med tal i numerisk rækkefølge: Fil 2 kommer før Fil 10. Mapper står først. Sorteringen ignorerer store/små bogstaver og bruger dansk bogstavrækkefølge. Lange tal understøttes uden heltalsoverløb; ved samme tal kommer den korteste nuludfyldning først. Afspilning og billedviser følger den viste rækkefølge.

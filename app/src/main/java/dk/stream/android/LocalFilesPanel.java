@@ -50,7 +50,7 @@ public final class LocalFilesPanel extends LinearLayout {
  public void sourceChanged() {open(false);}
  public void reload() {title.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(canGoBack());up.setVisibility(canGoBack()?VISIBLE:GONE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText("");path.setVisibility(GONE);List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
- private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);filter();}
+ private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);Collections.sort(entries,NaturalNameOrder.MEDIA);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayFileName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);path.setVisibility(query.isEmpty()&&canGoBack()?VISIBLE:GONE);adapter.notifyDataSetChanged();}
  private void loadFolder() {
   actions.navigationChanged(canGoBack());  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);path.setVisibility(canGoBack()?VISIBLE:GONE);up.setVisibility(canGoBack()?VISIBLE:GONE);showMessage("");show(Collections.emptyList());
