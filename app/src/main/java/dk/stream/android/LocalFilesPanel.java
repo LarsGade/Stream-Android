@@ -65,7 +65,7 @@ public final class LocalFilesPanel extends LinearLayout {
    LocalMedia entry=getItem(p);LinearLayout row=new LinearLayout(getContext());row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);row.setGravity(Gravity.CENTER_VERTICAL);int pad=Math.round(8*getResources().getDisplayMetrics().density);row.setPadding(pad,pad,pad,pad);MediaListStyle.row(row);
    if(entry.folder||entry.image()){ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:R.drawable.ic_image);icon.setContentDescription(entry.folder?"Åbn mappe":"Vis billede");row.addView(icon,new LayoutParams(pad*5,pad*5));}
    TextView name=new TextView(getContext());name.setText(search.getText().toString().trim().isEmpty()?entry.displayName():entry.displayFileName());name.setTextColor(Color.WHITE);name.setTextSize(16);name.setPadding(pad,0,pad,0);row.addView(name,new LayoutParams(0,-2,1));
-   View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri)));
+   boolean playing=!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri));View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
    name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);
    row.setLayoutParams(new AbsListView.LayoutParams(-1,MediaRowHeight.pixels(name)));
    return row;

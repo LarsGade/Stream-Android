@@ -478,3 +478,7 @@ Bundafspilleren har altid samme faste højde som rækkerne i Lokale filer og Pcl
 ### 1.26.10
 
 Medielister bruger mørke rækker og grå separatorer i Streaming, Radio, Lokale filer, Pcloud, favoritter og serieafsnit. Radio- og streaminglister har ingen favoritstjerner; hold på en række for at tilføje eller fjerne en favorit.
+
+### 1.26.11
+
+Den afspillende række vises med fed tekst i Streaming, Radio, Lokale filer, Pcloud og favoritter. Fed skrift følger samme afspilningsstatus som den hvide prik og fjernes igen ved pause, stop eller skift til en anden række.

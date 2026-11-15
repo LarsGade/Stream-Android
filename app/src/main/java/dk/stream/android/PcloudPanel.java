@@ -40,7 +40,7 @@ public final class PcloudPanel extends LinearLayout {
   public View getView(int index,View recycled,ViewGroup parent){LocalMedia entry=getItem(index);LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);int pad=Math.round(8*getResources().getDisplayMetrics().density);row.setPadding(pad,pad,pad,pad);MediaListStyle.row(row);
    if(entry.folder||entry.image()){ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:R.drawable.ic_image);icon.setContentDescription(entry.folder?"Åbn mappe":"Vis billede");row.addView(icon,new LayoutParams(pad*5,pad*5));}
    TextView name=new TextView(getContext());name.setText(entry.displayName());name.setTextColor(Color.WHITE);name.setTextSize(16);row.addView(name,new LayoutParams(0,-2,1));
-   View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri)));
+   boolean playing=!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri));View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
    name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);
    row.setLayoutParams(new AbsListView.LayoutParams(-1,MediaRowHeight.pixels(name)));
    return row;
