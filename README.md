@@ -253,3 +253,7 @@ Streamingfavoritter opdeles i TV, Film og Serier efter indholdets type. Radio, L
 
 ### 1.19.1 – Logo som adaptivt appikon
 Appikonet bruger det eksisterende gennemsigtige S/play-logo som forgrund. Der er ingen tegnet firkant eller baggrund i logobilledet. Android styrer ikonmasken og systemfarven i det obligatoriske adaptive baggrundslag (systempalettens neutrale farve på Android 12+). Ældre launchere får logoet med gennemsigtighed.
+
+
+### 1.19.2 – Mindre logo uden baggrundsfarve
+Ikonets forgrund er præcis 10 % mindre (inset 10 % → 14 %, så den tilgængelige størrelse går fra 80 % til 72 %). Det adaptive baggrundslag er gennemsigtigt; appen angiver ingen baggrundsfarve. En eventuel baggrund tilføjet af telefonens launcher styres af telefonen.
