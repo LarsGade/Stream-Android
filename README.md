@@ -385,3 +385,7 @@ Logoer hentes fra appens stationslogoer eller stationens billedadresse, indlæse
 
 ### 1.25.1 – Ens størrelse i 2 × 1-widget
 Stationslogo og play/pause-knap har nu hvert sit centrerede felt på 48 × 48 dp i lige brede kolonner. Bag knappen er en mørkegrå cirkel med diameter 48 dp, svarende til logofeltets størrelse.
+
+
+### 1.25.2 – Widgetgrafik 30 % større
+Logo og den cirkulære play/pause-knap i 2 × 1-widgetten er øget fra 48 dp til 62,4 dp i bredde og højde. Knappens indvendige afstand er skaleret tilsvarende, så play/pause-symbolet også bliver 30 % større. Lodret indvendig margen fjernes for at give plads i én række.
