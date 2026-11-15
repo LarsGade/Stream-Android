@@ -297,3 +297,7 @@ Play-logoets bredde og højde er reduceret med yderligere 5 % i forhold til 1.19
 
 ### 1.19.12 – Logo yderligere 8 % mindre
 Play-logoets bredde og højde er reduceret med yderligere 8 % i forhold til 1.19.11. Baggrunden bevares.
+
+
+### 1.19.13 – Streaming-overskrift
+Streamingsiden viser kun “Streaming” som standardoverskrift. Burgermenuen beholder “Streaming” med “(TV, Film, Serier)” på næste linje. Rettet fanernes kobling til deres indhold ved automatisk skjul af tomme favoritfaner.

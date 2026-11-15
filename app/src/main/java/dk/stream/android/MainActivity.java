@@ -352,7 +352,7 @@ public final class MainActivity extends AppCompatActivity {
  private void showFavoriteKind(boolean radio) {showFavoriteTab(radio?1:0);}
  private int selectedFavoriteTab(){return favoriteFilms.isChecked()?4:favoriteSeries.isChecked()?5:favoriteCloud.isChecked()?3:favoriteLocal.isChecked()?2:favoriteRadio.isChecked()?1:0;}
  private void updateFavoriteTabVisibility(){
-  RadioButton[] tabs={favoriteFilms,favoriteSeries,favoriteTv,favoriteRadio,favoriteLocal,favoriteCloud};boolean any=false;
+  RadioButton[] tabs={favoriteTv,favoriteRadio,favoriteLocal,favoriteCloud,favoriteFilms,favoriteSeries};boolean any=false;
   for(int i=0;i<tabs.length;i++){boolean present=library.hasFavoriteTab(i);tabs[i].setVisibility(present?View.VISIBLE:View.GONE);any|=present;}
   ((View)favoriteTabs.getParent()).setVisibility(favoritesPage&&any?View.VISIBLE:View.GONE);
   if(!any){choosingFavoriteTab=true;favoriteTabs.clearCheck();choosingFavoriteTab=false;}
@@ -492,7 +492,7 @@ public final class MainActivity extends AppCompatActivity {
   list.setVisibility(radioMode||localMode||pcloudMode?View.GONE:View.VISIBLE);
   if(radioMode||localMode||pcloudMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
   pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
-  pageTitle.setText(favoritesMode?"":activeSource==null?getString(R.string.library):activeSource.name);
+  pageTitle.setText(favoritesMode?"":activeSource==null?getString(R.string.streaming_title):activeSource.name);
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
   sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
