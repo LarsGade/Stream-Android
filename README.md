@@ -281,3 +281,7 @@ Logoets bredde og højde i appikonet er øget med yderligere 10 % i forhold til 
 
 ### 1.19.8 – Logo tilpasset referenceikonernes størrelse
 Play-logoet er tilpasset referencens visuelle højde, så det fylder cirka samme andel af ikonfladen som Stremio. Forgrunden på adaptive ikoner er cirka 34 % større end i 1.19.7. Den mørkegrå baggrund bevares.
+
+
+### 1.19.9 – Logo 5 % mindre
+Play-logoets bredde og højde er reduceret med 5 % i forhold til 1.19.8. Baggrunden bevares.
