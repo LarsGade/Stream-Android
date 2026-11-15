@@ -496,9 +496,9 @@ public final class MainActivity extends AppCompatActivity {
  private void playLocal(LocalMedia entry,long position) {playLocal(entry,position,localPanel.playbackEntries());}
  private void playLocal(LocalMedia entry,long position,List<LocalMedia> queue) {
   if(entry.image()){if(player!=null)player.pause();startActivity(ImageViewerActivity.intent(this,entry,queue));return;}
-  if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){CastPlayback.toggle(this);return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
+  if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
   LocalMedia current=LocalAudioService.current();
-  if(current!=null&&current.uri.equals(entry.uri)) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
+  if(current!=null&&current.uri.equals(entry.uri)) {return;}
   videoMinimized=false;requestNotificationPermission();
   if(player!=null&&!localPlayerAttached) {stopPlaybackState();if(videoSession!=null) {videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);}
   acceptLocalPlayback=true;resumeLocalPlayback=false;

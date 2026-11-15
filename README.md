@@ -450,3 +450,7 @@ Mapper og filer i Lokale filer, Pcloud og deres favoritlister sorteres nu efter 
 ### 1.26.3
 
 Kildemappe til lokale filer tilbyder nu “Vælg kildemappe” og “Ingen lokale filer”. Sidstnævnte fjerner den valgte kildemappe og tømmer lokale filers mappevisning. Gemte favoritter bevares.
+
+### 1.26.4
+
+Lokale filer, Pcloud og filfavoritter viser ingen play/pause-knap ved titlen. Den afspillende lyd- eller videofil markeres med en hvid prik yderst til højre. Tryk på den aktuelle fil ændrer ikke afspilningen; brug baren nederst. Mappe- og billedikoner bevares. Favoritstjernerne er fjernet fra alle fil- og mappelister. Hold på en fil eller mappe for at tilføje eller fjerne den fra favoritter.
