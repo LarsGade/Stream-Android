@@ -33,7 +33,7 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
  static void bind(Context context,int widgetId,String id) {context.getSharedPreferences("radio_widgets",0).edit().putString("station_"+widgetId,id).apply();}
  public static void refresh(Context context) {
   AppWidgetManager manager=AppWidgetManager.getInstance(context);int[] ids=manager.getAppWidgetIds(new ComponentName(context,RadioWidgetProvider.class));
-  for(int id:ids) update(context,manager,id);
+  for(int id:ids) update(context,manager,id);RadioWideWidgetProvider.refresh(context);
  }
  static void update(Context context,AppWidgetManager manager,int widgetId) {
   if(feedback.containsKey(widgetId)) return; // Player events must not restart a running animation.

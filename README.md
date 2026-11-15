@@ -376,3 +376,8 @@ Pcloud-siden har nu en fast overskrift over søgefeltet, som Lokale og Radio. Ma
 
 ### 1.24.1 – Lokale filer
 Lokale er omdøbt til Lokale filer i navigation, sideoverskrift, favoritkategori og startvælger. Indstillingen hedder tilsvarende Kildemappe til lokale filer.
+
+
+### 1.25.0 – Ekstra radio-widget 2 × 1
+Der er nu en ekstra widget, Stream radio 2 × 1, med stationslogo til venstre og en fast play/pause-knap til højre på mørkegrå baggrund med afrundede hjørner. Vælg en station fra radiofavoritter, når widgetten tilføjes. Tryk på logoet for at skifte den valgte station. Knappen til højre pauser/genoptager den valgte station eller starter den, hvis en anden station spiller. Den eksisterende 1 × 1-widget bevares.
+Logoer hentes fra appens stationslogoer eller stationens billedadresse, indlæses i begrænset størrelse og opdateres separat, så et sent billede ikke ændrer play/pause-tilstanden. Størrelsen er deklareret som 2 kolonner og 1 række med en minWidth/minHeight-fallback til Android 9. Widgetplacering og betjening skal stadig afprøves på en fysisk launcher.

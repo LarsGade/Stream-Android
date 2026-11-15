@@ -37,6 +37,13 @@ public class RadioPlaybackServiceTest {
    android.app.Notification notification=Shadows.shadowOf((android.app.NotificationManager)service.getSystemService(android.content.Context.NOTIFICATION_SERVICE)).getNotification(2001);assertNotNull(notification);assertEquals(0,notification.flags&(android.app.Notification.FLAG_ONGOING_EVENT|android.app.Notification.FLAG_FOREGROUND_SERVICE));assertNotNull(notification.deleteIntent);
   }finally{controller.destroy();}
  }
+ @Test public void wideWidgetPausesAndResumesWithoutStoppingTheStation(){
+  ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+  try{RadioStation station=new RadioStation("station","Radio","https://example.com/radio.mp3","");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);Player player=service.onGetSession(null).getPlayer();player.seekTo(15000);
+   Intent toggle=RadioPlaybackService.internalIntent(service,RadioPlaybackService.WIDE_WIDGET_TOGGLE).putExtra("favoriteId",station.id);service.onStartCommand(toggle,0,2);assertFalse(player.getPlayWhenReady());assertNotEquals(Player.STATE_IDLE,player.getPlaybackState());assertEquals(station.id,RadioPlaybackService.selectedStation().id);assertEquals(1,player.getMediaItemCount());
+   service.onStartCommand(toggle,0,3);assertTrue(player.getPlayWhenReady());assertEquals(station.id,RadioPlaybackService.selectedStation().id);assertEquals(1,player.getMediaItemCount());
+  }finally{controller.destroy();}
+ }
  @Test public void serviceStartsForegroundMediaSessionWithStandardPause() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
    server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));

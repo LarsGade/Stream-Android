@@ -104,4 +104,6 @@
  <string name="import_export">Importér/Eksportér</string>
  <string name="settings">Indstillinger</string>
  <string name="tv_guide_sources">Kilder til TV-Guide</string>
+ <string name="radio_widget_wide">Stream radio 2 × 1</string>
+ <string name="radio_widget_wide_description">Stationslogo og play/pause på mørkegrå baggrund</string>
 </resources>
