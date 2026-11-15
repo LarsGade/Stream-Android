@@ -502,3 +502,7 @@ I den fulde lydafspiller er play/pause og stop forstørret fra 24 til 48 dp (100
 ### 1.26.16
 
 Lokale filer med Anders og Anders, Bæltestedet, r8dio eller Den Korte Radioavis i navnet bruger de tilhørende medfølgende logoer. Logoerne vises i fil- og favoritlister, bundbaren, fuld lydafspiller og den lokale mediesessions metadata.
+
+### 1.26.17
+
+Live-knappen i den fulde lydafspiller er flyttet til venstre kant og gjort 20 % mindre. Play/pause og stop er centreret som en gruppe uafhængigt af live-knappens synlighed.
