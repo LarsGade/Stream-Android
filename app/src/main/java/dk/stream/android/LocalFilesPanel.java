@@ -17,7 +17,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private final ArrayList<LocalMedia> entries=new ArrayList<>();
 
  private final ImageButton up;
- private final TextView path,message;
+ private final TextView title,path,message;
  private final ListView list;
  private final ArrayList<LocalMedia> visible=new ArrayList<>();
  private final ArrayDeque<LocalMedia> parents=new ArrayDeque<>();
@@ -28,6 +28,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private Future<?> folderTask;
  public LocalFilesPanel(Context context,Actions actions) {
   super(context);this.actions=actions;setOrientation(VERTICAL);
+  title=new TextView(context);title.setText(R.string.local_files);title.setTextColor(Color.WHITE);title.setTextSize(20);addView(title);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence value,int start,int count,int after) {}public void onTextChanged(CharSequence value,int start,int before,int count) {filter();}public void afterTextChanged(android.text.Editable value) {}});
 
@@ -46,12 +47,12 @@ public final class LocalFilesPanel extends LinearLayout {
  public List<LocalMedia> playbackEntries() {return new ArrayList<>(visible);}
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
- public void reload() {actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText(favorites?"":"Lokale");List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
+ public void reload() {title.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(!parents.isEmpty());up.setVisibility(parents.isEmpty()?GONE:VISIBLE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText("");path.setVisibility(GONE);List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);adapter.notifyDataSetChanged();}
  private void loadFolder() {
-  actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);up.setVisibility(VISIBLE);showMessage("");show(Collections.emptyList());
+  actions.navigationChanged(true);  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);path.setVisibility(VISIBLE);up.setVisibility(VISIBLE);showMessage("");show(Collections.emptyList());
   if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries;
    if(PcloudDocument.is(folder.uri)){PcloudAccount account=actions.library().pcloud;WebDavClient client=new WebDavClient(account);try{entries=new ArrayList<>();for(WebDavClient.Entry entry:client.list(PcloudDocument.url(account,folder.uri)))entries.add(entry.media(account));}finally{client.cancel();}}else entries=LocalMedia.contents(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen mediefiler i mappen.":"");});}
    catch(Exception failure) {post(()->{if(!closed&&generation==request) showMessage("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});

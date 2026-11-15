@@ -357,3 +357,7 @@ Nulstil app under Indstillinger har nu rød baggrund og hvid tekst.
 
 ### 1.23.3 – Opdatér radiostationer
 Knappen Opdatér radio hedder nu Opdatér radiostationer.
+
+
+### 1.23.4 – Lokale-overskrift over søgning
+Lokale-siden har en fast overskrift “Lokale” over søgefeltet som på radiosiden. Den aktuelle mappesti vises stadig ved mappenavigation. Favoritter beholder kategori-dropdown uden en ekstra Lokale-overskrift.
