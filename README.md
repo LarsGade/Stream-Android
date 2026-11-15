@@ -401,3 +401,7 @@ Hele 2 × 1-widgettens baggrund er nu #202020, tilpasset den mørke referencefar
 
 ### 1.25.5 – Hele widgetten styrer afspilning
 Tryk på baggrund, logo eller play/pause styrer nu samme valgte station. Kanalvalget låses efter tilføjelse; en anden station vælges ved at tilføje en ny widget. Logoet er samtidig øget 5 % fra 62,4 dp til 65,52 dp; kontrolknappens størrelse bevares.
+
+
+### 1.25.6 – Næsten sort widgetbaggrund
+Baggrunden på 2 × 1-widgetten er ændret til #0D0D0D efter den nye farvereference.
