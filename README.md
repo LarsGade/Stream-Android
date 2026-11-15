@@ -249,3 +249,7 @@ Loginvinduets overskrift hedder nu kun “Pcloud”. Forkortelsen TV står igen 
 
 ### 1.19.0 – Separate streamingfavoritter og fleksible faner
 Streamingfavoritter opdeles i TV, Film og Serier efter indholdets type. Radio, Lokale og Pcloud bevares som selvstændige faner. Fanerne ombrydes automatisk til flere linjer efter den tilgængelige skærmbredde og tekststørrelse. Tomme faner skjules stadig. Film og Serier kan også vælges som startfane. Eksisterende favoritter og startpræferencer bevares.
+
+
+### 1.19.1 – Logo som adaptivt appikon
+Appikonet bruger det eksisterende gennemsigtige S/play-logo som forgrund. Der er ingen tegnet firkant eller baggrund i logobilledet. Android styrer ikonmasken og systemfarven i det obligatoriske adaptive baggrundslag (systempalettens neutrale farve på Android 12+). Ældre launchere får logoet med gennemsigtighed.
