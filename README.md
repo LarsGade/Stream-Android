@@ -494,3 +494,7 @@ Live-ikonet i bundbaren er 20 % mindre (28,8 dp), og play/pause-ikonet er 20 % s
 ### 1.26.14
 
 Opdatér radiostationer er flyttet fra radiosiden til burgermenuens Indstillinger, umiddelbart efter Kildemappe til lokale filer.
+
+### 1.26.15
+
+I den fulde lydafspiller er play/pause og stop forstørret fra 24 til 48 dp (100 % større). Live-ikonet er forstørret fra 24 til 36 dp (50 % større). Bundbarens ikoner er uændrede.
