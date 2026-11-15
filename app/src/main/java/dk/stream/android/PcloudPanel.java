@@ -42,8 +42,7 @@ public final class PcloudPanel extends LinearLayout {
    TextView name=new TextView(getContext());name.setText(entry.displayName());name.setTextColor(Color.WHITE);name.setTextSize(16);row.addView(name,new LayoutParams(0,-2,1));
    View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri)));
    name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);
-   android.graphics.Paint.FontMetricsInt metrics=name.getPaint().getFontMetricsInt();int textHeight=name.getLineHeight()*2+metrics.bottom-metrics.descent+metrics.ascent-metrics.top;
-   int rowHeight=Math.max(Math.round(64*getResources().getDisplayMetrics().density),textHeight+pad*2);row.setLayoutParams(new AbsListView.LayoutParams(-1,rowHeight));
+   row.setLayoutParams(new AbsListView.LayoutParams(-1,MediaRowHeight.pixels(name)));
    return row;
   }
  }

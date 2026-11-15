@@ -470,3 +470,7 @@ Appens hovedvisning bevarer altid telefonens status- og navigationslinjer, også
 ### 1.26.8
 
 Afspilningsprikken i lokale filer, Pcloud og filfavoritter bruger samme 16 dp markør som streaming- og radiofavoritter. Alle fil- og mapperækker har ens højde med plads til to tekstlinjer og lodret centreret tekst; lange titler afkortes efter to linjer. Rækkehøjden tager højde for større systemtekst.
+
+### 1.26.9
+
+Bundafspilleren har altid samme faste højde som rækkerne i Lokale filer og Pcloud, uanset titel, afspilningskilde, logo og live-knap. Højden deler samme beregning og tilpasses systemets tekststørrelse.

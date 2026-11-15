@@ -21,7 +21,7 @@ public final class RadioBar extends LinearLayout {
   int size=Math.round(48*getResources().getDisplayMetrics().density);
   toggle=new ImageButton(context);toggle.setBackgroundColor(Color.TRANSPARENT);toggle.setOnClickListener(view->transport());
   artwork=new ImageView(context);artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);artwork.setPadding(size/12,size/12,size/12,size/12);artwork.setVisibility(GONE);LayoutParams artParams=new LayoutParams(size,size);artParams.setMarginEnd(size/6);addView(artwork,artParams);
-  name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);addView(name,new LayoutParams(0,-2,1));
+  name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);addView(name,new LayoutParams(0,-2,1));
   live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setBackgroundColor(Color.TRANSPARENT);live.setContentDescription("Gå til live");addView(live,new LayoutParams(size,size));live.setOnClickListener(view->{beforePlay.run();if(CastPlayback.hasMedia(getContext()))LivePlayback.goLive(CastPlayback.remote(getContext()));else if(video!=null&&!video.title().isEmpty()&&LocalAudioService.current()==null)video.goLive();else getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.LIVE));refresh();});
   addView(toggle,new LayoutParams(size,size));
   setOnClickListener(view->open());refresh();
@@ -35,6 +35,7 @@ public final class RadioBar extends LinearLayout {
   updateArtwork(title.isEmpty()?null:image,title);
   setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?"Pause":"Afspil");toggle.setEnabled(!title.isEmpty());live.setVisibility(liveChannel?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(liveNow?0xFFFF3B30:Color.WHITE));live.setContentDescription(liveNow?"Live":"Gå til live");live.setSelected(liveNow);
  }
+ @Override protected void onMeasure(int widthSpec,int heightSpec){super.onMeasure(widthSpec,View.MeasureSpec.makeMeasureSpec(MediaRowHeight.pixels(name),View.MeasureSpec.EXACTLY));}
  @Override protected void onDraw(android.graphics.Canvas canvas){super.onDraw(canvas);android.graphics.Paint paint=new android.graphics.Paint();paint.setColor(Color.WHITE);canvas.drawRect(0,0,getWidth(),getPaddingTop(),paint);}
  private void updateArtwork(Object model,String title){
   artwork.setContentDescription("Billede til "+title);if(java.util.Objects.equals(model,artworkModel))return;artworkModel=model;
