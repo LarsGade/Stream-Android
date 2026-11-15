@@ -486,3 +486,7 @@ Den afspillende række vises med fed tekst i Streaming, Radio, Lokale filer, Pcl
 ### 1.26.12
 
 Logoet i bundbaren er 25 % større. Live- og play/pause-ikoner vises i 36 dp i stedet for 24 dp (50 % større), med samme berøringsområder og uændret barhøjde.
+
+### 1.26.13
+
+Live-ikonet i bundbaren er 20 % mindre (28,8 dp), og play/pause-ikonet er 20 % større (43,2 dp). Logo, barhøjde og berøringsområder er uændrede.
