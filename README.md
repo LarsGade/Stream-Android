@@ -261,3 +261,7 @@ Ikonets forgrund er præcis 10 % mindre (inset 10 % → 14 %, så den tilgængel
 
 ### 1.19.3 – Telefonens ikonindramning
 Appen leverer nu et almindeligt gennemsigtigt ikon uden adaptivt baggrundslag, så launcherens egen indramning kan anvendes. Logoet er yderligere 10 % mindre (tilgængelig størrelse 72 % → 64,8 %). Den præcise ydre baggrund og indramning afhænger af telefonens launcher og ikontema.
+
+
+### 1.19.4 – Mørk ikonbaggrund som referencen
+Appikonet har nu en mørkegrå lodret overgang (#2C2C2C → #1A1A1A), tilpasset Stremio-ikonet på brugerens skærmbillede. Android 8+ bruger launcherens adaptive maske, ældre launchere får en afrundet baggrund. Logoets størrelse er bevaret.
