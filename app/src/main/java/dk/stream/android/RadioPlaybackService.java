@@ -97,7 +97,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
     public void onFailure(Throwable error) {if(active==RadioPlaybackService.this) {sessionPlayer.stop();androidx.core.app.ServiceCompat.stopForeground(RadioPlaybackService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}}
    },androidx.core.content.ContextCompat.getMainExecutor(this));return START_NOT_STICKY;
   }
-  if(STOP.equals(action)) {artworkGeneration++;sessionPlayer.pause();sessionPlayer.stop();player.clearMediaItems();current=null;error="";behindLive=false;RadioWidgetProvider.refresh(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();return START_NOT_STICKY;}
+  if(STOP.equals(action)) {stopRadioPlayback();return START_NOT_STICKY;}
   if(LIVE.equals(action)) {
    MediaItem item=player.getCurrentMediaItem();
    if(current==null || item==null) {if(current==null) stopSelf();return START_NOT_STICKY;}
@@ -107,7 +107,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    RadioWidgetProvider.refresh(this);return START_NOT_STICKY;
   }
   if(TRANSPORT_TOGGLE.equals(action)) {if(current==null) {stopSelf();return START_NOT_STICKY;}if(player.getPlayWhenReady()) sessionPlayer.pause();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
-  if(WIDE_WIDGET_TOGGLE.equals(action)&&current!=null&&current.id.equals(intent.getStringExtra("favoriteId"))){foreground();if(player.getPlayWhenReady())sessionPlayer.pause();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
+  if(WIDE_WIDGET_TOGGLE.equals(action)&&current!=null&&current.id.equals(intent.getStringExtra("favoriteId"))){foreground();if(player.getPlayWhenReady())stopRadioPlayback();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
   if(!PLAY.equals(action) && !TOGGLE.equals(action) && !WIDGET_TOGGLE.equals(action)&&!WIDE_WIDGET_TOGGLE.equals(action)) return START_NOT_STICKY;
   // A foreground-service PendingIntent must promptly show a notification even if the favorite was removed.
   foreground();
@@ -119,7 +119,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    if(station==null || okhttp3.HttpUrl.parse(station.url)==null) throw new IllegalArgumentException("Station missing");
    error="";
    if(WIDGET_TOGGLE.equals(action)) RadioWidgetProvider.showFeedback(this,intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID),!playing(station.id));
-   if(WIDGET_TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) {sessionPlayer.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
+   if(WIDGET_TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) {stopRadioPlayback();return START_NOT_STICKY;}
    else if(TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) sessionPlayer.pause();
    else {
     stopService(new Intent(this,LocalAudioService.class));
@@ -130,6 +130,10 @@ public final class RadioPlaybackService extends MediaLibraryService {
    RadioWidgetProvider.refresh(this);
   } catch(Exception failure) {sessionPlayer.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();RadioWidgetProvider.refresh(this);}
   return START_NOT_STICKY;
+ }
+ private void stopRadioPlayback(){
+  artworkGeneration++;current=null;error="";behindLive=false;sessionPlayer.stop();player.clearMediaItems();
+  androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2001);RadioWidgetProvider.refresh(this);stopSelf();
  }
  @Override public void onTaskRemoved(Intent rootIntent) {artworkGeneration++;current=null;error="";behindLive=false;PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
  @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);artworkGeneration++;artworkWorker.shutdownNow();if(carCallback!=null) carCallback.close();if(active==this) active=null;if(session!=null) session.release();if(player!=null) player.release();RadioWidgetProvider.refresh(this);super.onDestroy();}

@@ -11,7 +11,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import java.util.*;
 
-/** A separate 2 by 1 widget. Its persistent transport button pauses rather than stops. */
+/** A separate 2 by 1 widget. Its persistent transport button starts or fully stops playback. */
 @androidx.media3.common.util.UnstableApi
 public final class RadioWideWidgetProvider extends AppWidgetProvider {
  private static final android.util.LruCache<String,Bitmap> images=new android.util.LruCache<String,Bitmap>(2*1024*1024){protected int sizeOf(String key,Bitmap image){return image.getAllocationByteCount();}};
@@ -44,8 +44,8 @@ public final class RadioWideWidgetProvider extends AppWidgetProvider {
  private static void clearRequest(Context context,int id){CustomTarget<Bitmap> target=requests.remove(id);requestKeys.remove(id);if(target!=null)Glide.with(context.getApplicationContext()).clear(target);}
  static RemoteViews views(Context context,int id,RadioStation station,Bitmap image){
   RemoteViews views=new RemoteViews(context.getPackageName(),R.layout.radio_widget_wide);views.setImageViewResource(R.id.widget_logo,R.drawable.ic_channel);if(image!=null)views.setImageViewBitmap(R.id.widget_logo,image);
-  boolean playing=station!=null&&RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_pause:R.drawable.ic_play);
-  views.setContentDescription(R.id.widget_logo,station==null?context.getString(R.string.radio_favorites_empty):station.displayName());views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.pause_action:R.string.play_action));
+  boolean playing=station!=null&&RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_stop:R.drawable.ic_play);
+  views.setContentDescription(R.id.widget_logo,station==null?context.getString(R.string.radio_favorites_empty):station.displayName());views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.stop_action:R.string.play_action));
   PendingIntent action=null;
   if(station!=null){Intent toggle=RadioPlaybackService.internalIntent(context,RadioPlaybackService.WIDE_WIDGET_TOGGLE).setData(Uri.parse("stream://radio-wide/play/"+id)).putExtra("favoriteId",station.id).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,id);action=android.os.Build.VERSION.SDK_INT>=26?PendingIntent.getForegroundService(context,id,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE):PendingIntent.getService(context,id,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
   views.setOnClickPendingIntent(R.id.widget_root,action);views.setOnClickPendingIntent(R.id.widget_logo,action);views.setOnClickPendingIntent(R.id.widget_play,action);views.setBoolean(R.id.widget_play,"setEnabled",station!=null);
