@@ -15,6 +15,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
  private ImageView artwork;private Object artworkModel;
  private SeekBar progress;
  private ImageButton toggle;
+ private ImageButton live;
  private androidx.mediarouter.app.MediaRouteButton castButton;
  private boolean local,tracking;
  private final android.os.Handler handler=new android.os.Handler(android.os.Looper.getMainLooper());
@@ -36,6 +37,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
    public void onStartTrackingTouch(SeekBar bar){tracking=true;}public void onStopTrackingTouch(SeekBar bar){tracking=false;}
   });
   LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER);root.addView(controls);
+  live=icon(controls,R.drawable.ic_live,"Gå til live");live.setVisibility(android.view.View.GONE);live.setOnClickListener(view->{RemoteMediaClient remote=remote();if(remote!=null)LivePlayback.goLive(remote);else if(!local)startService(RadioPlaybackService.internalIntent(this,RadioPlaybackService.LIVE));refresh();});
   toggle=icon(controls,R.drawable.ic_play,"Afspil");toggle.setOnClickListener(view->{RemoteMediaClient remote=remote();if(remote!=null)CastPlayback.toggle(this);else {Player player=player();if(player!=null){if(player.getPlaybackState()==Player.STATE_ENDED){player.seekTo(0);player.play();}else if(player.getPlayWhenReady())player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE)player.prepare();player.play();}}}refresh();});
   ImageButton stop=icon(controls,R.drawable.ic_stop,"Stop");stop.setOnClickListener(view->{if(remote()!=null)CastPlayback.stop(this);else if(local)startService(LocalAudioService.command(this,LocalAudioService.STOP));else startService(RadioPlaybackService.internalIntent(this,RadioPlaybackService.STOP));finish();});refresh();
  }
@@ -45,6 +47,9 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   RemoteMediaClient remote=remote();Player player=player();long duration,position;boolean seekable,running;
   if(remote!=null){title.setText(CastPlayback.title(this));duration=remote.getStreamDuration();position=remote.getApproximateStreamPosition();seekable=duration>0&&remote.getMediaInfo().getStreamType()!=com.google.android.gms.cast.MediaInfo.STREAM_TYPE_LIVE;running=remote.isPlaying()||remote.isBuffering();}
   else {if(player==null||player.getPlaybackState()==Player.STATE_IDLE){finish();return;}LocalMedia file=local?LocalAudioService.current():null;RadioStation station=local?null:RadioPlaybackService.selectedStation();CharSequence name=file!=null?file.displayName():station!=null?station.displayName():"";title.setText(name);duration=player.getDuration();position=player.getCurrentPosition();seekable=duration>0&&duration!=C.TIME_UNSET&&player.isCurrentMediaItemSeekable();running=player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
+  boolean liveChannel=remote!=null?remote.isLiveStream():!local&&RadioPlaybackService.selectedStation()!=null;
+  boolean liveNow=liveChannel&&(remote!=null?remote.isPlaying()&&!LivePlayback.behind(remote):player!=null&&player.isPlaying()&&!RadioPlaybackService.needsLive());
+  live.setVisibility(liveChannel?android.view.View.VISIBLE:android.view.View.GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(liveNow?0xFFFF3B30:Color.WHITE));live.setContentDescription(liveNow?"Live":"Gå til live");live.setSelected(liveNow);
   updateArtwork(remote,player);
   progress.setEnabled(seekable);if(!tracking)progress.setProgress(seekable?(int)Math.min(1000,position*1000/duration):0);time.setText(format(position)+(duration>0?" / "+format(duration):""));toggle.setImageResource(running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(running?"Pause":"Afspil");
  }

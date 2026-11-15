@@ -88,6 +88,6 @@ public final class LocalAudioService extends MediaSessionService {
   }
   return START_NOT_STICKY;
  }
- @Override public void onTaskRemoved(Intent root) {if(!isPlaybackOngoing()) stopSelf();}
- @Override public void onDestroy() {if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null) player.release();changed();super.onDestroy();}
+ @Override public void onTaskRemoved(Intent root) {PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
+ @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null) player.release();changed();super.onDestroy();}
 }

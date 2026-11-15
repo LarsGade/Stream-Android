@@ -47,5 +47,6 @@ public final class LocalCastService extends Service {
   }catch(Exception error){android.util.Log.e("StreamCast","Could not serve local queue",error);new Handler(Looper.getMainLooper()).post(()->{if(generation==request){CastPlayback.failed(this);stopSelf();}});}});
   return START_NOT_STICKY;
  }
- @Override public void onDestroy(){generation++;if(server!=null)server.close();worker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
+ @Override public void onTaskRemoved(Intent root){PlaybackShutdown.stop(this);stopSelf();}
+ @Override public void onDestroy(){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);generation++;if(server!=null)server.close();worker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
 }

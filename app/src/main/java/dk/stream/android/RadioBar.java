@@ -8,7 +8,7 @@ import android.widget.*;
 /** One transport icon; the rest of the bar opens the full player for every source. */
 @androidx.media3.common.util.UnstableApi
 public final class RadioBar extends LinearLayout {
- public interface VideoActions {String title();boolean playing();void toggle();void open();}
+ public interface VideoActions {String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
  private final TextView name;
  private final ImageView artwork;private Object artworkModel;
  private final ImageButton toggle,live;
@@ -17,24 +17,25 @@ public final class RadioBar extends LinearLayout {
  private final Runnable tick=new Runnable(){public void run(){refresh();postDelayed(this,500);}};
  public RadioBar(Context context,Runnable beforePlay){this(context,beforePlay,null);}
  public RadioBar(Context context,Runnable beforePlay,VideoActions video){
-  super(context);this.beforePlay=beforePlay;this.video=video;setOrientation(HORIZONTAL);setGravity(Gravity.CENTER_VERTICAL);setBackgroundColor(0xFF1D1D1D);setTag("radio_bar");
+  super(context);this.beforePlay=beforePlay;this.video=video;setOrientation(HORIZONTAL);setGravity(Gravity.CENTER_VERTICAL);setBackgroundColor(Color.BLACK);setWillNotDraw(false);int border=Math.max(1,Math.round(getResources().getDisplayMetrics().density));setPadding(0,border,0,0);setTag("radio_bar");
   int size=Math.round(48*getResources().getDisplayMetrics().density);
   toggle=new ImageButton(context);toggle.setBackgroundColor(Color.TRANSPARENT);toggle.setOnClickListener(view->transport());
   artwork=new ImageView(context);artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);artwork.setPadding(size/12,size/12,size/12,size/12);artwork.setVisibility(GONE);LayoutParams artParams=new LayoutParams(size,size);artParams.setMarginEnd(size/6);addView(artwork,artParams);
   name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);addView(name,new LayoutParams(0,-2,1));
-  live=new ImageButton(context);live.setBackgroundColor(Color.TRANSPARENT);live.setImageResource(android.R.drawable.ic_popup_sync);live.setContentDescription("Live");addView(live,new LayoutParams(size,size));live.setOnClickListener(view->{beforePlay.run();getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.LIVE));refresh();});
+  live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setBackgroundColor(Color.TRANSPARENT);live.setContentDescription("Gå til live");addView(live,new LayoutParams(size,size));live.setOnClickListener(view->{beforePlay.run();if(CastPlayback.hasMedia(getContext()))LivePlayback.goLive(CastPlayback.remote(getContext()));else if(video!=null&&!video.title().isEmpty()&&LocalAudioService.current()==null)video.goLive();else getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.LIVE));refresh();});
   addView(toggle,new LayoutParams(size,size));
   setOnClickListener(view->open());refresh();
  }
  void refresh(){
-  boolean running=false;String title="";boolean isLive=false;Object image=null;
-  if(CastPlayback.hasMedia(getContext())){title=CastPlayback.title(getContext());image=CastPlayback.phoneArtwork(getContext());if(image==null){com.google.android.gms.cast.MediaInfo info=CastPlayback.remote(getContext()).getMediaInfo();com.google.android.gms.cast.MediaMetadata metadata=info==null?null:info.getMetadata();if(metadata!=null&&!metadata.getImages().isEmpty())image=metadata.getImages().get(0).getUrl();}running=CastPlayback.remote(getContext()).isPlaying()||CastPlayback.remote(getContext()).isBuffering();}
+  boolean running=false;String title="";boolean isLive=false,liveChannel=false,liveNow=false;Object image=null;
+  if(CastPlayback.hasMedia(getContext())){title=CastPlayback.title(getContext());isLive=LivePlayback.behind(CastPlayback.remote(getContext()));liveChannel=CastPlayback.remote(getContext()).isLiveStream();liveNow=liveChannel&&CastPlayback.remote(getContext()).isPlaying()&&!isLive;image=CastPlayback.phoneArtwork(getContext());if(image==null){com.google.android.gms.cast.MediaInfo info=CastPlayback.remote(getContext()).getMediaInfo();com.google.android.gms.cast.MediaMetadata metadata=info==null?null:info.getMetadata();if(metadata!=null&&!metadata.getImages().isEmpty())image=metadata.getImages().get(0).getUrl();}running=CastPlayback.remote(getContext()).isPlaying()||CastPlayback.remote(getContext()).isBuffering();}
   else if(LocalAudioService.current()!=null){LocalMedia file=LocalAudioService.current();title=file.displayName();running=LocalAudioService.playing(file.uri);androidx.media3.common.Player player=LocalAudioService.player();if(player!=null){androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();image=metadata.artworkData!=null&&metadata.artworkData.length>0?metadata.artworkData:metadata.artworkUri;}}
-  else if(video!=null&&!video.title().isEmpty()){title=video.title();running=video.playing();}
-  else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();image=PlaybackArtwork.radioModel(getContext(),station);}}
+  else if(video!=null&&!video.title().isEmpty()){title=video.title();running=video.playing();isLive=video.needsLive();liveChannel=video.liveChannel();liveNow=video.liveNow();}
+  else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();liveChannel=true;liveNow=RadioPlaybackService.audioPlayer()!=null&&RadioPlaybackService.audioPlayer().isPlaying()&&!isLive;image=PlaybackArtwork.radioModel(getContext(),station);}}
   updateArtwork(title.isEmpty()?null:image,title);
-  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?"Pause":"Afspil");toggle.setEnabled(!title.isEmpty());live.setVisibility(isLive?VISIBLE:GONE);
+  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?"Pause":"Afspil");toggle.setEnabled(!title.isEmpty());live.setVisibility(liveChannel?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(liveNow?0xFFFF3B30:Color.WHITE));live.setContentDescription(liveNow?"Live":"Gå til live");live.setSelected(liveNow);
  }
+ @Override protected void onDraw(android.graphics.Canvas canvas){super.onDraw(canvas);android.graphics.Paint paint=new android.graphics.Paint();paint.setColor(Color.WHITE);canvas.drawRect(0,0,getWidth(),getPaddingTop(),paint);}
  private void updateArtwork(Object model,String title){
   artwork.setContentDescription("Billede til "+title);if(java.util.Objects.equals(model,artworkModel))return;artworkModel=model;
   com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?GONE:VISIBLE);if(model==null)return;

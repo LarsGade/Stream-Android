@@ -17,7 +17,7 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();
+  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}
  }
  public final PlayerView video;
  private final Actions actions;
@@ -25,6 +25,7 @@ public final class PlaybackPanel extends FrameLayout {
  private final ImageButton play,mute,fullscreen,rewind,forward,settings;
  private final SeekBar timeline;
  private final TextView title,time;
+ private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
  private int restoreVolume;
  private final LinearLayout controls;
  private boolean fullscreenMode,tracking;
@@ -41,6 +42,7 @@ public final class PlaybackPanel extends FrameLayout {
   controls=new LinearLayout(context);controls.setOrientation(LinearLayout.VERTICAL);controls.setBackgroundColor(0xDD101010);
   title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
   LinearLayout buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
+  live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setContentDescription("Gå til live");live.setPadding(dp(8),dp(8),dp(8),dp(8));live.setBackground(controlBackground());buttons.addView(live,new LinearLayout.LayoutParams(dp(44),-1));live.setOnClickListener(view->{liveWasPaused=false;actions.goLive();refresh();scheduleHide();});
   rewind=button(buttons,R.drawable.ic_rewind,R.string.seek_back,()->seekBy(-10000));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
   forward=button(buttons,R.drawable.ic_forward,R.string.seek_forward,()->seekBy(10000));
@@ -73,7 +75,7 @@ public final class PlaybackPanel extends FrameLayout {
   ImageButton button=new ImageButton(getContext());button.setImageResource(icon);button.setContentDescription(getContext().getString(label));button.setPadding(dp(8),dp(8),dp(8),dp(8));button.setBackground(controlBackground());
   row.addView(button,new LinearLayout.LayoutParams(0,-1,1));button.setOnClickListener(view->{click.run();if(controlsVisible()) scheduleHide();});return button;
  }
- public void setTitle(CharSequence name) {title.setText(name);}
+ public void setTitle(CharSequence name) {if(!android.text.TextUtils.equals(title.getText(),name)){liveWasPaused=false;liveBaseline=androidx.media3.common.C.TIME_UNSET;}title.setText(name);}
  public boolean controlsVisible() {return controls.getVisibility()==VISIBLE;}
  public void showControls() {controls.setVisibility(VISIBLE);refresh();removeCallbacks(progressTick);post(progressTick);scheduleHide();}
  public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);video.hideController();}
@@ -127,7 +129,20 @@ public final class PlaybackPanel extends FrameLayout {
  }
  private void seekBy(long delta) {seekTo(position()+delta);refreshProgress();}
  private String clock(long ms) {long seconds=Math.max(0,ms/1000);return String.format(java.util.Locale.ROOT,"%d:%02d",seconds/60,seconds%60);}
+ public boolean liveChannel(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isLiveStream();Player player=video.getPlayer();return actions.liveChannel()||player!=null&&player.isCurrentMediaItemLive();}
+ public boolean liveNow(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isLiveStream()&&session.getRemoteMediaClient().isPlaying()&&!needsLive();Player player=video.getPlayer();return liveChannel()&&player!=null&&player.isPlaying()&&!needsLive();}
+ public void resetLive(){liveWasPaused=false;liveBaseline=androidx.media3.common.C.TIME_UNSET;}
+ public boolean needsLive(){
+  CastSession session=actions.castSession();if(session!=null)return LivePlayback.behind(session.getRemoteMediaClient());
+  Player player=video.getPlayer();boolean channel=actions.liveChannel()||player!=null&&player.isCurrentMediaItemLive();if(!channel){liveWasPaused=false;return false;}
+  if(player!=null&&!player.getPlayWhenReady()&&player.getPlaybackState()==Player.STATE_READY)liveWasPaused=true;
+  long offset=player==null?androidx.media3.common.C.TIME_UNSET:player.getCurrentLiveOffset();long target=androidx.media3.common.C.TIME_UNSET;
+  if(player!=null&&!player.getCurrentTimeline().isEmpty()){androidx.media3.common.Timeline.Window window=player.getCurrentTimeline().getWindow(player.getCurrentMediaItemIndex(),new androidx.media3.common.Timeline.Window());if(window.liveConfiguration!=null)target=window.liveConfiguration.targetOffsetMs;}
+  if(target!=androidx.media3.common.C.TIME_UNSET)liveBaseline=target;else if(liveBaseline==androidx.media3.common.C.TIME_UNSET&&player!=null&&player.isPlaying()&&offset!=androidx.media3.common.C.TIME_UNSET)liveBaseline=offset;
+  return liveWasPaused||offset!=androidx.media3.common.C.TIME_UNSET&&liveBaseline!=androidx.media3.common.C.TIME_UNSET&&offset>liveBaseline+5000;
+ }
  private void refreshProgress() {
+  boolean now=liveNow();live.setVisibility(liveChannel()?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(now?0xFFFF3B30:Color.WHITE));live.setContentDescription(now?"Live":"Gå til live");live.setSelected(now);
   boolean enabled=seekable();timeline.setEnabled(enabled);rewind.setEnabled(enabled);forward.setEnabled(enabled);
   if(!tracking) timeline.setProgress(enabled?(int)(position()*1000/Math.max(1,duration())):0);
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));

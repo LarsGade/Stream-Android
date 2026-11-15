@@ -12,6 +12,10 @@ import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class) @Config(sdk=28)
 public class RadioPlaybackServiceTest {
+ @Test public void taskRemovalStopsActivePlaybackAndClearsTheQueue(){
+  ServiceController<RadioPlaybackService> controller=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=controller.get();
+  try{RadioStation station=new RadioStation("station","Radio","https://example.com/radio.mp3","");service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);Player player=service.onGetSession(null).getPlayer();assertTrue(player.getPlayWhenReady());service.onTaskRemoved(new Intent());assertEquals(Player.STATE_IDLE,player.getPlaybackState());assertEquals(0,player.getMediaItemCount());assertTrue(Shadows.shadowOf(service).isStoppedBySelf());assertNull(RadioPlaybackService.selectedStation());}finally{controller.destroy();}
+ }
  @Test public void serviceStartsForegroundMediaSessionWithStandardPause() throws Exception {
   try(MockWebServer server=new MockWebServer()) {
    server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));

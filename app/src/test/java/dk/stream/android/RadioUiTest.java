@@ -46,26 +46,26 @@ public class RadioUiTest {
    player.pause();bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals("Afspil",bar.getChildAt(0).getContentDescription());player.play();bar.refresh();
    assertEquals("P4 Fyn",((TextView)bar.getChildAt(1)).getText().toString());
    assertEquals(View.VISIBLE,bar.getVisibility());assertTrue(bar.getChildAt(0) instanceof ImageView);
-   ImageButton toggle=(ImageButton)bar.getChildAt(0);assertEquals("Pause",toggle.getContentDescription());toggle.performClick();
+   ImageButton toggle=ReflectionHelpers.getField(bar,"toggle");assertEquals("Pause",toggle.getContentDescription());toggle.performClick();
    Intent stop=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.TRANSPORT_TOGGLE,stop.getAction());
    service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,2);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
   } finally {serviceController.destroy();}
  }
- @Test public void onlyFixedBarHasControlsAndLiveIsOffUntilPaused() {
+ @Test public void liveIconRemainsVisibleAndOffersLiveAfterPause() {
   panel.open(true);
   for(TextView text:texts(panel)) if(text instanceof Button) {assertNotEquals("Live",text.getText().toString());assertNotEquals("Stop radio",text.getText().toString());}
-  RadioBar bar=new RadioBar(activity,()->{});Button live=ReflectionHelpers.getField(bar,"live");assertEquals(View.GONE,live.getVisibility());
+  RadioBar bar=new RadioBar(activity,()->{});ImageButton live=ReflectionHelpers.getField(bar,"live");assertEquals(View.GONE,live.getVisibility());
   org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
   try {
    server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));RadioPlaybackService service=serviceController.get();
    service.onStartCommand(RadioPlaybackService.playIntent(service,new RadioStation("station","DR P1",server.url("/radio.mp3").toString(),"")),0,1);
-   bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals(View.GONE,live.getVisibility());
+   bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals(View.VISIBLE,live.getVisibility());
    service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.TRANSPORT_TOGGLE),0,2);
    bar.refresh();assertEquals(View.VISIBLE,live.getVisibility());
    service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.TRANSPORT_TOGGLE),0,3);
    bar.refresh();assertEquals(View.VISIBLE,live.getVisibility()); // Resuming the old buffer is still behind live.
    live.performClick();Intent command=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.LIVE,command.getAction());
-   service.onStartCommand(command,0,4);bar.refresh();assertEquals(View.GONE,live.getVisibility());
+   service.onStartCommand(command,0,4);bar.refresh();assertEquals(View.VISIBLE,live.getVisibility());assertFalse(RadioPlaybackService.needsLive());
    service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,5);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
   } finally {serviceController.destroy();}
  }

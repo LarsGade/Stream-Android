@@ -319,3 +319,10 @@ Afspilningsbaren viser stationens logo eller lydfilens cover til venstre for nav
 
 ### 1.21.2 – Play/pause til højre
 Afspilningsbarens play/pause-knap er flyttet til højre kant. Logo/cover og navn står til venstre.
+
+
+### 1.22.0 – Live-knap og stop ved lukning
+- Live vises som to ringe under radio- og TV-afspilning i baren og den fulde afspiller. Ikonet er hvidt, når afspilningen er pauset, buffer eller er bagud, og rødt, når afspilningen kører live. Et tryk genindlæser radiostreamen, går til TV-kanalens livepunkt eller søger til live på en Cast-modtager. Almindelige lyd-/videofiler har ikke et livepunkt.
+- Afspilningsbaren er sort med en hvid kant øverst.
+- Fjernes appen fra seneste apps eller afsluttes hovedvinduet, stoppes afspilningstjenesterne og Cast-sessionen, og afspilningsmeddelelserne fjernes. Home, skærmlås og almindeligt skift mellem appens vinduer er ikke fuld lukning.
+På Favoritter-siden vises kun søgefelt for Lokale og Pcloud. TV, Film, Serier og Radio viser ikke søgefelt. Billed-/lifecycle-tests på Android er fortsat blokeret af download af Robolectric-testpakken (HTTP 403).

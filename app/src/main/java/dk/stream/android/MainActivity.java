@@ -150,6 +150,8 @@ public final class MainActivity extends AppCompatActivity {
   pageTitle=text("",20,Color.WHITE);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
   status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
+   public boolean liveChannel(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}
+   public void goLive(){goToLive();}
    public void togglePlayback() {togglePlaybackState();}
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
@@ -185,13 +187,17 @@ public final class MainActivity extends AppCompatActivity {
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
    public String title(){return selected==null?"":selected.name;}
    public boolean playing(){return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
+   public boolean liveChannel(){return playbackPanel.liveChannel();}
+   public boolean liveNow(){return playbackPanel.liveNow();}
+   public boolean needsLive(){return playbackPanel.needsLive();}
+   public void goLive(){goToLive();}
    public void toggle(){togglePlaybackState();}
    public void open(){if(LocalAudioService.current()!=null)syncLocalPlayback();enterFullscreen();}
   }),new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
    public boolean enabled() {return favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
-   public boolean canReorder(){return search.getText().toString().trim().isEmpty();}
+   public boolean canReorder(){return favoritesPage||search.getText().toString().trim().isEmpty();}
    public void showActions(int position,View anchor) {
     if(!favoritesMode||position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
@@ -493,8 +499,8 @@ public final class MainActivity extends AppCompatActivity {
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
   sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
-  search.setVisibility(View.VISIBLE);
-  if(favoritesMode) {visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(Library.Entry entry:library.favorites) if(entry.channel.kind==Library.favoriteKind(selectedFavoriteTab())&&entry.channel.name.toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);}
+  search.setVisibility(favoritesPage?View.GONE:View.VISIBLE);
+  if(favoritesMode) {visible=new ArrayList<>();String query="";for(Library.Entry entry:library.favorites) if(entry.channel.kind==Library.favoriteKind(selectedFavoriteTab())&&entry.channel.name.toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);}
   else {
    visible=new ArrayList<>();
    if(activeSource!=null) for(Playlist.Channel channel:catalog.filter(currentKind,group,search.getText().toString())) visible.add(new Library.Entry(activeSource.id,channel));
@@ -791,6 +797,12 @@ public final class MainActivity extends AppCompatActivity {
   if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);
   watchedRemote=remote;if(watchedRemote!=null) watchedRemote.registerCallback(remoteUpdates);
  }
+ private void goToLive(){
+  playbackPanel.resetLive();
+  CastSession session=connectedCast();if(session!=null){LivePlayback.goLive(session.getRemoteMediaClient());return;}
+  if(selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:")){resumePosition=0;play(selected);playbackPanel.resetLive();}
+  else if(player!=null&&player.isCurrentMediaItemLive()){player.seekToDefaultPosition();player.play();}
+ }
  private void togglePlaybackState() {
   if(localPlayerAttached) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
   CastSession session=connectedCast();
@@ -852,5 +864,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }
