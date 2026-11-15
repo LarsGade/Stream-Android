@@ -96,10 +96,10 @@
  <string name="radio_error">Radiostationen kunne ikke afspilles. Prøv igen eller vælg en anden station.</string>
  <string name="now_playing">Afspilles nu</string>
  <string name="car_danish_radio">Danske radiostationer</string>
- <string name="local_files">Lokale</string>
+ <string name="local_files">Lokale filer</string>
  <string name="pcloud">Pcloud</string>
  <string name="images">Billeder</string>
- <string name="local_source_folder">Kildemappe til lokale</string>
+ <string name="local_source_folder">Kildemappe til lokale filer</string>
  <string name="pcloud_account">Pcloud-konto</string>
  <string name="import_export">Importér/Eksportér</string>
  <string name="settings">Indstillinger</string>

@@ -258,7 +258,7 @@ public final class MainActivity extends AppCompatActivity {
   settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
   AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));settingsContent.addView(start);
   LinearLayout startChoice=column();settingsContent.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
-  Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Film","Serier","Radio","Lokale","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
+  Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Film","Serier","Radio","Lokale filer","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=Library.favoriteTabOrder().get(position);if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));}});
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
@@ -448,7 +448,7 @@ public final class MainActivity extends AppCompatActivity {
   if(isDestroyed()||isFinishing())return;getPreferences(0).edit().remove("playlist").apply();
   PlaybackShutdown.stop(this);stopPlaybackState();library=imported;storageReadable=true;RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
   boolean folderAccess=hasLocalFolderAccess(imported);
-  Toast.makeText(this,folderAccess?"Opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale for at give adgang.",Toast.LENGTH_LONG).show();recreate();
+  Toast.makeText(this,folderAccess?"Opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale filer for at give adgang.",Toast.LENGTH_LONG).show();recreate();
  }
  private boolean hasLocalFolderAccess(Library settings){
   for(LocalMedia entry:settings.localFiles)if(entry.folder&&!PcloudDocument.is(entry.uri)){
