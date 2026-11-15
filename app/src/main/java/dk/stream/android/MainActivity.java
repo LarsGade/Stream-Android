@@ -179,7 +179,7 @@ public final class MainActivity extends AppCompatActivity {
   favoriteCategories=new Spinner(this);favoriteCategories.setContentDescription("Vælg favoritkategori");root.addView(favoriteCategories,new LinearLayout.LayoutParams(-1,dp(48)));
   groups=new Spinner(this);groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
-  list=new FavoriteListView(this);list.setDivider(new android.graphics.drawable.ColorDrawable(Color.rgb(16,16,16)));list.setDividerHeight(dp(6));root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
+  list=new FavoriteListView(this);MediaListStyle.apply(list);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
   radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
   localPanel=new LocalFilesPanel(this,new LocalFilesPanel.Actions() {
    public Library library() {return library;}
@@ -205,12 +205,13 @@ public final class MainActivity extends AppCompatActivity {
   }),new LinearLayout.LayoutParams(-1,-2));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
-   public boolean enabled() {return favoritesMode&&!loading&&!updatingAll&&list.isEnabled();}
-   public boolean canReorder(){return favoritesPage||search.getText().toString().trim().isEmpty();}
+   public boolean enabled() {return !loading&&!updatingAll&&list.isEnabled();}
+   public boolean canReorder(){return favoritesMode&&(favoritesPage||search.getText().toString().trim().isEmpty());}
    public void showActions(int position,View anchor) {
-    if(!favoritesMode||position<0||position>=visible.size()) return;
+    if(position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
-    menu.getMenu().add(R.string.remove_from_favorites).setOnMenuItemClickListener(item->{if(changeLibrary(()->library.removeFavorite(entry))) filter();return true;});list.addReorderActions(menu,position);menu.show();
+    boolean favorite=library.isFavorite(entry);
+    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(changeLibrary(()->library.toggleFavorite(entry)))filter();return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {if(from>=0&&from<visible.size()&&to>=0&&to<visible.size()) {Library.Entry entry=visible.remove(from);visible.add(to,entry);adapter.notifyDataSetChanged();}}
    public void commit() {List<Library.Entry> ordered=new ArrayList<>(visible);changeLibrary(()->library.reorderVisibleFavorites(ordered));filter();}
@@ -774,7 +775,7 @@ public final class MainActivity extends AppCompatActivity {
     runOnUiThread(()->{
      if(isDestroyed()) return;
      LinearLayout choices=column();EditText query=new EditText(this);query.setSingleLine();query.setHint(R.string.search_hint);choices.addView(query);
-     ListView episodeList=new ListView(this);ArrayAdapter<Playlist.Channel> episodeAdapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes));episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
+     ListView episodeList=new ListView(this);MediaListStyle.apply(episodeList);ArrayAdapter<Playlist.Channel> episodeAdapter=new ArrayAdapter<Playlist.Channel>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes)){@Override public View getView(int position,View recycled,ViewGroup parent){View row=super.getView(position,recycled,parent);MediaListStyle.row(row);return row;}};episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
      AlertDialog dialog=new AlertDialog.Builder(this).setTitle(series.name).setView(choices).setNegativeButton(android.R.string.cancel,null).create();
      query.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence value,int start,int count,int after){}public void onTextChanged(CharSequence value,int start,int before,int count){episodeAdapter.getFilter().filter(value);}public void afterTextChanged(Editable value){}});
      episodeList.setOnItemClickListener((parent,view,position,id)->{Playlist.Channel episode=episodeAdapter.getItem(position);if(episode!=null){dialog.dismiss();play(episode);}});dialog.show();
@@ -794,7 +795,7 @@ public final class MainActivity extends AppCompatActivity {
     LinearLayout layout=new LinearLayout(MainActivity.this);layout.setGravity(Gravity.CENTER_VERTICAL);layout.setPadding(dp(10),dp(8),dp(4),dp(8));layout.setBackgroundColor(Color.rgb(29,29,29));
     row=new Row();row.logo=new ImageView(MainActivity.this);row.logo.setScaleType(ImageView.ScaleType.FIT_CENTER);layout.addView(row.logo,new LinearLayout.LayoutParams(dp(48),dp(48)));
     LinearLayout labels=column();labels.setPadding(dp(12),0,dp(4),0);row.name=text("",16,Color.WHITE);row.name.setMaxLines(2);labels.addView(row.name);row.group=text("",12,Color.LTGRAY);row.group.setMaxLines(1);labels.addView(row.group);layout.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
-    row.star=iconButton(R.drawable.ic_favorite_outline,"");row.star.setFocusable(false);layout.addView(row.star,new LinearLayout.LayoutParams(dp(48),dp(48)));row.indicator=NowPlayingIndicator.addTo(layout);layout.setTag(row);recycled=layout;
+    row.indicator=NowPlayingIndicator.addTo(layout);layout.setTag(row);recycled=layout;
    } else row=(Row)recycled.getTag();
    Library.Entry entry=getItem(position);Playlist.Channel channel=entry.channel;row.name.setText(channel.name);
    Library.Source source=library.findSource(entry.sourceId);
@@ -805,10 +806,9 @@ public final class MainActivity extends AppCompatActivity {
    String bundled=localLogos.find(channel.name);
    Object logoModel=bundled==null?LogoRequests.model(channel.logoUrl,source==null?null:source.server):bundled;
    Glide.with(MainActivity.this).load(logoModel).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(MainActivity.this)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
-   recycled.setAlpha(list.isPicked(position)?0.6f:1f);row.star.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+   recycled.setAlpha(list.isPicked(position)?0.6f:1f);
    NowPlayingIndicator.show(row.indicator,isChannelPlaying(channel));
-   boolean favorite=library.isFavorite(entry);row.star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);row.star.setContentDescription(getString(favorite?R.string.remove_favorite:R.string.add_favorite,channel.name));
-   row.star.setOnClickListener(v->{if(!favoritesMode&&changeLibrary(()->library.toggleFavorite(entry))) {if(favoritesMode) rebuildGroups();else notifyDataSetChanged();}});
+
    return recycled;
   }
  }
@@ -816,7 +816,7 @@ public final class MainActivity extends AppCompatActivity {
   if(selected==null || !selected.url.equals(channel.url)) return false;
   CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.isPlaying();
  }
- private static final class Row {ImageView logo;TextView name,group;ImageButton star;View indicator;}
+ private static final class Row {ImageView logo;TextView name,group;View indicator;}
  private void play(Playlist.Channel channel) {
   videoMinimized=false;
   acceptLocalPlayback=false;detachLocalPlayback();

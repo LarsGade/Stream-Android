@@ -35,7 +35,7 @@ public final class LocalFilesPanel extends LinearLayout {
   up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams backParams=new LayoutParams(backSize,backSize);backParams.gravity=Gravity.LEFT;addView(up,backParams);up.setOnClickListener(v->back());
   path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);path.setTypeface(null,android.graphics.Typeface.BOLD);android.graphics.drawable.Drawable folderIcon=context.getDrawable(R.drawable.ic_folder);int folderSize=Math.round(24*getResources().getDisplayMetrics().density);folderIcon.setBounds(0,0,folderSize,folderSize);path.setCompoundDrawables(folderIcon,null,null,null);path.setCompoundDrawablePadding(Math.round(8*getResources().getDisplayMetrics().density));addView(path);
   message=new TextView(context);message.setTextColor(Color.LTGRAY);message.setVisibility(GONE);addView(message);
-  list=new ListView(context);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
+  list=new ListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {search.setText("");parents.addLast(entry);loadFolder();}else actions.play(entry);});
   list.setOnItemLongClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);PopupMenu menu=new PopupMenu(context,v);
    menu.getMenu().add(actions.library().isLocalFavorite(entry.uri)?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{actions.save(()->actions.library().toggleLocalFavorite(entry));reload();return true;});
@@ -62,7 +62,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private final class Adapter extends BaseAdapter {
   public int getCount(){return visible.size();}public LocalMedia getItem(int p){return visible.get(p);}public long getItemId(int p){return p;}
   public View getView(int p,View recycled,ViewGroup parent) {
-   LocalMedia entry=getItem(p);LinearLayout row=new LinearLayout(getContext());row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);row.setGravity(Gravity.CENTER_VERTICAL);int pad=Math.round(8*getResources().getDisplayMetrics().density);row.setPadding(pad,pad,pad,pad);
+   LocalMedia entry=getItem(p);LinearLayout row=new LinearLayout(getContext());row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);row.setGravity(Gravity.CENTER_VERTICAL);int pad=Math.round(8*getResources().getDisplayMetrics().density);row.setPadding(pad,pad,pad,pad);MediaListStyle.row(row);
    if(entry.folder||entry.image()){ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:R.drawable.ic_image);icon.setContentDescription(entry.folder?"Åbn mappe":"Vis billede");row.addView(icon,new LayoutParams(pad*5,pad*5));}
    TextView name=new TextView(getContext());name.setText(search.getText().toString().trim().isEmpty()?entry.displayName():entry.displayFileName());name.setTextColor(Color.WHITE);name.setTextSize(16);name.setPadding(pad,0,pad,0);row.addView(name,new LayoutParams(0,-2,1));
    View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri)));

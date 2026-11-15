@@ -41,15 +41,16 @@ public final class RadioPanel extends LinearLayout {
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
   refresh=new Button(context);refresh.setText(R.string.refresh_radio);addView(refresh);refresh.setOnClickListener(v->load());
   message=text("",13);message.setTextColor(Color.LTGRAY);addView(message);
-  list=new FavoriteListView(context);list.setDividerHeight(dp(6));addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
+  list=new FavoriteListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((parent,view,position,id)->play(visible.get(position)));
   list.setFavoriteListener(new FavoriteListView.Listener() {
-   public boolean enabled() {return favorites;}
-   public boolean canReorder(){return search.getText().toString().trim().isEmpty();}
+   public boolean enabled() {return true;}
+   public boolean canReorder(){return favorites&&search.getText().toString().trim().isEmpty();}
    public void showActions(int position,View anchor) {
     if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new PopupMenu(context,anchor);
-    menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
-    menu.getMenu().add(0,2,1,R.string.remove_from_favorites).setOnMenuItemClickListener(item->{save.apply(()->library.get().removeRadio(station.id));filter();return true;});list.addReorderActions(menu,position);menu.show();
+    boolean favorite=library.get().findRadio(station.id)!=null;
+    if(favorite)menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
+    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{save.apply(()->{if(favorite)library.get().removeRadio(station.id);else library.get().addRadio(station);});filter();return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {RadioStation station=visible.remove(from);visible.add(to,station);adapter.notifyDataSetChanged();}
    public void commit() {List<RadioStation> order=new ArrayList<>(visible);save.apply(()->library.get().reorderRadio(order));filter();}
@@ -92,7 +93,7 @@ public final class RadioPanel extends LinearLayout {
    ImageView logo=new ImageView(getContext());logo.setScaleType(ImageView.ScaleType.FIT_CENTER);row.addView(logo,new LayoutParams(dp(48),dp(48)));
    TextView name=text(station.displayName(),16);name.setMaxLines(2);row.addView(name,new LayoutParams(0,-2,1));
    String local=logos.find(station.name);if(local==null)local=logos.find(station.displayName());Glide.with(RadioPanel.this).load(local==null?station.logo:local).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(getContext())).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(logo);
-   if(!favorites) {boolean favorite=library.get().findRadio(station.id)!=null;ImageButton star=new ImageButton(getContext());star.setImageResource(favorite?R.drawable.ic_favorite:R.drawable.ic_favorite_outline);star.setContentDescription(getContext().getString(favorite?R.string.remove_favorite:R.string.add_favorite,station.displayName()));star.setFocusable(false);star.setBackgroundColor(Color.TRANSPARENT);row.addView(star,new LayoutParams(dp(48),dp(48)));star.setOnClickListener(v->{save.apply(()->{if(library.get().findRadio(station.id)==null) library.get().addRadio(station);else library.get().removeRadio(station.id);});filter();});}
+
    NowPlayingIndicator.show(NowPlayingIndicator.addTo(row),station.id.equals(RadioPlaybackService.audibleStationId()));
    row.setAlpha(list.isPicked(position)?0.6f:1f);return row;
   }

@@ -474,3 +474,7 @@ Afspilningsprikken i lokale filer, Pcloud og filfavoritter bruger samme 16 dp ma
 ### 1.26.9
 
 Bundafspilleren har altid samme faste højde som rækkerne i Lokale filer og Pcloud, uanset titel, afspilningskilde, logo og live-knap. Højden deler samme beregning og tilpasses systemets tekststørrelse.
+
+### 1.26.10
+
+Medielister bruger mørke rækker og grå separatorer i Streaming, Radio, Lokale filer, Pcloud, favoritter og serieafsnit. Radio- og streaminglister har ingen favoritstjerner; hold på en række for at tilføje eller fjerne en favorit.
