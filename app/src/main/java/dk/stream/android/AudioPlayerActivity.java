@@ -67,7 +67,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   artwork.setContentDescription("Billede til "+title.getText());
   if(java.util.Objects.equals(model,artworkModel))return;
   artworkModel=model;com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?android.view.View.GONE:android.view.View.VISIBLE);if(model==null)return;
-  com.bumptech.glide.Glide.with(this).load(model).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
+  com.bumptech.glide.Glide.with(this).load(model).override(512,512).centerCrop().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
    public boolean onLoadFailed(com.bumptech.glide.load.engine.GlideException failure,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,boolean first){artwork.setVisibility(android.view.View.GONE);return false;}
    public boolean onResourceReady(android.graphics.drawable.Drawable image,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,com.bumptech.glide.load.DataSource source,boolean first){artwork.setVisibility(android.view.View.VISIBLE);return false;}
   }).into(artwork);

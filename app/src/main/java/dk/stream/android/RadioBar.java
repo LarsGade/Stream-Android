@@ -45,7 +45,7 @@ public final class RadioBar extends LinearLayout {
  private void updateArtwork(Object model,String title){
   artwork.setContentDescription("Billede til "+title);if(java.util.Objects.equals(model,artworkModel))return;artworkModel=model;
   com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?GONE:VISIBLE);if(model==null)return;
-  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
+  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).override(160,160).centerCrop().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
    public boolean onLoadFailed(com.bumptech.glide.load.engine.GlideException failure,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,boolean first){artwork.setVisibility(GONE);return false;}
    public boolean onResourceReady(android.graphics.drawable.Drawable image,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,com.bumptech.glide.load.DataSource source,boolean first){artwork.setVisibility(VISIBLE);return false;}
   }).into(artwork);

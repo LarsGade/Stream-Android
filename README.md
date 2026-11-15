@@ -514,3 +514,7 @@ Live-knappen i den fulde lydafspiller er flyttet til højre kant. Play/pause og 
 ### 1.27.0
 
 Streamingkataloger gemmes krypteret og genåbnes fra telefonen uden netværksopdatering ved appstart eller sideskift. Radio og TV-guide genbruges også uden automatisk udløb. Brug Opdatér alt, kildens opdatering eller Opdatér radiostationer for nye lister. På eksisterende installationer skal streaming opdateres én gang for at oprette den nye lokale kopi. Tilføjelse eller redigering af en kilde henter fortsat dens indhold.
+
+### 1.27.1
+
+Kanal- og programlogoer vises med kvadratisk beskæring i streaming- og radiolister, lokale fillister, favoritter, bundbaren, den fulde lydafspiller og begge radiowidgets. Appikon, mappeikoner og billedviseren er uændrede.

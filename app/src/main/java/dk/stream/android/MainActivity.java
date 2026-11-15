@@ -806,7 +806,7 @@ public final class MainActivity extends AppCompatActivity {
    row.logo.setContentDescription(getString(R.string.logo_for,channel.name));
    String bundled=localLogos.find(channel.name);
    Object logoModel=bundled==null?LogoRequests.model(channel.logoUrl,source==null?null:source.server):bundled;
-   Glide.with(MainActivity.this).load(logoModel).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(MainActivity.this)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).into(row.logo);
+   Glide.with(MainActivity.this).load(logoModel).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(MainActivity.this)).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).centerCrop().into(row.logo);
    recycled.setAlpha(list.isPicked(position)?0.6f:1f);
    boolean playing=isChannelPlaying(channel);NowPlayingIndicator.show(row.indicator,playing);row.name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);row.group.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
 
