@@ -29,7 +29,7 @@ final class CatalogStore {
   try{
    javax.crypto.Cipher cipher=javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");cipher.init(javax.crypto.Cipher.ENCRYPT_MODE,LibraryStore.key());byte[] iv=cipher.getIV();
    file=file(source);output=file.startWrite();output.write(iv.length);output.write(iv);
-   OutputStream nonClosing=new FilterOutputStream(output){@Override public void close()throws IOException{flush();}};
+   OutputStream nonClosing=new NonClosingOutputStream(output);
    try(OutputStream encrypted=new BufferedOutputStream(new javax.crypto.CipherOutputStream(nonClosing,cipher),64*1024)){CatalogBinary.write(encrypted,source,catalog);}
    file.finishWrite(output);return true;
   }catch(Exception failure){if(file!=null&&output!=null)file.failWrite(output);return false;}

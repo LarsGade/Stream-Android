@@ -522,3 +522,7 @@ Kanal- og programlogoer vises med kvadratisk beskæring i streaming- og radiolis
 ### 1.27.2
 
 Streaminglister gemmes nu løbende i krypteret binært format i stedet for at opbygge flere komplette JSON-kopier i hukommelsen. Det reducerer hukommelsesforbruget under Opdatér alt. Ældre gemte kataloger kan fortsat læses. Identiske kataloger gemmes ikke længere to gange efter kildeopdatering.
+
+### 1.27.3
+
+Retter langsom lagring, som kunne få streamingopdatering til at blive stående ved fx 1/3. Krypterede kataloger skrives nu i blokke direkte til filen frem for enkeltbytes. Atomisk lagring og kryptering bevares.
