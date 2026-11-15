@@ -315,3 +315,7 @@ Build, lint og model-/netværkstests er kontrolleret. Robolectric-testen af cove
 
 ### 1.21.1 – Logo i afspilningsbaren
 Afspilningsbaren viser stationens logo eller lydfilens cover til venstre for navnet. Billedet opdateres ved skift af fil/station og skjules, hvis der ikke er et billede, eller hvis det ikke kan hentes. Ved casting bruges det tilgængelige logo eller cover fra Cast-oplysningerne.
+
+
+### 1.21.2 – Play/pause til højre
+Afspilningsbarens play/pause-knap er flyttet til højre kant. Logo/cover og navn står til venstre.

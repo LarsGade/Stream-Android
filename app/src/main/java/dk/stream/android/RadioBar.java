@@ -19,10 +19,11 @@ public final class RadioBar extends LinearLayout {
  public RadioBar(Context context,Runnable beforePlay,VideoActions video){
   super(context);this.beforePlay=beforePlay;this.video=video;setOrientation(HORIZONTAL);setGravity(Gravity.CENTER_VERTICAL);setBackgroundColor(0xFF1D1D1D);setTag("radio_bar");
   int size=Math.round(48*getResources().getDisplayMetrics().density);
-  toggle=new ImageButton(context);toggle.setBackgroundColor(Color.TRANSPARENT);addView(toggle,new LayoutParams(size,size));toggle.setOnClickListener(view->transport());
+  toggle=new ImageButton(context);toggle.setBackgroundColor(Color.TRANSPARENT);toggle.setOnClickListener(view->transport());
   artwork=new ImageView(context);artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);artwork.setPadding(size/12,size/12,size/12,size/12);artwork.setVisibility(GONE);LayoutParams artParams=new LayoutParams(size,size);artParams.setMarginEnd(size/6);addView(artwork,artParams);
   name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);addView(name,new LayoutParams(0,-2,1));
   live=new ImageButton(context);live.setBackgroundColor(Color.TRANSPARENT);live.setImageResource(android.R.drawable.ic_popup_sync);live.setContentDescription("Live");addView(live,new LayoutParams(size,size));live.setOnClickListener(view->{beforePlay.run();getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.LIVE));refresh();});
+  addView(toggle,new LayoutParams(size,size));
   setOnClickListener(view->open());refresh();
  }
  void refresh(){
