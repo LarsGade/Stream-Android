@@ -421,3 +421,7 @@ Begge widgettyper bruger nu fuldt stop, når den valgte station spiller. Stop ry
 
 ### 1.25.10 – Store play/stop-ikoner uden knapbaggrund
 Den brede widgets play/stop-knap har nu gennemsigtig baggrund og større symboler uden indvendig padding. Widgettens samlede baggrund og logo bevares.
+
+
+### 1.25.11 – Mindre play/stop-ikoner
+Play- og stopikonets størrelse på 2 × 1-widgetten er reduceret med 25 % i forhold til 1.25.10. Logo og widgetbaggrund bevares.
