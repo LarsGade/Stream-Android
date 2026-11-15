@@ -5,7 +5,7 @@
   <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
   <string name="loading">Henter kanalliste …</string>
   <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
-  <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra tv\'et.</string>
+  <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra TV\'et.</string>
   <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
   <string name="search_hint">Søg</string>
   <string name="casting">Caster: %1$s</string>
@@ -21,14 +21,14 @@
  <string name="tls_failed">Serverens sikre forbindelse kunne ikke godkendes. Kontrollér serveradressen og certifikatet.</string>
  <string name="timeout">Serveren svarede ikke i tide. Prøv igen.</string>
  <string name="network_failed">Kunne ikke kontakte serveren. Kontrollér adressen og internetforbindelsen.</string>
- <string name="tv">Tv</string>
+ <string name="tv">TV</string>
  <string name="films">Film</string>
  <string name="series">Serier</string>
  <string name="all_groups">Alle grupper</string>
- <string name="loading_catalog">Henter tv, film, serier og grupper …</string>
+ <string name="loading_catalog">Henter TV, film, serier og grupper …</string>
  <string name="loading_episodes">Henter seriens afsnit …</string>
  <string name="open_menu">Åbn menu</string>
- <string name="library">Streaming\n(tv, film, serier)</string>
+ <string name="library">Streaming\n(TV, film, serier)</string>
  <string name="favorites">Favoritter</string>
  <string name="sources">Kilder til streaming</string>
  <string name="start_favorites">Vis favoritter, når appen åbner</string>
@@ -57,21 +57,21 @@
  <string name="seek_position">Afspilningsposition</string><string name="live">Live</string><string name="playback_time">%1$s / %2$s</string>
  <string name="player_settings">Afspillerindstillinger</string><string name="playback_speed">Afspilningshastighed</string>
  <string name="subtitles">Undertekster</string><string name="audio_track">Lydspor</string>
- <string name="tv_guide">Tv-guide</string><string name="add_epg">Tilføj EPG</string><string name="edit_epg">Redigér tv-guide</string>
- <string name="epg_name">Navn på tv-guide</string><string name="epg_url">EPG-link (XMLTV eller XMLTV.gz)</string>
+ <string name="tv_guide">TV-guide</string><string name="add_epg">Tilføj EPG</string><string name="edit_epg">Redigér TV-guide</string>
+ <string name="epg_name">Navn på TV-guide</string><string name="epg_url">EPG-link (XMLTV eller XMLTV.gz)</string>
  <string name="epg_invalid">Angiv et navn og et gyldigt HTTP/HTTPS-link.</string>
- <string name="select_epg">Tv-guide til denne kilde</string><string name="no_epg">Ingen tv-guide</string>
- <string name="epg_loading">Henter tv-guide …</string><string name="epg_no_programme">Ingen aktuelle programoplysninger</string>
+ <string name="select_epg">TV-guide til denne kilde</string><string name="no_epg">Ingen TV-guide</string>
+ <string name="epg_loading">Henter TV-guide …</string><string name="epg_no_programme">Ingen aktuelle programoplysninger</string>
  <string name="edit_source">Redigér kilde</string><string name="save">Gem</string><string name="delete">Slet</string>
- <string name="delete_epg">Slet tv-guide</string><string name="delete_epg_note">Vil du slette tv-guiden? Kilder og favoritter beholdes, men mister tilknytningen til denne guide.</string>
- <string name="update_all">Opdatér alt</string><string name="updating_all">Opdaterer kilder og tv-guides …</string>
+ <string name="delete_epg">Slet TV-guide</string><string name="delete_epg_note">Vil du slette TV-guiden? Kilder og favoritter beholdes, men mister tilknytningen til denne guide.</string>
+ <string name="update_all">Opdatér alt</string><string name="updating_all">Opdaterer kilder og TV-guides …</string>
  <string name="update_progress">%1$d / %2$d: %3$s</string>
  <string name="update_failed_names">Kunne ikke opdatere: %1$s. Tidligere data er beholdt.</string>
  <string name="reset_app">Nulstil app</string><string name="yes">Ja</string><string name="no">Nej</string>
- <string name="reset_app_note">Vil du nulstille appen? Alle gemte kilder, login, favoritter, tv-guides, indstillinger og cache slettes. Appen lukker og starter som ny, næste gang du åbner den.</string>
+ <string name="reset_app_note">Vil du nulstille appen? Alle gemte kilder, login, favoritter, TV-guides, indstillinger og cache slettes. Appen lukker og starter som ny, næste gang du åbner den.</string>
  <string name="reset_failed">Appen kunne ikke nulstilles. Prøv igen.</string>
  <plurals name="updated_sources"><item quantity="one">%1$d kilde opdateret</item><item quantity="other">%1$d kilder opdateret</item></plurals>
- <plurals name="updated_guides"><item quantity="one">%1$d tv-guide opdateret</item><item quantity="other">%1$d tv-guides opdateret</item></plurals>
+ <plurals name="updated_guides"><item quantity="one">%1$d TV-guide opdateret</item><item quantity="other">%1$d TV-guides opdateret</item></plurals>
  <plurals name="update_failures"><item quantity="one">%1$d opdatering mislykkedes</item><item quantity="other">%1$d opdateringer mislykkedes</item></plurals>
  <string name="epg_fetch_failed">Kunne ikke hente %1$s. Tidligere programoplysninger beholdes, hvis de findes.</string>
  <string name="developer_credit">Udviklet af Lars Gade</string>

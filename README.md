@@ -241,3 +241,7 @@ Knapper og dialogknapper viser teksten uden automatisk versalisering. Menutekste
 
 ### 1.18.2 – Gendan oprindeligt appikon
 Startskærmsikonet er gendannet fra versionen umiddelbart før ændringen til den enkle blå playknap, med de oprindelige ikoner til både Android 9 og adaptive launchere.
+
+
+### 1.18.3 – Pcloud-overskrift
+Loginvinduets overskrift hedder nu kun “Pcloud”. Forkortelsen TV står igen med store bogstaver i alle appens tekster.
