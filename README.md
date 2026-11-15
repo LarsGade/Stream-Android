@@ -311,3 +311,7 @@ Startvælgeren bruger samme rækkefølge: TV, Film, Serier, Radio, Lokale, Pclou
 ### 1.21.0 – Logo og cover i fuld lydafspiller
 Den fulde lydafspiller viser radiostationens lokale eller eksterne logo og lydfilens indlejrede cover fra afspillerens metadata, også ved afspilning fra Pcloud. Billeder indlæses og skaleres via Glide; uden billede eller ved fejl skjules billedfeltet. Visningen følger automatisk skift til næste fil. Stationens eller filens navn bruges i stedet for udsendelsestitler. “Afspilles via Stream” er fjernet fra media-sessioner, Android Auto og Cast-metadata. Ved casting vises modtagerens billede, stationens logo eller det kendte cover for den aktuelle fil.
 Build, lint og model-/netværkstests er kontrolleret. Robolectric-testen af coverfeltet kan ikke afvikles her, fordi download af Android-testpakken afvises af proxyen (HTTP 403). Billedvisningen er ikke afprøvet på en fysisk telefon.
+
+
+### 1.21.1 – Logo i afspilningsbaren
+Afspilningsbaren viser stationens logo eller lydfilens cover til venstre for navnet. Billedet opdateres ved skift af fil/station og skjules, hvis der ikke er et billede, eller hvis det ikke kan hentes. Ved casting bruges det tilgængelige logo eller cover fra Cast-oplysningerne.
