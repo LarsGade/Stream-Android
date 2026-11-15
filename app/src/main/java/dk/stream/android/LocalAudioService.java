@@ -38,7 +38,7 @@ public final class LocalAudioService extends MediaSessionService {
  private void changed() {sendBroadcast(new Intent(CHANGED).setPackage(getPackageName()));}
  @Override public void onCreate() {
   super.onCreate();active=this;
-  setMediaNotificationProvider(new DefaultMediaNotificationProvider.Builder(this).setNotificationId(2003).setChannelId("stream_local").build());
+  setMediaNotificationProvider(new DismissibleLocalNotifications(this));
   setListener(new MediaSessionService.Listener() {@Override public void onForegroundServiceStartNotAllowedException() {
    if(player!=null) player.pause();android.util.Log.e("StreamLocalPlayback","Android rejected foreground playback");
    android.widget.Toast.makeText(LocalAudioService.this,"Åbn Stream for at genoptage afspilningen.",android.widget.Toast.LENGTH_LONG).show();
@@ -65,7 +65,7 @@ public final class LocalAudioService extends MediaSessionService {
  @Override public MediaSession onGetSession(MediaSession.ControllerInfo controller) {return session;}
  @Override public int onStartCommand(Intent intent,int flags,int startId) {
   super.onStartCommand(intent,flags,startId);if(intent==null) return START_NOT_STICKY;
-  if(STOP.equals(intent.getAction())) {current=null;player.stop();player.clearMediaItems();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();}
+  if(STOP.equals(intent.getAction())) {current=null;queue=Collections.emptyList();pendingQueue=null;pendingToken=null;player.pause();player.stop();player.clearMediaItems();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();}
   else if(TOGGLE.equals(intent.getAction())) {if(current!=null) {if(player.getPlaybackState()==Player.STATE_ENDED) {player.seekTo(0);player.play();}else if(player.getPlayWhenReady()) player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE) player.prepare();player.play();}}}
   else if(PLAY.equals(intent.getAction())) {
    try {

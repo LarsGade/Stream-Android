@@ -66,7 +66,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
  private Notification notification(MediaSession mediaSession) {
   PendingIntent toggle=PendingIntent.getService(this,2,internalIntent(this,TRANSPORT_TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   PendingIntent stop=PendingIntent.getService(this,1,internalIntent(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-  return PlaybackNotification.create(this,"stream_radio",mediaSession,toggle,stop);
+  PendingIntent live=PendingIntent.getService(this,3,internalIntent(this,LIVE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+  return PlaybackNotification.radio(this,mediaSession,toggle,stop,live,mediaSession.getPlayer().isPlaying()&&!needsLive());
  }
  private void foreground() {startForeground(2001,notification(session));}
  private void loadArtwork(RadioStation station) {
@@ -93,7 +94,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
     public void onFailure(Throwable error) {if(active==RadioPlaybackService.this) {sessionPlayer.stop();androidx.core.app.ServiceCompat.stopForeground(RadioPlaybackService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}}
    },androidx.core.content.ContextCompat.getMainExecutor(this));return START_NOT_STICKY;
   }
-  if(STOP.equals(action)) {artworkGeneration++;sessionPlayer.stop();current=null;error="";RadioWidgetProvider.refresh(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();return START_NOT_STICKY;}
+  if(STOP.equals(action)) {artworkGeneration++;sessionPlayer.pause();sessionPlayer.stop();player.clearMediaItems();current=null;error="";behindLive=false;RadioWidgetProvider.refresh(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();return START_NOT_STICKY;}
   if(LIVE.equals(action)) {
    MediaItem item=player.getCurrentMediaItem();
    if(current==null || item==null) {if(current==null) stopSelf();return START_NOT_STICKY;}
