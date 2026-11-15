@@ -237,3 +237,7 @@ Favoritter har separate faner Lokale og Pcloud for alle mapper, lyd-, video- og 
 
 ### 1.18.1 – Almindelig skrivemåde
 Knapper og dialogknapper viser teksten uden automatisk versalisering. Menutekster bruger almindelig skrivemåde, herunder “Streaming (tv, film, serier)”, “Tv-guide” og “Kilder til streaming”. Filnavne, kanalnavne og brugernes indhold bevares.
+
+
+### 1.18.2 – Gendan oprindeligt appikon
+Startskærmsikonet er gendannet fra versionen umiddelbart før ændringen til den enkle blå playknap, med de oprindelige ikoner til både Android 9 og adaptive launchere.
