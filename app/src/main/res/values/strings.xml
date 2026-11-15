@@ -86,7 +86,7 @@
  <string name="radio_empty">Ingen stationer fundet</string>
  <string name="radio_favorites_empty">Ingen radiofavoritter</string>
  <string name="rename_radio">Omdøb</string>
- <string name="refresh_radio">Opdatér radio</string>
+ <string name="refresh_radio">Opdatér radiostationer</string>
  <string name="radio_widget">Stream radio</string>
  <string name="radio_widget_description">Afspil en radiostation fra favoritter</string>
  <string name="radio_widget_choose">Vælg radiostation</string>

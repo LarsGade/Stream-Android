@@ -353,3 +353,7 @@ Favoritter står øverst i burgermenuen. Alle afkrydsningsfelter, startfanevælg
 
 ### 1.23.2 – Rød nulstillingsknap
 Nulstil app under Indstillinger har nu rød baggrund og hvid tekst.
+
+
+### 1.23.3 – Opdatér radiostationer
+Knappen Opdatér radio hedder nu Opdatér radiostationer.
