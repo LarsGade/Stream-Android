@@ -27,7 +27,6 @@ public final class RadioPanel extends LinearLayout {
  private final FavoriteListView list;
  private final TextView title,message,playbackError;
  private final EditText search;
- private final Button refresh;
  private final Adapter adapter=new Adapter();
  private List<RadioStation> stations=new ArrayList<>(),visible=new ArrayList<>();
  private boolean favorites,loading,loaded,closed;
@@ -39,7 +38,6 @@ public final class RadioPanel extends LinearLayout {
   title=text("",20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
-  refresh=new Button(context);refresh.setText(R.string.refresh_radio);addView(refresh);refresh.setOnClickListener(v->load());
   message=text("",13);message.setTextColor(Color.LTGRAY);addView(message);
   list=new FavoriteListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((parent,view,position,id)->play(visible.get(position)));
@@ -61,15 +59,16 @@ public final class RadioPanel extends LinearLayout {
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private TextView text(String value,int size) {TextView view=new TextView(getContext());view.setText(value);view.setTextSize(size);view.setTextColor(Color.WHITE);view.setPadding(dp(4),dp(6),dp(4),dp(6));return view;}
  public void open(boolean favorites) {list.cancelFavoriteGesture();this.favorites=favorites;search.setText("");filter();updatePlayback();if(!favorites && !loaded && !loading) load();}
+ public void refreshStations(){load();}
  private void load() {
-  if(loading) return;loading=true;refresh.setEnabled(false);filter();
+  if(loading) return;loading=true;filter();
   worker.execute(()->{
-   try {List<RadioStation> result=browser.loadDanish();CarRadioCatalog.writeCache(getContext(),result);main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;refresh.setEnabled(true);filter();});}
-   catch(Exception error) {main.post(()->{if(closed)return;loading=false;refresh.setEnabled(true);filter();if(!favorites) showMessage(getContext().getString(R.string.radio_failed));});}
+   try {List<RadioStation> result=browser.loadDanish();CarRadioCatalog.writeCache(getContext(),result);main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;filter();});}
+   catch(Exception error) {main.post(()->{if(closed)return;loading=false;filter();if(!favorites) showMessage(getContext().getString(R.string.radio_failed));});}
   });
  }
  private void filter() {
-  title.setVisibility(favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(favorites?GONE:VISIBLE);refresh.setVisibility(favorites?GONE:VISIBLE);
+  title.setVisibility(favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(favorites?GONE:VISIBLE);
   visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
   for(RadioStation station:favorites?library.get().radioFavorites:stations) if(station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
   showMessage(favorites?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();

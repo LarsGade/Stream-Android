@@ -274,6 +274,7 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
   button(R.string.tv_guide_sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
   button(R.string.local_source_folder,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showLocalSourceOptions();});
+  button(R.string.refresh_radio,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioPanel.refreshStations();});
   button(R.string.pcloud_account,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
   button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});

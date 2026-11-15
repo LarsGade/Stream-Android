@@ -490,3 +490,7 @@ Logoet i bundbaren er 25 % større. Live- og play/pause-ikoner vises i 36 dp i s
 ### 1.26.13
 
 Live-ikonet i bundbaren er 20 % mindre (28,8 dp), og play/pause-ikonet er 20 % større (43,2 dp). Logo, barhøjde og berøringsområder er uændrede.
+
+### 1.26.14
+
+Opdatér radiostationer er flyttet fra radiosiden til burgermenuens Indstillinger, umiddelbart efter Kildemappe til lokale filer.
