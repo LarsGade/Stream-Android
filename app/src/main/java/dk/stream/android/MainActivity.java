@@ -155,7 +155,7 @@ public final class MainActivity extends AppCompatActivity {
    @Override public void onDrawerOpened(View view) {closeDrawer.setEnabled(true);}
    @Override public void onDrawerClosed(View view) {closeDrawer.setEnabled(false);collapseSettings();}
   });
-  pageTitle=text("",20,Color.WHITE);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
+  pageTitle=text("",20,Color.WHITE);pageTitle.setTypeface(null,android.graphics.Typeface.BOLD);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
   status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
    public boolean liveChannel(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}

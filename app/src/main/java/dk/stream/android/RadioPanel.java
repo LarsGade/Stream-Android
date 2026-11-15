@@ -36,7 +36,7 @@ public final class RadioPanel extends LinearLayout {
  public RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay) {this(context,library,save,beforePlay,new RadioBrowser());}
  RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay,RadioBrowser browser) {
   super(context);this.library=library;this.save=save;this.beforePlay=beforePlay;this.browser=browser;logos=LocalChannelLogos.load(context);setOrientation(VERTICAL);
-  title=text("",20);addView(title);
+  title=text("",20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
   refresh=new Button(context);refresh.setText(R.string.refresh_radio);addView(refresh);refresh.setOnClickListener(v->load());

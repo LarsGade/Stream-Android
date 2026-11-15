@@ -28,12 +28,12 @@ public final class LocalFilesPanel extends LinearLayout {
  private Future<?> folderTask;
  public LocalFilesPanel(Context context,Actions actions) {
   super(context);this.actions=actions;setOrientation(VERTICAL);
-  title=new TextView(context);title.setText(R.string.local_files);title.setTextColor(Color.WHITE);title.setTextSize(20);addView(title);
+  title=new TextView(context);title.setText(R.string.local_files);title.setTextColor(Color.WHITE);title.setTextSize(20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence value,int start,int count,int after) {}public void onTextChanged(CharSequence value,int start,int before,int count) {filter();}public void afterTextChanged(android.text.Editable value) {}});
 
   up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams backParams=new LayoutParams(backSize,backSize);backParams.gravity=Gravity.LEFT;addView(up,backParams);up.setOnClickListener(v->back());
-  path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);addView(path);
+  path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);path.setTypeface(null,android.graphics.Typeface.BOLD);android.graphics.drawable.Drawable folderIcon=context.getDrawable(R.drawable.ic_folder);int folderSize=Math.round(24*getResources().getDisplayMetrics().density);folderIcon.setBounds(0,0,folderSize,folderSize);path.setCompoundDrawables(folderIcon,null,null,null);path.setCompoundDrawablePadding(Math.round(8*getResources().getDisplayMetrics().density));addView(path);
   message=new TextView(context);message.setTextColor(Color.LTGRAY);message.setVisibility(GONE);addView(message);
   list=new ListView(context);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {search.setText("");parents.addLast(entry);loadFolder();}else actions.play(entry);});

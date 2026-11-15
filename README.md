@@ -454,3 +454,7 @@ Kildemappe til lokale filer tilbyder nu “Vælg kildemappe” og “Ingen lokal
 ### 1.26.4
 
 Lokale filer, Pcloud og filfavoritter viser ingen play/pause-knap ved titlen. Den afspillende lyd- eller videofil markeres med en hvid prik yderst til højre. Tryk på den aktuelle fil ændrer ikke afspilningen; brug baren nederst. Mappe- og billedikoner bevares. Favoritstjernerne er fjernet fra alle fil- og mappelister. Hold på en fil eller mappe for at tilføje eller fjerne den fra favoritter.
+
+### 1.26.5
+
+Hold-menuer har grå baggrund. Sideoverskrifter i Streaming, Radio, Lokale filer og Pcloud samt mappetitler er fede. Mappetitler i Lokale filer og Pcloud har mappeikon til venstre.
