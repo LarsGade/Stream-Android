@@ -138,7 +138,7 @@ public final class MainActivity extends AppCompatActivity {
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
   localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(pcloudMode&&pcloudPanel!=null)pcloudPanel.back();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{
-   androidx.core.graphics.Insets bars=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+   androidx.core.graphics.Insets bars=insets.getInsetsIgnoringVisibility(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout());
    view.setPadding(bars.left+dp(12),bars.top+dp(8),bars.right+dp(12),bars.bottom+dp(8));return insets;
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
@@ -907,9 +907,9 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void hideFullscreenSystemBars() {
   if(!fullscreen) {
-   boolean active=playbackPanel!=null && playbackPanel.getVisibility()==View.VISIBLE && selected!=null;
-   if(active) {getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).hide(androidx.core.view.WindowInsetsCompat.Type.statusBars());}
-   else {getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.statusBars());}
+   getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+   androidx.core.view.WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).show(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+   if(content!=null)androidx.core.view.ViewCompat.requestApplyInsets(content);
    return;
   }
   androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);

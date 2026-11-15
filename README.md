@@ -462,3 +462,7 @@ Hold-menuer har grå baggrund. Sideoverskrifter i Streaming, Radio, Lokale filer
 ### 1.26.6
 
 Favoritkategoriens overskrift og dropdown-valg står med fed skrift. Hold-menuer i streaming- og radiofavoritter åbner straks ved langt tryk uden at vente på slip. Rækkefølgen kan ændres via Flyt op/Flyt ned i menuen.
+
+### 1.26.7
+
+Appens hovedvisning bevarer altid telefonens status- og navigationslinjer, også ved indlejret video. Headerens afstand beregnes ud fra systemlinjernes faste indryk samt skærmudskæringer, så logo, menu og cast ikke flytter op under statuslinjen. Fuldskærmsvideo kan stadig skjule systemlinjerne.
