@@ -20,18 +20,15 @@ public final class CarRadioCatalog {
  public CarRadioCatalog(Context context) {this(context,new LibraryStore(context),new RadioBrowser());}
  CarRadioCatalog(Context context,LibraryPersistence store,RadioBrowser browser) {this.context=context.getApplicationContext();this.store=store;this.browser=browser;}
  static synchronized void writeCache(Context context,List<RadioStation> stations) {
-  AtomicFile file=new AtomicFile(new File(context.getCacheDir(),"car_radio.json"));FileOutputStream out=null;
+  AtomicFile file=new AtomicFile(new File(context.getFilesDir(),"car_radio.json"));FileOutputStream out=null;
   try {JSONArray data=new JSONArray();for(RadioStation station:stations) data.put(station.toJson());out=file.startWrite();out.write(data.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));file.finishWrite(out);} catch(Exception e) {if(out!=null) file.failWrite(out);}
  }
- private List<RadioStation> danish() throws Exception {
-  File path=new File(context.getCacheDir(),"car_radio.json");List<RadioStation> cached=new ArrayList<>();
-  try(InputStream in=new AtomicFile(path).openRead();ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
-   byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1) bytes.write(buffer,0,n);
-   JSONArray values=new JSONArray(bytes.toString("UTF-8"));for(int i=0;i<values.length();i++) cached.add(RadioStation.fromJson(values.getJSONObject(i)));
-  } catch(Exception ignored) { }
-  if(!cached.isEmpty() && System.currentTimeMillis()-path.lastModified()<30*60*1000) return remember(cached);
-  try {List<RadioStation> fresh=browser.loadDanish();writeCache(context,fresh);return remember(fresh);} catch(Exception e) {if(!cached.isEmpty()) return remember(cached);throw e;}
+ static synchronized List<RadioStation> readCache(Context context){
+  File path=new File(context.getFilesDir(),"car_radio.json");if(!path.exists())path=new File(context.getCacheDir(),"car_radio.json");List<RadioStation> cached=new ArrayList<>();
+  try(InputStream in=new AtomicFile(path).openRead();ByteArrayOutputStream bytes=new ByteArrayOutputStream()){byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)bytes.write(buffer,0,n);JSONArray values=new JSONArray(bytes.toString("UTF-8"));for(int i=0;i<values.length();i++)cached.add(RadioStation.fromJson(values.getJSONObject(i)));}catch(Exception ignored){}
+  return cached;
  }
+ private List<RadioStation> danish() throws Exception {return remember(readCache(context));}
  private List<RadioStation> remember(List<RadioStation> stations) {for(RadioStation station:stations) known.put(PREFIX+station.id,station);return stations;}
  public List<RadioStation> favorites() throws Exception {return remember(new ArrayList<>(store.load().radioFavorites));}
  public RadioStation known(String id) {return known.get(id);}

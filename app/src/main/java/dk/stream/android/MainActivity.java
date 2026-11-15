@@ -233,11 +233,7 @@ public final class MainActivity extends AppCompatActivity {
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
   catch(Exception e) { castButton.setVisibility(View.GONE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
-  else if(!favoritesMode) {
-   Library.Source last=library.findSource(library.lastSourceId);
-   if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);
-   if(last!=null) loadSource(last);
-  }
+  restoreCatalogs();
   restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
  }
  @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
@@ -539,7 +535,7 @@ public final class MainActivity extends AppCompatActivity {
   minimizeVideo();
   if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoriteTab(library.favoritesCurrentTab);return;}
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
-  if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);if(last!=null) loadSource(last);}
+
  }
  private void chooseFirstKind() {
   if(favoritesMode && !library.favorites.isEmpty()) currentKind=library.favorites.get(0).channel.kind;
@@ -658,7 +654,7 @@ public final class MainActivity extends AppCompatActivity {
   epgWorker.execute(()->{
    EpgData cached=epgRepository.cached(guide);
    if(cached!=null) runOnUiThread(()->acceptGuide(guide,cached));
-   try {if(force||cached==null||!epgRepository.fresh(guide,System.currentTimeMillis())) {EpgData fetched=epgRepository.fetch(guide,System.currentTimeMillis());runOnUiThread(()->acceptGuide(guide,fetched));}}
+   try {if(force) {EpgData fetched=epgRepository.fetch(guide,System.currentTimeMillis());runOnUiThread(()->acceptGuide(guide,fetched));}}
    catch(Exception ignored) {if(force) runOnUiThread(()->{if(!isDestroyed()) Toast.makeText(this,getString(R.string.epg_fetch_failed,guide.name),Toast.LENGTH_LONG).show();});}
    finally {runOnUiThread(()->{if(!isDestroyed()) {epgPending.remove(guide.id);adapter.notifyDataSetChanged();Library.Guide current=library.findGuide(guide.id);if(current!=null && !current.url.equals(guide.url)) {epgAttempted.remove(guide.id);refreshGuide(current,true);}}});}
   });
@@ -703,7 +699,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void updateAll() {
   if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
-  updatingAll=true;
+  updatingAll=true;radioPanel.refreshStations();
   List<Library.Source> sources=new ArrayList<>(library.sources);List<Library.Guide> guides=new ArrayList<>(library.guides);
   TextView progress=text(getString(R.string.updating_all),14,Color.LTGRAY);progress.setPadding(dp(24),dp(16),dp(24),dp(16));
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.update_all).setView(progress).setCancelable(false).create();dialog.show();
@@ -711,7 +707,7 @@ public final class MainActivity extends AppCompatActivity {
    Map<String,Catalog> catalogs=new LinkedHashMap<>();Map<String,EpgData> schedules=new LinkedHashMap<>();List<String> failures=new ArrayList<>();int completed=0,total=sources.size()+guides.size();
    for(Library.Source source:sources) {
     final int step=++completed;runOnUiThread(()->{if(!isDestroyed()) progress.setText(getString(R.string.update_progress,step,total,source.name));});
-    try {catalogs.put(source.id,source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server)));} catch(Exception e) {failures.add(source.name);}
+    try {Catalog fetched=source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server));new CatalogStore(this).save(source,fetched);catalogs.put(source.id,fetched);} catch(Exception e) {failures.add(source.name);}
    }
    for(Library.Guide guide:guides) {
     final int step=++completed;runOnUiThread(()->{if(!isDestroyed()) progress.setText(getString(R.string.update_progress,step,total,guide.name));});
@@ -730,6 +726,10 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
+ private void restoreCatalogs(){
+  List<Library.Source> sources=new ArrayList<>(library.sources);
+  worker.execute(()->{Map<Library.Source,Catalog> saved=new LinkedHashMap<>();CatalogStore cache=new CatalogStore(this);for(Library.Source source:sources){Catalog data=cache.load(source);if(data!=null)saved.put(source,data);}runOnUiThread(()->{if(isDestroyed()||applyingSettings)return;for(Map.Entry<Library.Source,Catalog> entry:saved.entrySet()){Library.Source current=library.findSource(entry.getKey().id);if(current!=null&&CombinedCatalog.sameConnection(current,entry.getKey())&&!sourceCatalogs.containsKey(current.id)){sourceCatalogs.put(current.id,entry.getValue());cachedSourceConfigs.put(current.id,current);}}rebuildStreamingCatalog();chooseFirstKind();rebuildGroups();});});
+ }
  private void rebuildStreamingCatalog(){
   Set<String> keep=new HashSet<>();for(Library.Source source:library.sources){keep.add(source.id);if(!CombinedCatalog.sameConnection(source,cachedSourceConfigs.get(source.id)))sourceCatalogs.remove(source.id);}
   sourceCatalogs.keySet().retainAll(keep);cachedSourceConfigs.keySet().retainAll(keep);combinedCatalog=new CombinedCatalog(library.sources,sourceCatalogs);catalog=combinedCatalog.catalog;activeSource=null;
@@ -740,11 +740,11 @@ public final class MainActivity extends AppCompatActivity {
   rebuildStreamingCatalog();busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(R.string.loading_catalog);
   worker.execute(()->{
    Map<Library.Source,Catalog> loaded=new LinkedHashMap<>();List<String> failures=new ArrayList<>();Exception firstError=null;List<java.util.concurrent.Future<Catalog>> tasks=new ArrayList<>();
-   for(Library.Source item:requested)tasks.add(streamingWorker.submit(()->item.xtream?new XtreamClient(item.server,item.username,item.password).load():new Catalog(new PlaylistLoader().load(item.server))));
+   for(Library.Source item:requested)tasks.add(streamingWorker.submit(()->{Catalog fetched=item.xtream?new XtreamClient(item.server,item.username,item.password).load():new Catalog(new PlaylistLoader().load(item.server));new CatalogStore(this).save(item,fetched);return fetched;}));
    for(int i=0;i<requested.size();i++)try{loaded.put(requested.get(i),tasks.get(i).get());}catch(Exception failure){failures.add(requested.get(i).name);Throwable cause=failure instanceof java.util.concurrent.ExecutionException?failure.getCause():failure;if(firstError==null)firstError=cause instanceof Exception?(Exception)cause:new java.io.IOException("Source failed");if(failure instanceof InterruptedException){Thread.currentThread().interrupt();break;}}
    Exception error=firstError;runOnUiThread(()->{
     if(isDestroyed()||applyingSettings)return;
-    if(!loaded.isEmpty())changeLibrary(()->{for(Map.Entry<Library.Source,Catalog> entry:loaded.entrySet()){Library.Source saved=library.addSource(entry.getKey());sourceCatalogs.put(saved.id,entry.getValue());cachedSourceConfigs.put(saved.id,saved);library.refreshFavorites(saved.id,entry.getValue().items);}});
+    if(!loaded.isEmpty())changeLibrary(()->{for(Map.Entry<Library.Source,Catalog> entry:loaded.entrySet()){Library.Source saved=library.addSource(entry.getKey());sourceCatalogs.put(saved.id,entry.getValue());cachedSourceConfigs.put(saved.id,saved);Catalog snapshot=entry.getValue();worker.execute(()->new CatalogStore(this).save(saved,snapshot));library.refreshFavorites(saved.id,entry.getValue().items);}});
     rebuildStreamingCatalog();busy(false);if(!favoritesMode&&catalog.filter(currentKind,null,"").isEmpty()&&!catalog.items.isEmpty())chooseFirstKind();rebuildGroups();loadAssignedGuides(false);
     if(error!=null){if(catalog.items.isEmpty()&&!radioMode&&!localMode&&!pcloudMode&&!favoritesPage)showError(error);else Toast.makeText(this,getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures)),Toast.LENGTH_LONG).show();}
    });

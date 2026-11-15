@@ -14,7 +14,7 @@ public final class LibraryStore implements LibraryPersistence {
  private static final String ALIAS="StreamLibrary_v1";
  private final SharedPreferences preferences;
  public LibraryStore(Context context) { preferences=context.getSharedPreferences("stream_library",Context.MODE_PRIVATE); }
- private SecretKey key() throws Exception {
+ static synchronized SecretKey key() throws Exception {
   KeyStore keys=KeyStore.getInstance("AndroidKeyStore");keys.load(null);
   if(keys.containsAlias(ALIAS)) return (SecretKey)keys.getKey(ALIAS,null);
   KeyGenerator generator=KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES,"AndroidKeyStore");

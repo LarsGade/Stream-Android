@@ -35,6 +35,7 @@ public final class RadioPanel extends LinearLayout {
  public RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay) {this(context,library,save,beforePlay,new RadioBrowser());}
  RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay,RadioBrowser browser) {
   super(context);this.library=library;this.save=save;this.beforePlay=beforePlay;this.browser=browser;logos=LocalChannelLogos.load(context);setOrientation(VERTICAL);
+  worker.execute(()->{List<RadioStation> cached=CarRadioCatalog.readCache(context);main.post(()->{if(closed||loading||loaded)return;stations=cached;loaded=true;filter();});});
   title=text("",20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
@@ -58,7 +59,7 @@ public final class RadioPanel extends LinearLayout {
  }
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private TextView text(String value,int size) {TextView view=new TextView(getContext());view.setText(value);view.setTextSize(size);view.setTextColor(Color.WHITE);view.setPadding(dp(4),dp(6),dp(4),dp(6));return view;}
- public void open(boolean favorites) {list.cancelFavoriteGesture();this.favorites=favorites;search.setText("");filter();updatePlayback();if(!favorites && !loaded && !loading) load();}
+ public void open(boolean favorites) {list.cancelFavoriteGesture();this.favorites=favorites;search.setText("");filter();updatePlayback();}
  public void refreshStations(){load();}
  private void load() {
   if(loading) return;loading=true;filter();
