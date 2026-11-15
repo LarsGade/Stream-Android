@@ -11,7 +11,6 @@ public final class RadioWidgetConfigureActivity extends AppCompatActivity {
   super.onCreate(state);setResult(RESULT_CANCELED);
   int widgetId=getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,AppWidgetManager.INVALID_APPWIDGET_ID);
   if(widgetId==AppWidgetManager.INVALID_APPWIDGET_ID) {finish();return;}
-  if(RadioWideWidgetProvider.owns(this,widgetId)&&RadioWidgetProvider.favoriteId(this,widgetId)!=null){RadioWideWidgetProvider.safeUpdate(this,AppWidgetManager.getInstance(this),widgetId);setResult(RESULT_OK,new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId));finish();return;}
   try {
    Library library=new LibraryStore(this).load();
    if(library.radioFavorites.isEmpty()) {new AlertDialog.Builder(this).setTitle(R.string.radio_widget).setMessage(R.string.radio_favorites_empty).setPositiveButton(android.R.string.ok,(d,w)->finish()).setOnCancelListener(d->finish()).show();return;}

@@ -405,3 +405,7 @@ Tryk på baggrund, logo eller play/pause styrer nu samme valgte station. Kanalva
 
 ### 1.25.6 – Næsten sort widgetbaggrund
 Baggrunden på 2 × 1-widgetten er ændret til #0D0D0D efter den nye farvereference.
+
+
+### 1.25.7 – Vælg radiofavorit ved tilføjelse
+Kanalvælgeren vises altid ved tilføjelse af en radio-widget, også hvis telefonen genbruger et widget-id. Vælgerens titel angiver, at stationen vælges fra favoritter. Den brede widgets trykflader styrer fortsat kun play/pause; kanalskift kræver en ny widget.
