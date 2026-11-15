@@ -482,3 +482,7 @@ Medielister bruger mørke rækker og grå separatorer i Streaming, Radio, Lokale
 ### 1.26.11
 
 Den afspillende række vises med fed tekst i Streaming, Radio, Lokale filer, Pcloud og favoritter. Fed skrift følger samme afspilningsstatus som den hvide prik og fjernes igen ved pause, stop eller skift til en anden række.
+
+### 1.26.12
+
+Logoet i bundbaren er 25 % større. Live- og play/pause-ikoner vises i 36 dp i stedet for 24 dp (50 % større), med samme berøringsområder og uændret barhøjde.
