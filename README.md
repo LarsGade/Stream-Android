@@ -381,3 +381,7 @@ Lokale er omdøbt til Lokale filer i navigation, sideoverskrift, favoritkategori
 ### 1.25.0 – Ekstra radio-widget 2 × 1
 Der er nu en ekstra widget, Stream radio 2 × 1, med stationslogo til venstre og en fast play/pause-knap til højre på mørkegrå baggrund med afrundede hjørner. Vælg en station fra radiofavoritter, når widgetten tilføjes. Tryk på logoet for at skifte den valgte station. Knappen til højre pauser/genoptager den valgte station eller starter den, hvis en anden station spiller. Den eksisterende 1 × 1-widget bevares.
 Logoer hentes fra appens stationslogoer eller stationens billedadresse, indlæses i begrænset størrelse og opdateres separat, så et sent billede ikke ændrer play/pause-tilstanden. Størrelsen er deklareret som 2 kolonner og 1 række med en minWidth/minHeight-fallback til Android 9. Widgetplacering og betjening skal stadig afprøves på en fysisk launcher.
+
+
+### 1.25.1 – Ens størrelse i 2 × 1-widget
+Stationslogo og play/pause-knap har nu hvert sit centrerede felt på 48 × 48 dp i lige brede kolonner. Bag knappen er en mørkegrå cirkel med diameter 48 dp, svarende til logofeltets størrelse.
