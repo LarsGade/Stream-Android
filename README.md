@@ -498,3 +498,7 @@ Opdatér radiostationer er flyttet fra radiosiden til burgermenuens Indstillinge
 ### 1.26.15
 
 I den fulde lydafspiller er play/pause og stop forstørret fra 24 til 48 dp (100 % større). Live-ikonet er forstørret fra 24 til 36 dp (50 % større). Bundbarens ikoner er uændrede.
+
+### 1.26.16
+
+Lokale filer med Anders og Anders, Bæltestedet, r8dio eller Den Korte Radioavis i navnet bruger de tilhørende medfølgende logoer. Logoerne vises i fil- og favoritlister, bundbaren, fuld lydafspiller og den lokale mediesessions metadata.

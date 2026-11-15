@@ -76,7 +76,7 @@ public final class LocalAudioService extends MediaSessionService {
     if(entry.image())throw new IllegalArgumentException("Use image viewer");
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
     this.queue=queue.entries;pendingQueue=null;pendingToken=null;stopService(new Intent(this,RadioPlaybackService.class));
-    List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){items.add(item(file));network|=PcloudDocument.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
+    List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);byte[] cover=LocalFileArtwork.bytes(this,file);if(cover!=null)media=media.buildUpon().setMediaMetadata(media.mediaMetadata.buildUpon().setArtworkData(cover,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build();items.add(media);network|=PcloudDocument.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
     player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",0)));
     // Establish foreground immediately, before asynchronous file/decoder preparation.
     PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);

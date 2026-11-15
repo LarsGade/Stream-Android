@@ -61,6 +61,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
    if(model==null&&metadata!=null&&!metadata.getImages().isEmpty())model=metadata.getImages().get(0).getUrl();
   }else if(local&&player!=null){MediaMetadata metadata=player.getMediaMetadata();if(metadata.artworkData!=null&&metadata.artworkData.length>0)model=metadata.artworkData;else if(metadata.artworkUri!=null)model=metadata.artworkUri;}
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null)model=PlaybackArtwork.radioModel(this,station);}
+  String localCover=local?LocalFileArtwork.asset(LocalAudioService.current()):null;if(remote==null&&localCover!=null)model=localCover;
   artwork.setContentDescription("Billede til "+title.getText());
   if(java.util.Objects.equals(model,artworkModel))return;
   artworkModel=model;com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?android.view.View.GONE:android.view.View.VISIBLE);if(model==null)return;
