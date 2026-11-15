@@ -409,3 +409,7 @@ Baggrunden på 2 × 1-widgetten er ændret til #0D0D0D efter den nye farverefere
 
 ### 1.25.7 – Vælg radiofavorit ved tilføjelse
 Kanalvælgeren vises altid ved tilføjelse af en radio-widget, også hvis telefonen genbruger et widget-id. Vælgerens titel angiver, at stationen vælges fra favoritter. Den brede widgets trykflader styrer fortsat kun play/pause; kanalskift kræver en ny widget.
+
+
+### 1.25.8 – Lysere mørkegrå widgetbaggrund
+Baggrunden på 2 × 1-widgetten er ændret fra #0D0D0D til #202020 efter den nye farvereference.
