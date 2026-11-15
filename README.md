@@ -438,3 +438,7 @@ Play og stop på den brede radio-widget har nu let afrundede hjørner. Ikonernes
 ### 1.26.0 – Samlede streamingkilder og P5/P6-logoer
 Alle tilføjede streamingkilder indlæses i en samlet liste og fælles TV-/Film-/Seriegrupper uden kildevælger. Hver række beholder sin kildeidentitet, så favoritter, TV-guide, logins og serieafsnit fortsat knyttes til den rette kilde. Kilder hentes parallelt med højst tre samtidige forespørgsler; fejl i én kilde fjerner ikke de øvriges indhold. Allerede indlæste data fra samme uændrede forbindelse kan bevares ved en opdateringsfejl.
 Kanaler med P5 eller P6 i navnet bruger nu henholdsvis P5.png og P6.png fra appens logoer, også for navnevarianter og i radioafspiller, radio-lister, widgets og Android Auto. Kildemappens navn vises ikke længere under søgefeltet i roden af Lokale filer; overskriften er kun Lokale filer.
+
+
+### 1.26.1 – Samme mappestruktur som kildemappen
+Lokale filer viser nu kun den aktuelle mappes direkte undermapper og mediefiler. Indhold fra dybere undermapper blandes ikke ind i listen. Åbn en undermappe for at se dens indhold; tilbage går stadig højst til den valgte kildemappe.
