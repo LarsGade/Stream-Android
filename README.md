@@ -534,3 +534,7 @@ Favoritter-knappen er hvid med fed sort tekst. Alle dropdown-menuer har samme gr
 ### 1.27.5
 
 Genåbning af gemte kataloger har sin egen arbejdskø, så Opdatér alt ikke venter bag den. Manuel streamingopdatering afbryder en igangværende gendannelse, og forældede resultater kan ikke overskrive opdateringen. Dekryptering læser 64 KiB ad gangen i stedet for mange små Android Keystore-kald og verificerer krypteringens integritet.
+
+### 1.27.6
+
+Favoritter-knappen i burgermenuen er blå som de øvrige hovedknapper, med fed hvid tekst i 25 % større skriftstørrelse.
