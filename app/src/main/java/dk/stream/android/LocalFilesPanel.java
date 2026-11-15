@@ -65,7 +65,11 @@ public final class LocalFilesPanel extends LinearLayout {
    LocalMedia entry=getItem(p);LinearLayout row=new LinearLayout(getContext());row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);row.setGravity(Gravity.CENTER_VERTICAL);int pad=Math.round(8*getResources().getDisplayMetrics().density);row.setPadding(pad,pad,pad,pad);
    if(entry.folder||entry.image()){ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:R.drawable.ic_image);icon.setContentDescription(entry.folder?"Åbn mappe":"Vis billede");row.addView(icon,new LayoutParams(pad*5,pad*5));}
    TextView name=new TextView(getContext());name.setText(search.getText().toString().trim().isEmpty()?entry.displayName():entry.displayFileName());name.setTextColor(Color.WHITE);name.setTextSize(16);name.setPadding(pad,0,pad,0);row.addView(name,new LayoutParams(0,-2,1));
-   if(!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri))){TextView indicator=new TextView(getContext());indicator.setText("●");indicator.setTextColor(Color.WHITE);indicator.setTextSize(16);indicator.setGravity(Gravity.CENTER);indicator.setContentDescription("Afspilles");row.addView(indicator,new LayoutParams(pad*4,pad*5));}return row;
+   View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri)));
+   name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);
+   android.graphics.Paint.FontMetricsInt metrics=name.getPaint().getFontMetricsInt();int textHeight=name.getLineHeight()*2+metrics.bottom-metrics.descent+metrics.ascent-metrics.top;
+   int rowHeight=Math.max(Math.round(64*getResources().getDisplayMetrics().density),textHeight+pad*2);row.setLayoutParams(new AbsListView.LayoutParams(-1,rowHeight));
+   return row;
   }
  }
 }

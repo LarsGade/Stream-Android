@@ -466,3 +466,7 @@ Favoritkategoriens overskrift og dropdown-valg står med fed skrift. Hold-menuer
 ### 1.26.7
 
 Appens hovedvisning bevarer altid telefonens status- og navigationslinjer, også ved indlejret video. Headerens afstand beregnes ud fra systemlinjernes faste indryk samt skærmudskæringer, så logo, menu og cast ikke flytter op under statuslinjen. Fuldskærmsvideo kan stadig skjule systemlinjerne.
+
+### 1.26.8
+
+Afspilningsprikken i lokale filer, Pcloud og filfavoritter bruger samme 16 dp markør som streaming- og radiofavoritter. Alle fil- og mapperækker har ens højde med plads til to tekstlinjer og lodret centreret tekst; lange titler afkortes efter to linjer. Rækkehøjden tager højde for større systemtekst.
