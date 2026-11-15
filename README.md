@@ -273,3 +273,7 @@ Logoets bredde og højde i appikonet er øget med 5 %. Den mørkegrå baggrund b
 
 ### 1.19.6 – Logo yderligere 5 % større
 Logoets bredde og højde i appikonet er øget med yderligere 5 % i forhold til 1.19.5.
+
+
+### 1.19.7 – Logo yderligere 10 % større
+Logoets bredde og højde i appikonet er øget med yderligere 10 % i forhold til 1.19.6. Baggrunden bevares.
