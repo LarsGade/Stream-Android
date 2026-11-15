@@ -361,3 +361,7 @@ Knappen Opdatér radio hedder nu Opdatér radiostationer.
 
 ### 1.23.4 – Lokale-overskrift over søgning
 Lokale-siden har en fast overskrift “Lokale” over søgefeltet som på radiosiden. Den aktuelle mappesti vises stadig ved mappenavigation. Favoritter beholder kategori-dropdown uden en ekstra Lokale-overskrift.
+
+
+### 1.23.5 – Pcloud-overskrift over søgning
+Pcloud-siden har nu en fast overskrift over søgefeltet, som Lokale og Radio. Mappestien vises fortsat ved navigation i undermapper.
