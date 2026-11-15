@@ -393,3 +393,7 @@ Logo og den cirkulære play/pause-knap i 2 × 1-widgetten er øget fra 48 dp til
 
 ### 1.25.3 – Afrundet firkant bag widget-knappen
 Baggrunden bag play/pause i 2 × 1-widgetten er nu en mørkegrå firkant med afrundede hjørner. Størrelsen bevares.
+
+
+### 1.25.4 – Mørkere widgetbaggrund
+Hele 2 × 1-widgettens baggrund er nu #202020, tilpasset den mørke referencefarve. Afrundede hjørner og knapbaggrund bevares.
