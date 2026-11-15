@@ -429,3 +429,7 @@ Play- og stopikonets størrelse på 2 × 1-widgetten er reduceret med 25 % i for
 
 ### 1.25.12 – Play/stop yderligere 25 % mindre
 Play- og stopikonets størrelse på 2 × 1-widgetten er reduceret med yderligere 25 % i forhold til 1.25.11.
+
+
+### 1.25.13 – Let afrundede widget-ikoner
+Play og stop på den brede radio-widget har nu let afrundede hjørner. Ikonernes felter og farve bevares.
