@@ -269,3 +269,7 @@ Appikonet har nu en mørkegrå lodret overgang (#2C2C2C → #1A1A1A), tilpasset 
 
 ### 1.19.5 – Logo 5 % større
 Logoets bredde og højde i appikonet er øget med 5 %. Den mørkegrå baggrund bevares.
+
+
+### 1.19.6 – Logo yderligere 5 % større
+Logoets bredde og højde i appikonet er øget med yderligere 5 % i forhold til 1.19.5.

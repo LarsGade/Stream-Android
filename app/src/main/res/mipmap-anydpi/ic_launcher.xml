@@ -1,1 +1,1 @@
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="@drawable/launcher_background_legacy"/><item><inset android:drawable="@drawable/brand_icon" android:inset="15.98%"/></item></layer-list>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="@drawable/launcher_background_legacy"/><item><inset android:drawable="@drawable/brand_icon" android:inset="14.279%"/></item></layer-list>
