@@ -506,3 +506,7 @@ Lokale filer med Anders og Anders, Bæltestedet, r8dio eller Den Korte Radioavis
 ### 1.26.17
 
 Live-knappen i den fulde lydafspiller er flyttet til venstre kant og gjort 20 % mindre. Play/pause og stop er centreret som en gruppe uafhængigt af live-knappens synlighed.
+
+### 1.26.18
+
+Live-knappen i den fulde lydafspiller er flyttet til højre kant. Play/pause og stop forbliver centreret.

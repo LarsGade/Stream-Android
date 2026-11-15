@@ -37,7 +37,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
    public void onStartTrackingTouch(SeekBar bar){tracking=true;}public void onStopTrackingTouch(SeekBar bar){tracking=false;}
   });
   FrameLayout controlBar=new FrameLayout(this);int controlHeight=Math.round(64*getResources().getDisplayMetrics().density);root.addView(controlBar,new LinearLayout.LayoutParams(-1,controlHeight));
-  LinearLayout liveControls=new LinearLayout(this);controlBar.addView(liveControls,new FrameLayout.LayoutParams(-2,-1,Gravity.LEFT|Gravity.CENTER_VERTICAL));
+  LinearLayout liveControls=new LinearLayout(this);controlBar.addView(liveControls,new FrameLayout.LayoutParams(-2,-1,Gravity.RIGHT|Gravity.CENTER_VERTICAL));
   LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER);controlBar.addView(controls,new FrameLayout.LayoutParams(-2,-1,Gravity.CENTER));
   live=icon(liveControls,R.drawable.ic_live,"Gå til live");live.setVisibility(android.view.View.GONE);live.setOnClickListener(view->{RemoteMediaClient remote=remote();if(remote!=null)LivePlayback.goLive(remote);else if(!local)startService(RadioPlaybackService.internalIntent(this,RadioPlaybackService.LIVE));refresh();});
   toggle=icon(controls,R.drawable.ic_play,"Afspil");toggle.setOnClickListener(view->{RemoteMediaClient remote=remote();if(remote!=null)CastPlayback.toggle(this);else {Player player=player();if(player!=null){if(player.getPlaybackState()==Player.STATE_ENDED){player.seekTo(0);player.play();}else if(player.getPlayWhenReady())player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE)player.prepare();player.play();}}}refresh();});
