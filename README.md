@@ -265,3 +265,7 @@ Appen leverer nu et almindeligt gennemsigtigt ikon uden adaptivt baggrundslag, s
 
 ### 1.19.4 – Mørk ikonbaggrund som referencen
 Appikonet har nu en mørkegrå lodret overgang (#2C2C2C → #1A1A1A), tilpasset Stremio-ikonet på brugerens skærmbillede. Android 8+ bruger launcherens adaptive maske, ældre launchere får en afrundet baggrund. Logoets størrelse er bevaret.
+
+
+### 1.19.5 – Logo 5 % større
+Logoets bredde og højde i appikonet er øget med 5 %. Den mørkegrå baggrund bevares.
