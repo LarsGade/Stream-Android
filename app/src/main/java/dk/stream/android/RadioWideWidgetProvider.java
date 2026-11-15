@@ -44,7 +44,7 @@ public final class RadioWideWidgetProvider extends AppWidgetProvider {
  private static void clearRequest(Context context,int id){CustomTarget<Bitmap> target=requests.remove(id);requestKeys.remove(id);if(target!=null)Glide.with(context.getApplicationContext()).clear(target);}
  static RemoteViews views(Context context,int id,RadioStation station,Bitmap image){
   RemoteViews views=new RemoteViews(context.getPackageName(),R.layout.radio_widget_wide);views.setImageViewResource(R.id.widget_logo,R.drawable.ic_channel);if(image!=null)views.setImageViewBitmap(R.id.widget_logo,image);
-  boolean playing=station!=null&&RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_stop:R.drawable.ic_play);
+  boolean playing=station!=null&&RadioPlaybackService.playing(station.id);views.setImageViewResource(R.id.widget_play,playing?R.drawable.ic_widget_stop:R.drawable.ic_widget_play);
   views.setContentDescription(R.id.widget_logo,station==null?context.getString(R.string.radio_favorites_empty):station.displayName());views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.stop_action:R.string.play_action));
   PendingIntent action=null;
   if(station!=null){Intent toggle=RadioPlaybackService.internalIntent(context,RadioPlaybackService.WIDE_WIDGET_TOGGLE).setData(Uri.parse("stream://radio-wide/play/"+id)).putExtra("favoriteId",station.id).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,id);action=android.os.Build.VERSION.SDK_INT>=26?PendingIntent.getForegroundService(context,id,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE):PendingIntent.getService(context,id,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}

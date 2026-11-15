@@ -417,3 +417,7 @@ Baggrunden på 2 × 1-widgetten er ændret fra #0D0D0D til #202020 efter den nye
 
 ### 1.25.9 – Play/stop på begge radio-widgets
 Begge widgettyper bruger nu fuldt stop, når den valgte station spiller. Stop rydder kø og station, stopper tjenesten og fjerner radiomeddelelsen. Den brede widget viser et stopikon under afspilning. Afspillerens almindelige pausefunktion inde i appen og meddelelsen bevares.
+
+
+### 1.25.10 – Store play/stop-ikoner uden knapbaggrund
+Den brede widgets play/stop-knap har nu gennemsigtig baggrund og større symboler uden indvendig padding. Widgettens samlede baggrund og logo bevares.
