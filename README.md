@@ -530,3 +530,7 @@ Retter langsom lagring, som kunne få streamingopdatering til at blive stående 
 ### 1.27.4
 
 Favoritter-knappen er hvid med fed sort tekst. Alle dropdown-menuer har samme grå baggrund som hold-menuerne. Logoer vises med deres oprindelige proportioner uden kvadratisk eller rund beskæring i lister, afspillere og widgets.
+
+### 1.27.5
+
+Genåbning af gemte kataloger har sin egen arbejdskø, så Opdatér alt ikke venter bag den. Manuel streamingopdatering afbryder en igangværende gendannelse, og forældede resultater kan ikke overskrive opdateringen. Dekryptering læser 64 KiB ad gangen i stedet for mange små Android Keystore-kald og verificerer krypteringens integritet.

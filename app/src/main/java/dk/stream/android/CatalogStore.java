@@ -17,7 +17,7 @@ final class CatalogStore {
   try(InputStream raw=file(source).openRead()){
    int length=raw.read();if(length!=12)throw new IOException("Invalid encryption header");byte[] iv=new byte[length];new DataInputStream(raw).readFully(iv);
    javax.crypto.Cipher cipher=javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");cipher.init(javax.crypto.Cipher.DECRYPT_MODE,LibraryStore.key(),new javax.crypto.spec.GCMParameterSpec(128,iv));
-   try(BufferedInputStream input=new BufferedInputStream(new javax.crypto.CipherInputStream(raw,cipher))){
+   try(BufferedInputStream input=new BufferedInputStream(new BlockCipherInputStream(raw,cipher))){
     input.mark(4);int magic=new DataInputStream(input).readInt();input.reset();if(magic==CatalogBinary.MAGIC)return CatalogBinary.read(input,source);
     // Migrate snapshots written by 1.27.0 without downloading the source again.
     ByteArrayOutputStream output=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int n;while((n=input.read(buffer))!=-1)output.write(buffer,0,n);return CatalogSnapshot.decode(source,new String(output.toByteArray(),StandardCharsets.UTF_8));

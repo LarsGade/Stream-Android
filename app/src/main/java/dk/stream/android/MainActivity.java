@@ -27,6 +27,8 @@ import java.util.concurrent.*;
 @androidx.media3.common.util.UnstableApi
 public final class MainActivity extends AppCompatActivity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
+ private final ExecutorService catalogReader=Executors.newSingleThreadExecutor();
+ private java.util.concurrent.Future<?> catalogRestoreTask;private int catalogRestoreGeneration;
  private final ExecutorService epgWorker=Executors.newSingleThreadExecutor();
  private EpgRepository epgRepository;
  private final Map<String,EpgData> epgData=new HashMap<>();
@@ -700,7 +702,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void updateAll() {
   if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
-  updatingAll=true;radioPanel.refreshStations();
+  cancelCatalogRestore();updatingAll=true;radioPanel.refreshStations();
   List<Library.Source> sources=new ArrayList<>(library.sources);List<Library.Guide> guides=new ArrayList<>(library.guides);
   TextView progress=text(getString(R.string.updating_all),14,Color.LTGRAY);progress.setPadding(dp(24),dp(16),dp(24),dp(16));
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.update_all).setView(progress).setCancelable(false).create();dialog.show();
@@ -727,16 +729,17 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
+ private void cancelCatalogRestore(){catalogRestoreGeneration++;if(catalogRestoreTask!=null)catalogRestoreTask.cancel(true);}
  private void restoreCatalogs(){
   List<Library.Source> sources=new ArrayList<>(library.sources);
-  worker.execute(()->{Map<Library.Source,Catalog> saved=new LinkedHashMap<>();CatalogStore cache=new CatalogStore(this);for(Library.Source source:sources){Catalog data=cache.load(source);if(data!=null)saved.put(source,data);}runOnUiThread(()->{if(isDestroyed()||applyingSettings)return;for(Map.Entry<Library.Source,Catalog> entry:saved.entrySet()){Library.Source current=library.findSource(entry.getKey().id);if(current!=null&&CombinedCatalog.sameConnection(current,entry.getKey())&&!sourceCatalogs.containsKey(current.id)){sourceCatalogs.put(current.id,entry.getValue());cachedSourceConfigs.put(current.id,current);}}rebuildStreamingCatalog();chooseFirstKind();rebuildGroups();});});
+  int restoreGeneration=++catalogRestoreGeneration;catalogRestoreTask=catalogReader.submit(()->{Map<Library.Source,Catalog> saved=new LinkedHashMap<>();CatalogStore cache=new CatalogStore(this);for(Library.Source source:sources){if(Thread.currentThread().isInterrupted())return;Catalog data=cache.load(source);if(data!=null)saved.put(source,data);}runOnUiThread(()->{if(isDestroyed()||applyingSettings||restoreGeneration!=catalogRestoreGeneration)return;for(Map.Entry<Library.Source,Catalog> entry:saved.entrySet()){Library.Source current=library.findSource(entry.getKey().id);if(current!=null&&CombinedCatalog.sameConnection(current,entry.getKey())&&!sourceCatalogs.containsKey(current.id)){sourceCatalogs.put(current.id,entry.getValue());cachedSourceConfigs.put(current.id,current);}}rebuildStreamingCatalog();chooseFirstKind();rebuildGroups();});});
  }
  private void rebuildStreamingCatalog(){
   Set<String> keep=new HashSet<>();for(Library.Source source:library.sources){keep.add(source.id);if(!CombinedCatalog.sameConnection(source,cachedSourceConfigs.get(source.id)))sourceCatalogs.remove(source.id);}
   sourceCatalogs.keySet().retainAll(keep);cachedSourceConfigs.keySet().retainAll(keep);combinedCatalog=new CombinedCatalog(library.sources,sourceCatalogs);catalog=combinedCatalog.catalog;activeSource=null;
  }
  private void loadSource(Library.Source source) {
-  if(loading)return;minimizeVideo();pcloudMode=false;pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;
+  if(loading||updatingAll)return;cancelCatalogRestore();minimizeVideo();pcloudMode=false;pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;
   List<Library.Source> requested=new ArrayList<>(library.sources);int replace=-1;for(int i=0;i<requested.size();i++)if(requested.get(i).id.equals(source.id)||CombinedCatalog.sameConnection(requested.get(i),source)){replace=i;break;}if(replace<0)requested.add(source);else requested.set(replace,source);
   rebuildStreamingCatalog();busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(R.string.loading_catalog);
   worker.execute(()->{
@@ -935,5 +938,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }
