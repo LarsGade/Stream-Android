@@ -18,6 +18,7 @@ final class DismissibleLocalNotifications implements MediaNotification.Provider 
   Notification notification;
   if(Build.VERSION.SDK_INT>=24)notification=Notification.Builder.recoverBuilder(service,original.notification).setOngoing(session.getPlayer().getPlayWhenReady()).setDeleteIntent(stop).build();
   else {PendingIntent toggle=PendingIntent.getService(service,31,LocalAudioService.command(service,LocalAudioService.TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);notification=PlaybackNotification.create(service,"stream_local",session,toggle,stop);}
+  if(!session.getPlayer().getPlayWhenReady())notification.flags&=~(Notification.FLAG_ONGOING_EVENT|Notification.FLAG_FOREGROUND_SERVICE|Notification.FLAG_NO_CLEAR);
   return new MediaNotification(original.notificationId,notification);
  }
  @Override public boolean handleCustomCommand(MediaSession session,String action,android.os.Bundle extras){return delegate.handleCustomCommand(session,action,extras);}

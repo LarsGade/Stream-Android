@@ -51,7 +51,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   });
   sessionPlayer=new RadioSessionPlayer(player,this::foreground);
   carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog,()->onStartCommand(internalIntent(this,LIVE),0,0));
-  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(java.util.Collections.singletonList(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_live).setDisplayName("Live").setSessionCommand(new SessionCommand(LIVE,android.os.Bundle.EMPTY)).build())).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class).putExtra("openRadio",true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
+  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(CarRadioCallback.liveButtons()).setMediaButtonPreferences(CarRadioCallback.liveButtons()).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,AudioPlayerActivity.class).putExtra("local",false).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
   player.addListener(new Player.Listener() {
    @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;if(!ready)refreshPausedNotification();}
    @Override public void onPlaybackStateChanged(int state) {if(state==Player.STATE_IDLE) behindLive=false;}

@@ -335,3 +335,7 @@ Radiomeddelelsen har desuden en live-cirkel, der sender samme Live-kommando som 
 
 ### 1.22.2 – Live i systemafspiller og swipe straks efter pause
 Radiomediesessionen registrerer Live som en rigtig custom session command med live-cirkel, så systemafspillere, der bruger sessionsknapper frem for meddelelsens actions, også kan vise den. Ved pause fjernes foreground-låsningen med det samme, og en ny pauset meddelelse indsættes uden ongoing-flag, mens afspilning og resume bevares. Det gælder radio samt lokale/Pcloud-filer. Swipe sender fortsat stop og rydder køen. Den konkrete visning og swipe skal efterprøves på brugerens telefon, da Android/Samsung SystemUI ikke kan afprøves i dette miljø.
+
+
+### 1.22.3 – Stabil pause, Live-plads og åbn fuld afspiller
+Pause opdaterer samme meddelelse uden cancel/remove eller genindsættelse. Foreground-laget frakobles, og ongoing/foreground/no-clear-flag ryddes på den pausede meddelelse. Radio registrerer Live både som custom layout og som media-button preference med en konkret knapplads; meningsløse forrige/næste-/spoleknapper for radiostationen fjernes fra systemcontrollerens kommandoer, så Live kan få plads. Tryk på radiomeddelelsen åbner fuld lydafspiller; lokal video og streamingmeddelelser beder om fuldskærmsvisning. SystemUI-visning og swipe er endnu ikke verificeret på en fysisk telefon.

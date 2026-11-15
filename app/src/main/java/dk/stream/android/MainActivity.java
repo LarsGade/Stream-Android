@@ -228,9 +228,10 @@ public final class MainActivity extends AppCompatActivity {
    if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);
    if(last!=null) loadSource(last);
   }
-  restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);
+  restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
  }
- @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);}
+ @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
+ private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
  private TextView text(String value,int size,int color) {TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setTextColor(color);return view;}
@@ -772,7 +773,7 @@ public final class MainActivity extends AppCompatActivity {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
     player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
-    videoSession=new androidx.media3.session.MediaSession.Builder(this,player).setId("stream-video").setSessionActivity(android.app.PendingIntent.getActivity(this,10,new android.content.Intent(this,MainActivity.class).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE)).build();
+    videoSession=new androidx.media3.session.MediaSession.Builder(this,player).setId("stream-video").setSessionActivity(android.app.PendingIntent.getActivity(this,10,new android.content.Intent(this,MainActivity.class).putExtra("openFullPlayer",true).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE)).build();
     player.addListener(new Player.Listener() {
      @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
      @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateVideoNotification();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}

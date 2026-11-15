@@ -15,9 +15,13 @@ public final class CarRadioCallback implements MediaLibrarySession.Callback {
  private final ListeningExecutorService worker=MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newSingleThreadExecutor());
  public CarRadioCallback(CarRadioCatalog catalog) {this(catalog,null);}
  public CarRadioCallback(CarRadioCatalog catalog,Runnable liveAction){this.catalog=catalog;this.liveAction=liveAction;}
+ public static java.util.List<CommandButton> liveButtons(){return java.util.Collections.singletonList(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_live).setDisplayName("Live").setSessionCommand(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).setSlots(CommandButton.SLOT_FORWARD,CommandButton.SLOT_BACK).build());}
  public void close() {worker.shutdownNow();}
  @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {
-  SessionCommands commands=MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS;if(liveAction!=null)commands=commands.buildUpon().add(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).build();return MediaSession.ConnectionResult.accept(commands,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
+  if(liveAction==null)return MediaSession.ConnectionResult.accept(MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
+  SessionCommands commands=MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).build();
+  Player.Commands playerCommands=MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon().remove(Player.COMMAND_SEEK_TO_NEXT).remove(Player.COMMAND_SEEK_TO_PREVIOUS).remove(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM).remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM).remove(Player.COMMAND_SEEK_BACK).remove(Player.COMMAND_SEEK_FORWARD).build();
+  return new MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(commands).setAvailablePlayerCommands(playerCommands).setCustomLayout(liveButtons()).setMediaButtonPreferences(liveButtons()).build();
  }
  @Override public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,MediaSession.ControllerInfo controller,SessionCommand command,Bundle args){
   if(liveAction!=null&&RadioPlaybackService.LIVE.equals(command.customAction)){liveAction.run();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}

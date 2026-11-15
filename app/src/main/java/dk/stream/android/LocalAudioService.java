@@ -52,7 +52,7 @@ public final class LocalAudioService extends MediaSessionService {
     if(item==null) {current=null;changed();return;}
     android.os.Bundle extras=item.mediaMetadata.extras;
     current=new LocalMedia(item.mediaId,extras==null?String.valueOf(item.mediaMetadata.title):extras.getString("name",String.valueOf(item.mediaMetadata.title)),extras==null?"":extras.getString("mime",""),false);
-    Intent screen=current.audio()?new Intent(LocalAudioService.this,AudioPlayerActivity.class).putExtra("local",true):new Intent(LocalAudioService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    Intent screen=(current.audio()?new Intent(LocalAudioService.this,AudioPlayerActivity.class).putExtra("local",true):new Intent(LocalAudioService.this,MainActivity.class).putExtra("openFullPlayer",true)).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
     session.setSessionActivity(PendingIntent.getActivity(LocalAudioService.this,30,screen,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));changed();
    }
    @Override public void onEvents(Player source,Player.Events events) {changed();}
