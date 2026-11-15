@@ -285,3 +285,7 @@ Play-logoet er tilpasset referencens visuelle højde, så det fylder cirka samme
 
 ### 1.19.9 – Logo 5 % mindre
 Play-logoets bredde og højde er reduceret med 5 % i forhold til 1.19.8. Baggrunden bevares.
+
+
+### 1.19.10 – Logo yderligere 5 % mindre
+Play-logoets bredde og højde er reduceret med yderligere 5 % i forhold til 1.19.9. Baggrunden bevares.
