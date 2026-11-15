@@ -397,3 +397,7 @@ Baggrunden bag play/pause i 2 × 1-widgetten er nu en mørkegrå firkant med afr
 
 ### 1.25.4 – Mørkere widgetbaggrund
 Hele 2 × 1-widgettens baggrund er nu #202020, tilpasset den mørke referencefarve. Afrundede hjørner og knapbaggrund bevares.
+
+
+### 1.25.5 – Hele widgetten styrer afspilning
+Tryk på baggrund, logo eller play/pause styrer nu samme valgte station. Kanalvalget låses efter tilføjelse; en anden station vælges ved at tilføje en ny widget. Logoet er samtidig øget 5 % fra 62,4 dp til 65,52 dp; kontrolknappens størrelse bevares.

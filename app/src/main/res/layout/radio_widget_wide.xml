@@ -1,6 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:background="@drawable/radio_widget_wide_background">
  <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
-  <ImageView android:id="@id/widget_logo" android:layout_width="62.4dp" android:layout_height="62.4dp" android:layout_gravity="center" android:src="@drawable/ic_channel" android:contentDescription="@string/radio_widget_choose" android:scaleType="fitCenter"/>
+  <ImageView android:id="@id/widget_logo" android:layout_width="65.52dp" android:layout_height="65.52dp" android:layout_gravity="center" android:src="@drawable/ic_channel" android:contentDescription="@string/radio_widget_choose" android:scaleType="fitCenter"/>
  </FrameLayout>
  <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
   <ImageButton android:id="@id/widget_play" android:layout_width="62.4dp" android:layout_height="62.4dp" android:layout_gravity="center" android:padding="13dp" android:background="@drawable/radio_widget_play_background" android:src="@drawable/ic_play" android:contentDescription="@string/play_action" android:scaleType="fitCenter"/>
