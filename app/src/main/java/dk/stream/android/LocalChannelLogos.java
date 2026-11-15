@@ -19,6 +19,7 @@ public final class LocalChannelLogos {
    return new LocalChannelLogos(files);
   } catch(IOException|JSONException e) {return new LocalChannelLogos(Collections.emptyMap());}
  }
- public String find(String channelName) {String normalized=key(channelName);String file=files.get(normalized.contains("p4")?"drp4":normalized);return file==null?null:"file:///android_asset/channel_logos/"+file;}
+ public static String lookupKey(String channelName){String normalized=key(channelName);return normalized.contains("p5")?"drp5":normalized.contains("p6")?"drp6":normalized.contains("p4")?"drp4":normalized;}
+ public String find(String channelName) {String file=files.get(lookupKey(channelName));return file==null?null:"file:///android_asset/channel_logos/"+file;}
  public int size() {return files.size();}
 }

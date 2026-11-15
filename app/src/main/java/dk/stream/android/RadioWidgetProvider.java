@@ -45,7 +45,7 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
   views.setContentDescription(R.id.widget_logo,station==null?context.getString(R.string.radio_widget_choose):station.displayName());
   views.setImageViewResource(R.id.widget_logo,R.drawable.ic_channel);
   if(station!=null) {
-   String local=LocalChannelLogos.load(context).find(station.displayName());
+   String local=LocalChannelLogos.load(context).find(PlaybackArtwork.logoName(context,station));
    if(local!=null) try(java.io.InputStream in=context.getAssets().open(local.substring("file:///android_asset/".length()))) {views.setImageViewBitmap(R.id.widget_logo,BitmapFactory.decodeStream(in));} catch(java.io.IOException ignored) { }
   }
   Intent configure=new Intent(context,RadioWidgetConfigureActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId).setData(Uri.parse("stream://radio-widget/config/"+widgetId));

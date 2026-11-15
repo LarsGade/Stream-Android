@@ -56,6 +56,10 @@ public final class MainActivity extends AppCompatActivity {
  private boolean settingsTransferBusy,applyingSettings;
  private final ExecutorService settingsWorker=Executors.newSingleThreadExecutor();
  private Catalog catalog=new Catalog();
+ private final Map<String,Catalog> sourceCatalogs=new LinkedHashMap<>();
+ private final Map<String,Library.Source> cachedSourceConfigs=new HashMap<>();
+ private CombinedCatalog combinedCatalog=new CombinedCatalog(java.util.Collections.emptyList(),java.util.Collections.emptyMap());
+ private final ExecutorService streamingWorker=Executors.newFixedThreadPool(3);
  private Library.Source activeSource;
  private List<Library.Entry> visible=new ArrayList<>();
  private Playlist.Kind currentKind=Playlist.Kind.TV;
@@ -515,21 +519,12 @@ public final class MainActivity extends AppCompatActivity {
   if(favorites) {showFavoriteKind(true);return;}
   favoritesPage=false;favoritesMode=false;radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(false);
  }
- private void openStreamingService() {
-  minimizeVideo();
-  drawer.closeDrawer(androidx.core.view.GravityCompat.START);
-  if(library.sources.size()>1) {
-   List<Library.Source> sources=new ArrayList<>(library.sources);
-   new AlertDialog.Builder(this).setTitle(R.string.choose_source)
-    .setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(dialog,position)->{list.cancelFavoriteGesture();loadSource(sources.get(position));})
-    .setNegativeButton(android.R.string.cancel,null).show();
-  } else navigate(false);
- }
+ private void openStreamingService() {navigate(false);}
  private void navigate(boolean favorites) {
   minimizeVideo();
   if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoriteTab(library.favoritesCurrentTab);return;}
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
-  if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && library.sources.size()==1) last=library.sources.get(0);if(last!=null) loadSource(last);}
+  if(!favorites && catalog.items.isEmpty() && !loading) {Library.Source last=library.findSource(library.lastSourceId);if(last==null && !library.sources.isEmpty()) last=library.sources.get(0);if(last!=null) loadSource(last);}
  }
  private void chooseFirstKind() {
   if(favoritesMode && !library.favorites.isEmpty()) currentKind=library.favorites.get(0).channel.kind;
@@ -551,7 +546,7 @@ public final class MainActivity extends AppCompatActivity {
   list.setVisibility(radioMode||localMode||pcloudMode?View.GONE:View.VISIBLE);
   if(radioMode||localMode||pcloudMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
   pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
-  pageTitle.setText(favoritesMode?"":activeSource==null?getString(R.string.streaming_title):activeSource.name);
+  pageTitle.setText(favoritesMode?"":getString(R.string.streaming_title));
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
   sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
@@ -559,7 +554,7 @@ public final class MainActivity extends AppCompatActivity {
   if(favoritesMode) {visible=new ArrayList<>();String query="";for(Library.Entry entry:library.favorites) if(entry.channel.kind==Library.favoriteKind(selectedFavoriteTab())&&entry.channel.name.toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);}
   else {
    visible=new ArrayList<>();
-   if(activeSource!=null) for(Playlist.Channel channel:catalog.filter(currentKind,group,search.getText().toString())) visible.add(new Library.Entry(activeSource.id,channel));
+   if(!sourceCatalogs.isEmpty())visible.addAll(combinedCatalog.filter(currentKind,group,search.getText().toString()));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,search.getText().toString()))visible.add(new Library.Entry(activeSource.id,channel));
   }
   adapter.notifyDataSetChanged();
   if(playbackPanel!=null && playbackPanel.getVisibility()==View.VISIBLE && selected!=null) {status.setVisibility(View.GONE);return;}
@@ -592,7 +587,7 @@ public final class MainActivity extends AppCompatActivity {
     else new AlertDialog.Builder(this).setTitle(R.string.remove_source).setMessage(getString(R.string.remove_source_note,source.name))
      .setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.remove_source,(confirmation,selected)->{
       if(changeLibrary(()->library.removeSource(source.id))) {
-       if(activeSource!=null && activeSource.id.equals(source.id)) {activeSource=null;catalog=new Catalog();}
+       sourceCatalogs.remove(source.id);cachedSourceConfigs.remove(source.id);rebuildStreamingCatalog();
        dialog.dismiss();rebuildGroups();showSources();
       }
      }).show();
@@ -710,7 +705,7 @@ public final class MainActivity extends AppCompatActivity {
    runOnUiThread(()->{
     updatingAll=false;if(isDestroyed()) return;dialog.dismiss();
     boolean saved=changeLibrary(()->{for(Map.Entry<String,Catalog> entry:catalogs.entrySet()) library.refreshFavorites(entry.getKey(),entry.getValue().items);});
-    if(activeSource!=null && catalogs.containsKey(activeSource.id)) catalog=catalogs.get(activeSource.id);
+    for(Library.Source source:sources)if(catalogs.containsKey(source.id)){sourceCatalogs.put(source.id,catalogs.get(source.id));cachedSourceConfigs.put(source.id,source);}rebuildStreamingCatalog();
     epgData.putAll(schedules);for(String id:schedules.keySet()) epgAttempted.put(id,System.currentTimeMillis());rebuildGroups();
     String result=getResources().getQuantityString(R.plurals.updated_sources,catalogs.size(),catalogs.size())+"\n"+getResources().getQuantityString(R.plurals.updated_guides,schedules.size(),schedules.size())+"\n"+getResources().getQuantityString(R.plurals.update_failures,failures.size(),failures.size());
     if(!failures.isEmpty()) result+="\n\n"+getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures));
@@ -720,23 +715,24 @@ public final class MainActivity extends AppCompatActivity {
   });
  }
  private void busy(boolean value) {loading=value;list.setEnabled(!value);}
+ private void rebuildStreamingCatalog(){
+  Set<String> keep=new HashSet<>();for(Library.Source source:library.sources){keep.add(source.id);if(!CombinedCatalog.sameConnection(source,cachedSourceConfigs.get(source.id)))sourceCatalogs.remove(source.id);}
+  sourceCatalogs.keySet().retainAll(keep);cachedSourceConfigs.keySet().retainAll(keep);combinedCatalog=new CombinedCatalog(library.sources,sourceCatalogs);catalog=combinedCatalog.catalog;activeSource=null;
+ }
  private void loadSource(Library.Source source) {
-  minimizeVideo();
-  pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
-  if(loading) return;
-  favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(source.xtream?R.string.loading_catalog:R.string.loading);
+  if(loading)return;minimizeVideo();pcloudMode=false;pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;radioMode=false;radioPanel.setVisibility(View.GONE);favoritesMode=false;
+  List<Library.Source> requested=new ArrayList<>(library.sources);int replace=-1;for(int i=0;i<requested.size();i++)if(requested.get(i).id.equals(source.id)||CombinedCatalog.sameConnection(requested.get(i),source)){replace=i;break;}if(replace<0)requested.add(source);else requested.set(replace,source);
+  rebuildStreamingCatalog();busy(true);rebuildGroups();status.setVisibility(View.VISIBLE);status.setText(R.string.loading_catalog);
   worker.execute(()->{
-   try {
-    Catalog result=source.xtream?new XtreamClient(source.server,source.username,source.password).load():new Catalog(new PlaylistLoader().load(source.server));
-    runOnUiThread(()->{
-     if(isDestroyed()) return;
-     Library.Source[] saved={source};
-     if(changeLibrary(()->{saved[0]=library.addSource(source);library.lastSourceId=saved[0].id;library.refreshFavorites(saved[0].id,result.items);})) {
-      activeSource=saved[0];catalog=result;search.setText("");chooseFirstKind();busy(false);rebuildGroups();loadAssignedGuides(false);
-     }
-    });
-   } catch(Exception e) {runOnUiThread(()->{if(!isDestroyed()) showError(e);});}
-   finally {runOnUiThread(()->{if(!isDestroyed()) {busy(false);}});}
+   Map<Library.Source,Catalog> loaded=new LinkedHashMap<>();List<String> failures=new ArrayList<>();Exception firstError=null;List<java.util.concurrent.Future<Catalog>> tasks=new ArrayList<>();
+   for(Library.Source item:requested)tasks.add(streamingWorker.submit(()->item.xtream?new XtreamClient(item.server,item.username,item.password).load():new Catalog(new PlaylistLoader().load(item.server))));
+   for(int i=0;i<requested.size();i++)try{loaded.put(requested.get(i),tasks.get(i).get());}catch(Exception failure){failures.add(requested.get(i).name);Throwable cause=failure instanceof java.util.concurrent.ExecutionException?failure.getCause():failure;if(firstError==null)firstError=cause instanceof Exception?(Exception)cause:new java.io.IOException("Source failed");if(failure instanceof InterruptedException){Thread.currentThread().interrupt();break;}}
+   Exception error=firstError;runOnUiThread(()->{
+    if(isDestroyed()||applyingSettings)return;
+    if(!loaded.isEmpty())changeLibrary(()->{for(Map.Entry<Library.Source,Catalog> entry:loaded.entrySet()){Library.Source saved=library.addSource(entry.getKey());sourceCatalogs.put(saved.id,entry.getValue());cachedSourceConfigs.put(saved.id,saved);library.refreshFavorites(saved.id,entry.getValue().items);}});
+    rebuildStreamingCatalog();busy(false);if(!favoritesMode&&catalog.filter(currentKind,null,"").isEmpty()&&!catalog.items.isEmpty())chooseFirstKind();rebuildGroups();loadAssignedGuides(false);
+    if(error!=null){if(catalog.items.isEmpty()&&!radioMode&&!localMode&&!pcloudMode&&!favoritesPage)showError(error);else Toast.makeText(this,getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures)),Toast.LENGTH_LONG).show();}
+   });
   });
  }
  private void showError(Exception e) {
@@ -924,5 +920,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

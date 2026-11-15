@@ -125,29 +125,19 @@ public class MainActivityTest {
   assertFalse(ReflectionHelpers.<Boolean>getField(activity,"fullscreen"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));
   RadioPanel radio=ReflectionHelpers.getField(activity,"radioPanel");assertEquals(View.VISIBLE,radio.getVisibility());assertTrue(ReflectionHelpers.<Boolean>getField(radio,"favorites"));
  }
- @Test public void streamingServiceAsksWhichSourceToOpenAndLoadsTheSelection() throws Exception {
-  Library library=ReflectionHelpers.getField(activity,"library");
-  Library.Source first=library.addSource(Library.Source.m3u("First",server.url("/first.m3u").toString()));
-  Library.Source second=library.addSource(Library.Source.m3u("Second",server.url("/second.m3u").toString()));
-  clickText(activity.getWindow().getDecorView(),R.string.favorites);
-  clickText(activity.getWindow().getDecorView(),R.string.library);
-  AlertDialog chooser=dialog();assertEquals(2,chooser.getListView().getCount());
-  assertEquals("First",chooser.getListView().getAdapter().getItem(0).toString());assertEquals("Second",chooser.getListView().getAdapter().getItem(1).toString());
-  assertEquals(0,server.getRequestCount());assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));
-  chooser.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));
-  clickText(activity.getWindow().getDecorView(),R.string.library);
-  server.enqueue(new MockResponse().setBody("#EXTM3U\n#EXTINF:-1,Selected channel\nhttps://example.com/live.ts\n"));
-  dialog().getListView().performItemClick(null,1,1);awaitLoadAndRender();
-  assertEquals("/second.m3u",server.takeRequest().getPath());assertEquals(second.id,ReflectionHelpers.<Library.Source>getField(activity,"activeSource").id);
-  assertFalse(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));assertEquals(second.id,storage.saved.lastSourceId);
-  clickText(activity.getWindow().getDecorView(),R.string.library);assertEquals(2,dialog().getListView().getCount());assertEquals(1,server.getRequestCount());
+ @Test public void streamingServiceCombinesAllSourcesWithoutPicker() throws Exception {
+  Library library=ReflectionHelpers.getField(activity,"library");Library.Source first=library.addSource(Library.Source.m3u("First",server.url("/first.m3u").toString()));Library.Source second=library.addSource(Library.Source.m3u("Second",server.url("/second.m3u").toString()));
+  server.setDispatcher(new Dispatcher(){@Override public MockResponse dispatch(RecordedRequest request){String name=request.getPath().startsWith("/first")?"First channel":"Second channel";return new MockResponse().setBody("#EXTM3U\n#EXTINF:-1,"+name+"\nhttps://example.com/"+name.replace(' ','_')+".ts\n");}});
+  clickText(activity.getWindow().getDecorView(),R.string.favorites);clickText(activity.getWindow().getDecorView(),R.string.library);awaitLoadAndRender();assertEquals(2,server.getRequestCount());
+  List<Library.Entry> entries=ReflectionHelpers.getField(activity,"visible");assertEquals(2,entries.size());assertEquals(first.id,entries.get(0).sourceId);assertEquals(second.id,entries.get(1).sourceId);assertFalse(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));assertEquals("Streaming",ReflectionHelpers.<TextView>getField(activity,"pageTitle").getText().toString());
+  clickText(activity.getWindow().getDecorView(),R.string.library);assertEquals(2,server.getRequestCount());
  }
  @Test public void streamingServiceOpensSingleSourceWithoutPicker() throws Exception {
   Library library=ReflectionHelpers.getField(activity,"library");library.addSource(Library.Source.m3u("Only",server.url("/only.m3u").toString()));
   server.enqueue(new MockResponse().setBody("#EXTM3U\n#EXTINF:-1,Only channel\nhttps://example.com/live.ts\n"));
   clickText(activity.getWindow().getDecorView(),R.string.favorites);
   clickText(activity.getWindow().getDecorView(),R.string.library);awaitLoadAndRender();
-  RecordedRequest request=server.takeRequest(5,TimeUnit.SECONDS);assertNotNull(request);assertEquals("/only.m3u",request.getPath());assertEquals("Only",ReflectionHelpers.<Library.Source>getField(activity,"activeSource").name);
+  RecordedRequest request=server.takeRequest(5,TimeUnit.SECONDS);assertNotNull(request);assertEquals("/only.m3u",request.getPath());assertEquals(1,ReflectionHelpers.<List<Library.Entry>>getField(activity,"visible").size());assertEquals(library.sources.get(0).id,ReflectionHelpers.<List<Library.Entry>>getField(activity,"visible").get(0).sourceId);
  }
  private void startTestPlayback() {
   server.enqueue(new MockResponse().setResponseCode(404));
