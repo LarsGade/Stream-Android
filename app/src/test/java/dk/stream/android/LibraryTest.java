@@ -29,6 +29,9 @@ public class LibraryTest {
   Library l=new Library();Library.Entry a=new Library.Entry("source",channel("A","https://example.com/a")),b=new Library.Entry("source",channel("B","https://example.com/b")),film=new Library.Entry("source",new Playlist.Channel("Film","https://example.com/f","",Playlist.Kind.FILM,null,""));
   l.favorites.addAll(Arrays.asList(a,film,b));l.reorderVisibleFavorites(Arrays.asList(b,a));assertEquals(Arrays.asList(b,film,a),l.favorites);
  }
+ @Test public void favoriteOrderPutsStreamingKindsFirstAndRetainsStoredIds() throws Exception {
+  assertEquals(Arrays.asList(0,4,5,1,2,3),Library.favoriteTabOrder());Library l=new Library();for(int tab:Library.favoriteTabOrder()){l.setFavoritesStartTab(tab);Library restored=Library.fromJson(l.toJson());assertEquals(tab,restored.favoritesStartTab);assertEquals(tab,(int)Library.favoriteTabOrder().get(Library.favoriteTabOrder().indexOf(restored.favoritesStartTab)));}
+ }
  private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
  @Test public void radioFavoritesAreIndependentOrderedAndAliasesSurviveReload() throws Exception {
   Library library=new Library();RadioStation one=new RadioStation("one","Original","https://example.com/one",""),two=new RadioStation("two","Two","https://example.com/two","");

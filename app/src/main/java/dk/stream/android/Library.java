@@ -89,7 +89,8 @@ public final class Library {
  public List<LocalMedia> sourceFavorites(boolean cloud){List<LocalMedia> result=new ArrayList<>();for(List<LocalMedia> list:java.util.Arrays.asList(localFavorites,imageFavorites))for(LocalMedia entry:list)if(PcloudDocument.is(entry.uri)==cloud)result.add(entry);return result;}
  public static Playlist.Kind favoriteKind(int tab){return tab==4?Playlist.Kind.FILM:tab==5?Playlist.Kind.SERIES:Playlist.Kind.TV;}
  public boolean hasFavoriteTab(int tab){switch(tab){case 0:case 4:case 5:for(Entry entry:favorites)if(favoriteKind(tab)==entry.channel.kind)return true;return false;case 1:return !radioFavorites.isEmpty();case 2:return !sourceFavorites(false).isEmpty();case 3:return !sourceFavorites(true).isEmpty();default:return false;}}
- public int availableFavoriteTab(int preferred){if(hasFavoriteTab(preferred))return preferred;for(int tab:new int[]{0,4,5,1,2,3})if(hasFavoriteTab(tab))return tab;return -1;}
+ public static List<Integer> favoriteTabOrder(){return java.util.Arrays.asList(0,4,5,1,2,3);}
+ public int availableFavoriteTab(int preferred){if(hasFavoriteTab(preferred))return preferred;for(int tab:favoriteTabOrder())if(hasFavoriteTab(tab))return tab;return -1;}
  public void setFavoritesStartTab(int tab){if(tab<0||tab>5)throw new IllegalArgumentException("Unknown favorites tab");favoritesStartTab=tab;}
  public Playlist.Channel lastPlayed;
  public long lastPlayedPosition;

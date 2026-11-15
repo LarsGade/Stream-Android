@@ -24,17 +24,17 @@ public class LocalFilesUiTest {
   ReflectionHelpers.setField(activity,"store",new LibraryPersistence(){public Library load(){return new Library();}public void save(Library library){}});
  }
  @After public void close() {controller.pause().stop().destroy();}
- @Test public void localFavoritesAreToTheRightOfRadioAndSelectTheirOwnPanel() {
-  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(6,tabs.getChildCount());assertEquals("Radio",((RadioButton)tabs.getChildAt(3)).getText().toString());assertEquals("Lokale",((RadioButton)tabs.getChildAt(4)).getText().toString());
-  ReflectionHelpers.<Library>getField(activity,"library").toggleLocalFavorite(new LocalMedia("content://test/audio","Audio.mp3","audio/mpeg",false));
-  ((RadioButton)tabs.getChildAt(4)).performClick();assertEquals(2,ReflectionHelpers.<Library>getField(activity,"library").favoritesCurrentTab);assertFalse(ReflectionHelpers.<Library>getField(activity,"library").favoritesRadio);assertEquals(View.VISIBLE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());assertEquals(View.GONE,ReflectionHelpers.<RadioPanel>getField(activity,"radioPanel").getVisibility());
+ @Test public void favoriteDropdownSelectsTheLocalPanel(){
+  Library library=ReflectionHelpers.getField(activity,"library");library.toggleLocalFavorite(new LocalMedia("content://test/audio","Audio.mp3","audio/mpeg",false));
+  ReflectionHelpers.callInstanceMethod(activity,"showFavoriteTab",ReflectionHelpers.ClassParameter.from(int.class,2));
+  Spinner choices=ReflectionHelpers.getField(activity,"favoriteCategories");assertEquals(View.VISIBLE,choices.getVisibility());assertEquals("Lokale",choices.getSelectedItem());assertEquals(View.VISIBLE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());assertEquals(View.GONE,ReflectionHelpers.<RadioPanel>getField(activity,"radioPanel").getVisibility());
  }
- @Test public void emptyFavoriteTabsAreHiddenAndLastRemovalFallsBack(){
+ @Test public void emptyFavoriteCategoriesAreHiddenAndLastRemovalFallsBack(){
   Library library=ReflectionHelpers.getField(activity,"library");library.favorites.clear();library.radioFavorites.clear();library.localFavorites.clear();library.imageFavorites.clear();
   LocalMedia image=new LocalMedia("content://test/photo","Photo.jpg","image/jpeg",false);library.toggleLocalFavorite(image);
   ReflectionHelpers.callInstanceMethod(activity,"showFavoriteTab",ReflectionHelpers.ClassParameter.from(int.class,0));
-  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");for(int i:new int[]{0,1,2,3,5})assertEquals(View.GONE,tabs.getChildAt(i).getVisibility());assertEquals(View.VISIBLE,tabs.getChildAt(4).getVisibility());assertEquals(tabs.getChildAt(4).getId(),tabs.getCheckedRadioButtonId());
-  library.toggleLocalFavorite(image);ReflectionHelpers.callInstanceMethod(activity,"filter");assertEquals(View.GONE,((View)tabs.getParent()).getVisibility());assertEquals(View.GONE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());
+  Spinner choices=ReflectionHelpers.getField(activity,"favoriteCategories");assertEquals(1,choices.getCount());assertEquals("Lokale",choices.getSelectedItem());
+  library.toggleLocalFavorite(image);ReflectionHelpers.callInstanceMethod(activity,"filter");assertEquals(View.GONE,choices.getVisibility());assertEquals(View.GONE,ReflectionHelpers.<LocalFilesPanel>getField(activity,"localPanel").getVisibility());
  }
  @Test public void pickersAskForReadOnlyPersistentLinksAndSupportMultipleFiles() {
   ReflectionHelpers.callInstanceMethod(activity,"pickLocal",ReflectionHelpers.ClassParameter.from(boolean.class,false));

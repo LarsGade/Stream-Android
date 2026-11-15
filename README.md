@@ -301,3 +301,8 @@ Play-logoets bredde og højde er reduceret med yderligere 8 % i forhold til 1.19
 
 ### 1.19.13 – Streaming-overskrift
 Streamingsiden viser kun “Streaming” som standardoverskrift. Burgermenuen beholder “Streaming” med “(TV, Film, Serier)” på næste linje. Rettet fanernes kobling til deres indhold ved automatisk skjul af tomme favoritfaner.
+
+
+### 1.20.0 – Dropdown i Favoritter
+Favoritkategorierne TV, Film, Serier, Radio, Lokale og Pcloud vælges nu i en dropdownmenu. Kun kategorier med indhold vises, og den tomme menu skjules, hvis der ingen favoritter er. Fjernes sidste favorit fra den valgte kategori, vælges en anden kategori med indhold.
+Startvælgeren bruger samme rækkefølge: TV, Film, Serier, Radio, Lokale, Pcloud. Gemte kategori-id’er bevares.

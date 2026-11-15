@@ -129,11 +129,13 @@ public class RadioUiTest {
  @Test public void drawerHasOneFavoritesEntryWithTvAndRadioTabs() {
   List<TextView> labels=texts(activity.getWindow().getDecorView());assertTrue(labels.stream().anyMatch(v->v.getText().toString().equals("Favoritter")));assertFalse(labels.stream().anyMatch(v->v.getText().toString().equals("TV-Favoritter")||v.getText().toString().equals("Radio-Favoritter")));
   List<Button> menuButtons=new ArrayList<>();for(TextView label:labels) if(label instanceof Button && !(label instanceof RadioButton)) menuButtons.add((Button)label);
-  int radioIndex=-1,favoritesIndex=-1;for(int i=0;i<menuButtons.size();i++) {if(menuButtons.get(i).getText().toString().equals("Radio")) radioIndex=i;if(menuButtons.get(i).getText().toString().equals("Favoritter")) favoritesIndex=i;}assertEquals("Lokale",menuButtons.get(radioIndex+1).getText().toString());assertEquals(radioIndex+2,favoritesIndex);
+  int radioIndex=-1,favoritesIndex=-1;for(int i=0;i<menuButtons.size();i++) {if(menuButtons.get(i).getText().toString().equals("Radio")) radioIndex=i;if(menuButtons.get(i).getText().toString().equals("Favoritter")) favoritesIndex=i;}assertEquals("Lokale",menuButtons.get(radioIndex+1).getText().toString());assertEquals(radioIndex+3,favoritesIndex);
   ReflectionHelpers.callInstanceMethod(activity,"navigate",ReflectionHelpers.ClassParameter.from(boolean.class,true));
   ReflectionHelpers.setField(activity,"store",new LibraryPersistence(){public Library load(){return new Library();}public void save(Library value){} });
-  RadioGroup tabs=ReflectionHelpers.getField(activity,"favoriteTabs");assertEquals(View.VISIBLE,tabs.getVisibility());assertEquals("TV",((RadioButton)tabs.getChildAt(0)).getText().toString());assertEquals("Radio",((RadioButton)tabs.getChildAt(1)).getText().toString());
-  RadioButton radio=ReflectionHelpers.getField(activity,"favoriteRadio");radio.setChecked(true);assertTrue(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesPage"));
-  RadioButton tv=ReflectionHelpers.getField(activity,"favoriteTv");tv.setChecked(true);assertFalse(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));
+  Library library=ReflectionHelpers.getField(activity,"library");library.favorites.clear();library.radioFavorites.clear();library.addRadio(new RadioStation("one","Radio","https://example.com/radio",""));library.toggleFavorite(new Library.Entry("source",new Playlist.Channel("TV","https://example.com/tv","",Playlist.Kind.TV,null,"")));
+  ReflectionHelpers.callInstanceMethod(activity,"showFavoriteTab",ReflectionHelpers.ClassParameter.from(int.class,0));
+  Spinner choices=ReflectionHelpers.getField(activity,"favoriteCategories");assertEquals(View.VISIBLE,choices.getVisibility());assertEquals("TV",choices.getItemAtPosition(0));assertEquals("Radio",choices.getItemAtPosition(1));
+  choices.setSelection(1);Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertTrue(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));
+  choices.setSelection(0);Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertFalse(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));
  }
 }
