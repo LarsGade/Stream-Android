@@ -257,3 +257,7 @@ Appikonet bruger det eksisterende gennemsigtige S/play-logo som forgrund. Der er
 
 ### 1.19.2 – Mindre logo uden baggrundsfarve
 Ikonets forgrund er præcis 10 % mindre (inset 10 % → 14 %, så den tilgængelige størrelse går fra 80 % til 72 %). Det adaptive baggrundslag er gennemsigtigt; appen angiver ingen baggrundsfarve. En eventuel baggrund tilføjet af telefonens launcher styres af telefonen.
+
+
+### 1.19.3 – Telefonens ikonindramning
+Appen leverer nu et almindeligt gennemsigtigt ikon uden adaptivt baggrundslag, så launcherens egen indramning kan anvendes. Logoet er yderligere 10 % mindre (tilgængelig størrelse 72 % → 64,8 %). Den præcise ydre baggrund og indramning afhænger af telefonens launcher og ikontema.
