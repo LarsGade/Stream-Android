@@ -243,12 +243,16 @@ public final class MainActivity extends AppCompatActivity {
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
+  Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
   Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
-  Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD600));favoritesButton.setTextColor(Color.BLACK);
-  AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));navigation.addView(start);
-  LinearLayout startChoice=column();navigation.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
+  Button settingsToggle=button(R.string.settings,navigation,()->{});
+  LinearLayout settingsContent=column();settingsContent.setPadding(dp(8),0,dp(8),0);settingsContent.setVisibility(View.GONE);navigation.addView(settingsContent,new LinearLayout.LayoutParams(-1,-2));
+  settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");
+  settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
+  AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));settingsContent.addView(start);
+  LinearLayout startChoice=column();settingsContent.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
   Spinner startTab=new Spinner(this);ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Film","Serier","Radio","Lokale","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=Library.favoriteTabOrder().get(position);if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));}});
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
@@ -256,14 +260,14 @@ public final class MainActivity extends AppCompatActivity {
    if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
    startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   });
-  playbackPreference(navigation,R.string.auto_play_last,false);playbackPreference(navigation,R.string.mini_player,true);
-  button(R.string.sources,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
-  button(R.string.tv_guide,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
-  button(R.string.local_source_folder,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);replacingLocalFolder=null;pickLocal(true);});
-  button(R.string.pcloud_account,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
-  button(R.string.import_export,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
-  button(R.string.update_all,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
-  button(R.string.reset_app,navigation,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
+  playbackPreference(settingsContent,R.string.auto_play_last,false);playbackPreference(settingsContent,R.string.mini_player,true);
+  button(R.string.sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
+  button(R.string.tv_guide_sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
+  button(R.string.local_source_folder,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);replacingLocalFolder=null;pickLocal(true);});
+  button(R.string.pcloud_account,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
+  button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
+  button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
+  button(R.string.reset_app,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});
   navigation.addView(new Space(this),new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(16),0,0);navigation.addView(credit,new LinearLayout.LayoutParams(-1,-2));
   ScrollView menu=new ScrollView(this);menu.setFillViewport(true);menu.addView(navigation);
@@ -644,7 +648,7 @@ public final class MainActivity extends AppCompatActivity {
  private void showGuides() {
   if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
   List<Library.Guide> guides=new ArrayList<>(library.guides);
-  new AlertDialog.Builder(this).setTitle(R.string.tv_guide).setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,guides),(dialog,position)->showGuideEditor(guides.get(position)))
+  new AlertDialog.Builder(this).setTitle(R.string.tv_guide_sources).setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,guides),(dialog,position)->showGuideEditor(guides.get(position)))
    .setPositiveButton(R.string.add_epg,(dialog,which)->showGuideEditor(null)).setNegativeButton(android.R.string.cancel,null).show();
  }
  private void showGuideEditor(Library.Guide existing) {

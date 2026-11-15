@@ -345,3 +345,7 @@ Pause opdaterer samme meddelelse uden cancel/remove eller genindsættelse. Foreg
 Under TV-guide findes nu Kildemappe til lokale, Pcloud-konto og Importér/Eksportér i denne rækkefølge. Lokale og Pcloud er rene filvisninger; valg af rodmappe og konto ligger i burgermenuen.
 Eksport gemmer hele Library-opsætningen (streamingkilder inkl. logins, Pcloud-konto, TV-guides, alle favoritter, lokale mappelinks, afspilnings- og startindstillinger) som læsbar UTF-8-JSON. Import kontrollerer format/version, størrelse og kildehenvisninger, før den gemmer en erstatning i det krypterede lokale lager. Ugyldige filer eller fejl ved lagring bevarer den gamle opsætning. Aktuel afspilning stoppes ved vellykket import, og siden genoprettes med de importerede indstillinger. Ingen gamle asynkrone biblioteksskrivninger må overskrive importen.
 Filen indeholder logins i klartekst. Androids mappeadgang kan ikke flyttes med JSON; ved import på en anden telefon skal lokal kildemappe vælges igen. Systemtilladelser og Androids widget-placeringer er enhedsindstillinger. Swipe-adfærden og de nuværende live-kontroller bevares.
+
+
+### 1.23.1 – Foldbare indstillinger
+Favoritter står øverst i burgermenuen. Alle afkrydsningsfelter, startfanevælgeren og de grå menupunkter ligger under Indstillinger, som starter foldet sammen og åbnes/lukkes ved tryk. Menupunktet TV-guide hedder nu Kilder til TV-Guide. Krediteringen står fortsat nederst uden for indstillingerne.

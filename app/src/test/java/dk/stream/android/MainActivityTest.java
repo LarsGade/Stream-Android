@@ -290,7 +290,7 @@ public class MainActivityTest {
   ExecutorService executor=ReflectionHelpers.getField(activity,"epgWorker");executor.submit(()->{}).get(30,TimeUnit.SECONDS);Shadows.shadowOf(Looper.getMainLooper()).idle();
  }
  @Test public void namedGuideCanBeAssignedAndCurrentProgrammeAppearsInGrayOnFavorite() throws Exception {
-  useGuideDispatcher();clickText(activity.getWindow().getDecorView(),R.string.tv_guide);
+  useGuideDispatcher();clickText(activity.getWindow().getDecorView(),R.string.tv_guide_sources);
   dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();List<EditText> guideFields=views(dialog().getWindow().getDecorView(),EditText.class);guideFields.get(0).setText("Dansk guide");guideFields.get(1).setText(server.url("/epg.xml").toString());dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitGuides();
   assertEquals("Dansk guide",storage.saved.guides.get(0).name);
   sourceDialog(false);List<EditText> fields=views(dialog().getWindow().getDecorView(),EditText.class);fields.get(0).setText("Dansk TV");fields.get(1).setText(server.url("/list.m3u").toString());views(dialog().getWindow().getDecorView(),Spinner.class).get(0).setSelection(1);dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitLoadAndRender();awaitGuides();
@@ -322,13 +322,13 @@ public class MainActivityTest {
  }
  @Test public void guideCanBeRenamedAndDeletedWithoutDeletingItsSource() throws Exception {
   useGuideDispatcher();Library library=ReflectionHelpers.getField(activity,"library");Library.Guide guide=Library.Guide.create("Old guide",server.url("/epg.xml").toString());library.putGuide(guide);Library.Source source=library.addSource(Library.Source.m3u("TV",server.url("/list.m3u").toString()).withEpg(guide.id));
-  clickText(activity.getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);
+  clickText(activity.getWindow().getDecorView(),R.string.tv_guide_sources);dialog().getListView().performItemClick(null,0,0);
   views(dialog().getWindow().getDecorView(),EditText.class).get(0).setText("New guide");dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();awaitGuides();assertEquals("New guide",storage.saved.findGuide(guide.id).name);
-  clickText(activity.getWindow().getDecorView(),R.string.tv_guide);dialog().getListView().performItemClick(null,0,0);dialog().getButton(AlertDialog.BUTTON_NEUTRAL).performClick();dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertNull(storage.saved.findGuide(guide.id));assertNotNull(storage.saved.findSource(source.id));assertEquals("",storage.saved.findSource(source.id).epgId);
+  clickText(activity.getWindow().getDecorView(),R.string.tv_guide_sources);dialog().getListView().performItemClick(null,0,0);dialog().getButton(AlertDialog.BUTTON_NEUTRAL).performClick();dialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();Shadows.shadowOf(Looper.getMainLooper()).idle();assertNull(storage.saved.findGuide(guide.id));assertNotNull(storage.saved.findSource(source.id));assertEquals("",storage.saved.findSource(source.id).epgId);
  }
  @Test public void drawerContainsAllFormerSettingsAndSourceCancelIsBelowXtream() {
   View root=activity.getWindow().getDecorView();
-  for(int label:new int[]{R.string.sources,R.string.tv_guide,R.string.update_all,R.string.reset_app}) assertTrue(views(root,Button.class).stream().anyMatch(button->button.getText().toString().equals(activity.getString(label))));
+  for(int label:new int[]{R.string.sources,R.string.tv_guide_sources,R.string.update_all,R.string.reset_app}) assertTrue(views(root,Button.class).stream().anyMatch(button->button.getText().toString().equals(activity.getString(label))));
   assertTrue(views(root,AppCompatCheckBox.class).get(0).getText().toString().equals(activity.getString(R.string.start_favorites)));
   clickText(root,R.string.sources);View dialogRoot=dialog().getWindow().getDecorView();
   List<Button> actions=new ArrayList<>();for(Button button:views(dialogRoot,Button.class)) if(button.getVisibility()==View.VISIBLE && !button.getText().toString().isEmpty()) actions.add(button);

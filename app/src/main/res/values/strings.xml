@@ -102,4 +102,6 @@
  <string name="local_source_folder">Kildemappe til lokale</string>
  <string name="pcloud_account">Pcloud-konto</string>
  <string name="import_export">Importér/Eksportér</string>
+ <string name="settings">Indstillinger</string>
+ <string name="tv_guide_sources">Kilder til TV-Guide</string>
 </resources>
