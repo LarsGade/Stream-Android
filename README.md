@@ -446,3 +446,7 @@ Lokale filer viser nu kun den aktuelle mappes direkte undermapper og mediefiler.
 
 ### 1.26.2 – Naturlig navnesortering
 Mapper og filer i Lokale filer, Pcloud og deres favoritlister sorteres nu efter navn med tal i numerisk rækkefølge: Fil 2 kommer før Fil 10. Mapper står først. Sorteringen ignorerer store/små bogstaver og bruger dansk bogstavrækkefølge. Lange tal understøttes uden heltalsoverløb; ved samme tal kommer den korteste nuludfyldning først. Afspilning og billedviser følger den viste rækkefølge.
+
+### 1.26.3
+
+Kildemappe til lokale filer tilbyder nu “Vælg kildemappe” og “Ingen lokale filer”. Sidstnævnte fjerner den valgte kildemappe og tømmer lokale filers mappevisning. Gemte favoritter bevares.

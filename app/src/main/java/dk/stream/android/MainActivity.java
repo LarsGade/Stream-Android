@@ -272,7 +272,7 @@ public final class MainActivity extends AppCompatActivity {
   playbackPreference(settingsContent,R.string.auto_play_last,false);playbackPreference(settingsContent,R.string.mini_player,true);
   button(R.string.sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
   button(R.string.tv_guide_sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
-  button(R.string.local_source_folder,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);replacingLocalFolder=null;pickLocal(true);});
+  button(R.string.local_source_folder,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showLocalSourceOptions();});
   button(R.string.pcloud_account,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
   button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
@@ -460,6 +460,15 @@ public final class MainActivity extends AppCompatActivity {
    for(android.content.UriPermission grant:getContentResolver().getPersistedUriPermissions())try{if(grant.isReadPermission()&&java.util.Objects.equals(root.getAuthority(),grant.getUri().getAuthority())&&android.provider.DocumentsContract.getTreeDocumentId(root).equals(android.provider.DocumentsContract.getTreeDocumentId(grant.getUri()))){allowed=true;break;}}catch(IllegalArgumentException invalid){}
    if(!allowed)return false;
   }return true;
+ }
+ private void showLocalSourceOptions() {
+  new android.app.AlertDialog.Builder(this).setTitle(R.string.local_source_folder)
+   .setItems(new String[]{"Vælg kildemappe","Ingen lokale filer"},(dialog,which)->{
+    replacingLocalFolder=null;
+    if(which==0) {pickLocal(true);return;}
+    changeLibrary(()->library.localFiles.clear());
+    if(localMode&&!favoritesPage) localPanel.sourceChanged();
+   }).setNegativeButton("Annuller",null).show();
  }
  private void pickLocal(boolean folder) {
   android.content.Intent intent=new android.content.Intent(folder?android.content.Intent.ACTION_OPEN_DOCUMENT_TREE:android.content.Intent.ACTION_OPEN_DOCUMENT);
