@@ -245,3 +245,7 @@ Startskærmsikonet er gendannet fra versionen umiddelbart før ændringen til de
 
 ### 1.18.3 – Pcloud-overskrift
 Loginvinduets overskrift hedder nu kun “Pcloud”. Forkortelsen TV står igen med store bogstaver i alle appens tekster.
+
+
+### 1.19.0 – Separate streamingfavoritter og fleksible faner
+Streamingfavoritter opdeles i TV, Film og Serier efter indholdets type. Radio, Lokale og Pcloud bevares som selvstændige faner. Fanerne ombrydes automatisk til flere linjer efter den tilgængelige skærmbredde og tekststørrelse. Tomme faner skjules stadig. Film og Serier kan også vælges som startfane. Eksisterende favoritter og startpræferencer bevares.

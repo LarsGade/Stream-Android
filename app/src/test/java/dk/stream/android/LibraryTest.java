@@ -20,6 +20,15 @@ public class LibraryTest {
   for(LocalMedia entry:restored.sourceFavorites(true))assertTrue(PcloudDocument.is(entry.uri));for(LocalMedia entry:restored.sourceFavorites(false))assertFalse(PcloudDocument.is(entry.uri));
   restored.toggleLocalFavorite(cloudFolder);restored.toggleLocalFavorite(cloudImage);assertFalse(restored.hasFavoriteTab(3));assertTrue(restored.hasFavoriteTab(2));assertEquals(2,restored.availableFavoriteTab(3));
  }
+ @Test public void streamingFavoritesAreSeparatedByKindAndSurviveReload() throws Exception {
+  Library library=new Library();Library.Source source=library.addSource(Library.Source.m3u("Source","https://example.com/list"));for(Playlist.Kind kind:Playlist.Kind.values())library.toggleFavorite(new Library.Entry(source.id,new Playlist.Channel(kind.name(),"https://example.com/"+kind,"",kind,null,"")));
+  Library copy=Library.fromJson(library.toJson());for(int tab:new int[]{0,4,5})assertTrue(copy.hasFavoriteTab(tab));assertEquals(Playlist.Kind.FILM,Library.favoriteKind(4));assertEquals(Playlist.Kind.SERIES,Library.favoriteKind(5));
+  copy.favorites.removeIf(entry->entry.channel.kind==Playlist.Kind.TV);assertFalse(copy.hasFavoriteTab(0));assertEquals(4,copy.availableFavoriteTab(0));copy.favoritesCurrentTab=5;copy.setFavoritesStartTab(4);Library restored=Library.fromJson(copy.toJson());assertEquals(5,restored.favoritesCurrentTab);assertEquals(4,restored.favoritesStartTab);
+ }
+ @Test public void reorderingOneStreamingTabKeepsOtherTabsInPlace(){
+  Library l=new Library();Library.Entry a=new Library.Entry("source",channel("A","https://example.com/a")),b=new Library.Entry("source",channel("B","https://example.com/b")),film=new Library.Entry("source",new Playlist.Channel("Film","https://example.com/f","",Playlist.Kind.FILM,null,""));
+  l.favorites.addAll(Arrays.asList(a,film,b));l.reorderVisibleFavorites(Arrays.asList(b,a));assertEquals(Arrays.asList(b,film,a),l.favorites);
+ }
  private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
  @Test public void radioFavoritesAreIndependentOrderedAndAliasesSurviveReload() throws Exception {
   Library library=new Library();RadioStation one=new RadioStation("one","Original","https://example.com/one",""),two=new RadioStation("two","Two","https://example.com/two","");
@@ -123,13 +132,13 @@ public class LibraryTest {
   assertEquals(2,library.favorites.size());assertTrue(library.isFavorite(two));
  }
  @Test public void startFavoriteTabIsSavedIndependentlyOfTheLastViewedTab() throws Exception {
-  for(int tab=0;tab<4;tab++) {Library library=new Library();library.favoritesOnStart=true;library.setFavoritesStartTab(tab);library.favoritesRadio=tab!=1;library.favoritesLocal=tab!=2;Library restored=Library.fromJson(library.toJson());assertEquals(tab,restored.favoritesStartTab);assertTrue(restored.favoritesOnStart);}
+  for(int tab=0;tab<6;tab++) {Library library=new Library();library.favoritesOnStart=true;library.setFavoritesStartTab(tab);library.favoritesRadio=tab!=1;library.favoritesLocal=tab!=2;Library restored=Library.fromJson(library.toJson());assertEquals(tab,restored.favoritesStartTab);assertTrue(restored.favoritesOnStart);}
  }
  @Test public void oldStartPreferenceKeepsPreviouslyChosenFavoritesTab() throws Exception {
   Library library=new Library();library.favoritesLocal=true;org.json.JSONObject old=new org.json.JSONObject(library.toJson());old.remove("favoritesStartTab");assertEquals(2,Library.fromJson(old.toString()).favoritesStartTab);old.put("favoritesLocal",false).put("favoritesRadio",true);assertEquals(1,Library.fromJson(old.toString()).favoritesStartTab);
  }
  @Test public void invalidSavedStartTabIsClampedToAnAvailableTab() throws Exception {
-  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(3,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
+  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(5,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
  }
 
 }

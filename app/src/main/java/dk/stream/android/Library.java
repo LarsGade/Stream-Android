@@ -85,11 +85,12 @@ public final class Library {
  public final List<Source> sources=new ArrayList<>();
  public final List<Entry> favorites=new ArrayList<>();
  public boolean favoritesOnStart,favoritesRadio,autoPlayLast,miniPlayer;
- public int favoritesStartTab;
+ public int favoritesStartTab,favoritesCurrentTab;
  public List<LocalMedia> sourceFavorites(boolean cloud){List<LocalMedia> result=new ArrayList<>();for(List<LocalMedia> list:java.util.Arrays.asList(localFavorites,imageFavorites))for(LocalMedia entry:list)if(PcloudDocument.is(entry.uri)==cloud)result.add(entry);return result;}
- public boolean hasFavoriteTab(int tab){switch(tab){case 0:return !favorites.isEmpty();case 1:return !radioFavorites.isEmpty();case 2:return !sourceFavorites(false).isEmpty();case 3:return !sourceFavorites(true).isEmpty();default:return false;}}
- public int availableFavoriteTab(int preferred){if(hasFavoriteTab(preferred))return preferred;for(int tab=0;tab<4;tab++)if(hasFavoriteTab(tab))return tab;return -1;}
- public void setFavoritesStartTab(int tab){if(tab<0||tab>3)throw new IllegalArgumentException("Unknown favorites tab");favoritesStartTab=tab;}
+ public static Playlist.Kind favoriteKind(int tab){return tab==4?Playlist.Kind.FILM:tab==5?Playlist.Kind.SERIES:Playlist.Kind.TV;}
+ public boolean hasFavoriteTab(int tab){switch(tab){case 0:case 4:case 5:for(Entry entry:favorites)if(favoriteKind(tab)==entry.channel.kind)return true;return false;case 1:return !radioFavorites.isEmpty();case 2:return !sourceFavorites(false).isEmpty();case 3:return !sourceFavorites(true).isEmpty();default:return false;}}
+ public int availableFavoriteTab(int preferred){if(hasFavoriteTab(preferred))return preferred;for(int tab:new int[]{0,4,5,1,2,3})if(hasFavoriteTab(tab))return tab;return -1;}
+ public void setFavoritesStartTab(int tab){if(tab<0||tab>5)throw new IllegalArgumentException("Unknown favorites tab");favoritesStartTab=tab;}
  public Playlist.Channel lastPlayed;
  public long lastPlayedPosition;
  public String lastSourceId="";
@@ -115,6 +116,12 @@ public final class Library {
   favorites.add(entry);
  }
  public void removeFavorite(Entry entry) {for(int i=favorites.size()-1;i>=0;i--) if(favorites.get(i).same(entry)) favorites.remove(i);}
+ public void reorderVisibleFavorites(List<Entry> ordered){
+  List<Integer> slots=new ArrayList<>();List<Entry> remaining=new ArrayList<>(ordered);
+  for(int i=0;i<favorites.size();i++)for(int j=0;j<remaining.size();j++)if(favorites.get(i).same(remaining.get(j))){slots.add(i);remaining.remove(j);break;}
+  if(!remaining.isEmpty()||slots.size()!=ordered.size())throw new IllegalArgumentException("Favorite set changed");
+  for(int i=0;i<slots.size();i++)favorites.set(slots.get(i),ordered.get(i));
+ }
  public void reorderFavorites(List<Entry> ordered) {
   if(ordered.size()!=favorites.size()) throw new IllegalArgumentException("Favorite set changed");
   List<Entry> remaining=new ArrayList<>(favorites);
@@ -160,7 +167,7 @@ public final class Library {
  }
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
-  JSONObject root=new JSONObject();if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
+  JSONObject root=new JSONObject();if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesCurrentTab",favoritesCurrentTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   JSONArray photos=new JSONArray();for(LocalMedia photo:imageFavorites)photos.put(photo.json());root.put("imageFavorites",photos);
   root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
@@ -185,7 +192,8 @@ public final class Library {
   Library library=new Library();JSONObject root=new JSONObject(json);
   if(root.optJSONObject("pcloud")!=null)library.pcloud=PcloudAccount.from(root.getJSONObject("pcloud"));
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
-  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");library.favoritesImages=root.optBoolean("favoritesImages");library.favoritesStartTab=Math.max(0,Math.min(3,root.optInt("favoritesStartTab",library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0)));
+  library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");library.favoritesImages=root.optBoolean("favoritesImages");library.favoritesStartTab=Math.max(0,Math.min(5,root.optInt("favoritesStartTab",library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0)));
+  library.favoritesCurrentTab=Math.max(0,Math.min(5,root.optInt("favoritesCurrentTab",library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0)));
   JSONArray locals=root.optJSONArray("localFiles"),localStars=root.optJSONArray("localFavorites");if(locals!=null) for(int i=0;i<locals.length();i++) library.addLocal(LocalMedia.from(locals.getJSONObject(i)));if(localStars!=null) for(int i=0;i<localStars.length();i++) {LocalMedia entry=LocalMedia.from(localStars.getJSONObject(i));if(!library.isLocalFavorite(entry.uri))(entry.image()?library.imageFavorites:library.localFavorites).add(entry);}
   JSONArray photos=root.optJSONArray("imageFavorites");if(photos!=null)for(int i=0;i<photos.length();i++){LocalMedia photo=LocalMedia.from(photos.getJSONObject(i));if(photo.image()&&!library.isLocalFavorite(photo.uri))library.imageFavorites.add(photo);}
   library.lastSourceId=root.optString("lastSourceId","");
