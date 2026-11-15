@@ -1,0 +1,13 @@
+package dk.stream.android;
+import java.io.*;
+import javax.crypto.*;
+import org.junit.Test;
+import static org.junit.Assert.*;
+public class CatalogBinaryTest {
+ private final Library.Source source=Library.Source.m3u("Test","https://example.com/list");
+ private Catalog sample(){Catalog catalog=new Catalog();catalog.addGroup(Playlist.Kind.FILM,"Tom gruppe");catalog.add(new Playlist.Channel("ÆØÅ TV","https://example.com/live","TV",Playlist.Kind.TV,null,"logo","id","guide"));catalog.add(new Playlist.Channel("Serie","","Drama",Playlist.Kind.SERIES,"42"));return catalog;}
+ @Test public void roundTripPreservesMetadataAndEmptyGroups()throws Exception{ByteArrayOutputStream bytes=new ByteArrayOutputStream();CatalogBinary.write(bytes,source,sample());Catalog result=CatalogBinary.read(new ByteArrayInputStream(bytes.toByteArray()),source);assertEquals(2,result.items.size());assertEquals("ÆØÅ TV",result.items.get(0).name);assertEquals("id",result.items.get(0).epgId);assertEquals("guide",result.items.get(0).epgName);assertNull(result.items.get(0).seriesId);assertEquals("42",result.items.get(1).seriesId);assertEquals("Tom gruppe",result.groups(Playlist.Kind.FILM).get(0));}
+ @Test public void largeCatalogWritesIncrementally()throws Exception{Catalog catalog=new Catalog();for(int i=0;i<50000;i++)catalog.add(new Playlist.Channel("Kanal "+i,"https://example.com/"+i,"TV"));final long[] total={0};CatalogBinary.write(new OutputStream(){public void write(int b){total[0]++;}public void write(byte[] bytes,int offset,int length){assertTrue(length<1024);total[0]+=length;}},source,catalog);assertTrue(total[0]>2000000);}
+ @Test(expected=IOException.class)public void truncatedCatalogIsRejected()throws Exception{ByteArrayOutputStream bytes=new ByteArrayOutputStream();CatalogBinary.write(bytes,source,sample());byte[] data=bytes.toByteArray();CatalogBinary.read(new ByteArrayInputStream(java.util.Arrays.copyOf(data,data.length-1)),source);}
+ @Test public void streamingEncryptionPreservesExistingEnvelope()throws Exception{KeyGenerator keys=KeyGenerator.getInstance("AES");keys.init(256);javax.crypto.SecretKey key=keys.generateKey();Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.ENCRYPT_MODE,key);ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] iv=cipher.getIV();bytes.write(iv.length);bytes.write(iv);try(CipherOutputStream encrypted=new CipherOutputStream(bytes,cipher)){CatalogBinary.write(encrypted,source,sample());}byte[] plain=LibraryCrypto.decrypt(bytes.toByteArray(),key);assertEquals(2,CatalogBinary.read(new ByteArrayInputStream(plain),source).items.size());}
+}

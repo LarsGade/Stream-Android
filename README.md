@@ -518,3 +518,7 @@ Streamingkataloger gemmes krypteret og genåbnes fra telefonen uden netværksopd
 ### 1.27.1
 
 Kanal- og programlogoer vises med kvadratisk beskæring i streaming- og radiolister, lokale fillister, favoritter, bundbaren, den fulde lydafspiller og begge radiowidgets. Appikon, mappeikoner og billedviseren er uændrede.
+
+### 1.27.2
+
+Streaminglister gemmes nu løbende i krypteret binært format i stedet for at opbygge flere komplette JSON-kopier i hukommelsen. Det reducerer hukommelsesforbruget under Opdatér alt. Ældre gemte kataloger kan fortsat læses. Identiske kataloger gemmes ikke længere to gange efter kildeopdatering.
