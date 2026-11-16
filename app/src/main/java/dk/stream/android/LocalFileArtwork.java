@@ -10,7 +10,7 @@ final class LocalFileArtwork {
  static String asset(LocalMedia file){
   if(file==null||file.folder||file.image()||PcloudDocument.is(file.uri))return null;
   String name=Normalizer.normalize(file.name,Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
-  String logo=name.contains("anders og anders")?"anders.jpg":name.contains("bæltestedet")||name.contains("baeltestedet")?"balte.jpg":name.contains("r8dio")?"roder.jpg":name.contains("den korte radioavis")?"korte.png":null;
+  String logo=name.contains("anders og anders")?"anders.png":name.contains("bæltestedet")||name.contains("baeltestedet")?"balte.png":name.contains("r8dio")?"roder.png":name.contains("den korte radioavis")?"korte.png":null;
   return logo==null?null:"file:///android_asset/local_logos/"+logo;
  }
  static byte[] bytes(Context context,LocalMedia file){

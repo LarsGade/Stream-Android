@@ -554,3 +554,7 @@ Widgetternes play/stop-ikoner bruger nu #989898, midt mellem den tidligere lyse 
 ### 1.28.3
 
 Play, pause og stop har let afrundede hjørner. Øvrige tegnede appikoner har fået en diskret afrunding af konturerne. Farver og knapstørrelser er bevaret; widgetternes allerede afrundede ikoner er uændrede.
+
+### 1.28.4
+
+De fire lokale programlogoer er erstattet med de nye filer anders.png, korte.png, balte.png og roder.png. Logoernes oprindelige form og gennemsigtighed bevares.
