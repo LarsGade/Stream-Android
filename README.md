@@ -562,3 +562,7 @@ De fire lokale programlogoer er erstattet med de nye filer anders.png, korte.png
 ### 1.28.5
 
 De fire programlogoer matches nu også på Pcloud-filer. Logoerne vises i Pcloud-listen, favoritter, bundbaren og den fulde lydafspiller på samme måde som ved lokale filer.
+
+### 1.28.6
+
+Afstanden mellem ikoner/logoer og tekst er samlet til 12 dp, samme afstand som TV-favoritter. Gælder radio, landemapper, lokale filer, Pcloud, filfavoritter, mappeoverskrifter og bundbaren.

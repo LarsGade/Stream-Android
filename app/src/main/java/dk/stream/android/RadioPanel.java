@@ -45,7 +45,7 @@ public final class RadioPanel extends LinearLayout {
   worker.execute(()->{List<RadioStation> cached=CarRadioCatalog.readCache(context);main.post(()->{if(closed||loading||loaded)return;stations=cached;loaded=true;filter();});});
   title=text("",20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);addView(up,new LayoutParams(dp(48),dp(48)));up.setOnClickListener(view->back());
-  folderTitle=text("",18);folderTitle.setTypeface(null,android.graphics.Typeface.BOLD);folderTitle.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_folder,0,0,0);folderTitle.setCompoundDrawablePadding(dp(8));addView(folderTitle);
+  folderTitle=text("",18);folderTitle.setTypeface(null,android.graphics.Typeface.BOLD);folderTitle.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_folder,0,0,0);folderTitle.setCompoundDrawablePadding(MediaListStyle.iconGap(folderTitle));addView(folderTitle);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
   message=text("",13);message.setTextColor(Color.LTGRAY);addView(message);
@@ -98,10 +98,10 @@ public final class RadioPanel extends LinearLayout {
  private final class Adapter extends BaseAdapter {
   public int getCount() {return folderList()?3:visible.size();}public RadioStation getItem(int position) {return folderList()?null:visible.get(position);}public long getItemId(int position) {return position;}
   public View getView(int position,View recycled,ViewGroup parent) {
-   if(folderList()){LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(8),dp(8));MediaListStyle.row(row);ImageView icon=new ImageView(getContext());icon.setImageResource(R.drawable.ic_folder);row.addView(icon,new LayoutParams(dp(40),dp(40)));TextView label=text(COUNTRY_NAMES[position],16);row.addView(label,new LayoutParams(0,-2,1));row.setLayoutParams(new android.widget.AbsListView.LayoutParams(-1,MediaRowHeight.pixels(label)));return row;}
+   if(folderList()){LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(8),dp(8));MediaListStyle.row(row);ImageView icon=new ImageView(getContext());icon.setImageResource(R.drawable.ic_folder);row.addView(icon,new LayoutParams(dp(40),dp(40)));TextView label=text(COUNTRY_NAMES[position],16);label.setPadding(MediaListStyle.iconGap(label),label.getPaddingTop(),label.getPaddingRight(),label.getPaddingBottom());row.addView(label,new LayoutParams(0,-2,1));row.setLayoutParams(new android.widget.AbsListView.LayoutParams(-1,MediaRowHeight.pixels(label)));return row;}
    RadioStation station=getItem(position);LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(4),dp(8));row.setBackgroundColor(0xFF1D1D1D);
    ImageView logo=new ImageView(getContext());logo.setScaleType(ImageView.ScaleType.FIT_CENTER);row.addView(logo,new LayoutParams(dp(48),dp(48)));
-   TextView name=text(station.displayName(),16);name.setMaxLines(2);row.addView(name,new LayoutParams(0,-2,1));
+   TextView name=text(station.displayName(),16);name.setPadding(MediaListStyle.iconGap(name),name.getPaddingTop(),name.getPaddingRight(),name.getPaddingBottom());name.setMaxLines(2);row.addView(name,new LayoutParams(0,-2,1));
    String local=logos.find(station.name);if(local==null)local=logos.find(station.displayName());Glide.with(RadioPanel.this).load(local==null?station.logo:local).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(getContext())).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).fitCenter().into(logo);
 
    boolean playing=station.id.equals(RadioPlaybackService.audibleStationId());NowPlayingIndicator.show(NowPlayingIndicator.addTo(row),playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
