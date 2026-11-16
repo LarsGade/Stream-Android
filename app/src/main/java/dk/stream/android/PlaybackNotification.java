@@ -29,7 +29,7 @@ public final class PlaybackNotification {
   Notification.Builder builder=Build.VERSION.SDK_INT>=26?new Notification.Builder(context,channel):new Notification.Builder(context);
   Player player=session.getPlayer();androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();boolean playing=player.getPlayWhenReady();
   builder.setColor(0xFF3686FF).setSmallIcon(R.drawable.ic_play).setContentTitle(metadata.title==null?context.getString(R.string.app_name):metadata.title)
-   .setContentText(metadata.artist==null?context.getString(R.string.app_name):metadata.artist).setContentIntent(session.getSessionActivity()).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false)
+   .setContentText(PlaybackText.SOURCE).setContentIntent(session.getSessionActivity()).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false)
    .addAction(playing?(liveRadio?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play,context.getString(playing?(liveRadio?R.string.stop_action:R.string.pause_action):R.string.play_action),toggle);
   if(!liveRadio) builder.addAction(R.drawable.ic_stop,context.getString(R.string.stop_action),stop);
   if(live!=null)builder.addAction(R.drawable.ic_live,atLive?"Live":"Gå til live",live);

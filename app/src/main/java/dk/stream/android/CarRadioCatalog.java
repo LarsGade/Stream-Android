@@ -54,10 +54,10 @@ public final class CarRadioCatalog {
   try {for(RadioStation station:danish()) if(!matches.containsKey(station.id) && LocalChannelLogos.key(station.displayName()).contains(key)) matches.put(station.id,station);} catch(Exception e) {if(matches.isEmpty()) throw e;}
   List<MediaItem> result=new ArrayList<>();for(RadioStation station:matches.values()) result.add(item(station,false));return result;
  }
- public static MediaItem folder(String id,String title) {return new MediaItem.Builder().setMediaId(id).setMediaMetadata(new MediaMetadata.Builder().setTitle(title).setIsBrowsable(true).setIsPlayable(false).build()).build();}
+ public static MediaItem folder(String id,String title) {return new MediaItem.Builder().setMediaId(id).setMediaMetadata(new MediaMetadata.Builder().setArtist(PlaybackText.SOURCE).setSubtitle(PlaybackText.SOURCE).setTitle(title).setIsBrowsable(true).setIsPlayable(false).build()).build();}
  public MediaItem item(RadioStation station,boolean playable) {
   Uri artwork=PlaybackArtwork.bundled(context,PlaybackArtwork.logoName(context,station))?CarArtworkProvider.uri(context,PlaybackArtwork.logoName(context,station)):Uri.parse(station.logo.isEmpty()?CarArtworkProvider.uri(context,"Stream").toString():station.logo);
-  MediaMetadata.Builder metadata=new MediaMetadata.Builder().setTitle(station.displayName()).setDisplayTitle(station.displayName()).setIsBrowsable(false).setIsPlayable(true).setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION).setArtworkUri(artwork);
+  MediaMetadata.Builder metadata=new MediaMetadata.Builder().setArtist(PlaybackText.SOURCE).setSubtitle(PlaybackText.SOURCE).setTitle(station.displayName()).setDisplayTitle(station.displayName()).setIsBrowsable(false).setIsPlayable(true).setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION).setArtworkUri(artwork);
   MediaItem.Builder item=new MediaItem.Builder().setMediaId(PREFIX+station.id);
   if(playable) {item.setUri(Playlist.httpUrl(station.url).toString()).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null);metadata.setArtworkData(PlaybackArtwork.local(context,PlaybackArtwork.logoName(context,station)),MediaMetadata.PICTURE_TYPE_FRONT_COVER);}
   return item.setMediaMetadata(metadata.build()).build();

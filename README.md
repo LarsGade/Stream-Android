@@ -542,3 +542,7 @@ Favoritter-knappen i burgermenuen er blå som de øvrige hovedknapper, med fed h
 ### 1.28.0
 
 Radio har tre landemapper: Danmark (DK), England (GB i Radio Browser) og USA (US). Manuel radioopdatering henter alle tre lande og bevarer tidligere data for lande, der fejler. Favoritter bevarer deres land og vises fortsat samlet.
+
+### 1.28.1
+
+Play/stop-ikonerne i begge radiowidgets bruger nu den grå farve #555555. Medieafspillerens undertekst er “Afspilles fra Stream” for radio, streaming og lokale/Pcloud-filer, også i Cast-metadata.
