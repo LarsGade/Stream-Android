@@ -570,3 +570,7 @@ Afstanden mellem ikoner/logoer og tekst er samlet til 12 dp, samme afstand som T
 ### 1.28.7
 
 Mappeikoner bruger nu den gule farve #FFC400 i lister og mappeoverskrifter, inklusive radiolandemapper, lokale filer, Pcloud og favoritter.
+
+### 1.28.8
+
+Bundbaren viser nu også logoet for TV, film og serier til venstre for navnet. Den bruger medfølgende kanallogo, kildens logo eller indlejret artwork, når tilgængeligt. Radio, lokale filer og Pcloud bevarer deres logoer; TV-logoet bruges også i telefonens bar under casting.

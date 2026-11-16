@@ -8,7 +8,7 @@ import android.widget.*;
 /** One transport icon; the rest of the bar opens the full player for every source. */
 @androidx.media3.common.util.UnstableApi
 public final class RadioBar extends LinearLayout {
- public interface VideoActions {String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
+ public interface VideoActions {default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
  private final TextView name;
  private final ImageView artwork;private Object artworkModel;
  private final ImageButton toggle,live;
@@ -32,9 +32,9 @@ public final class RadioBar extends LinearLayout {
  }
  void refresh(){
   boolean running=false;String title="";boolean isLive=false,liveChannel=false,liveNow=false;Object image=null;
-  if(CastPlayback.hasMedia(getContext())){title=CastPlayback.title(getContext());isLive=LivePlayback.behind(CastPlayback.remote(getContext()));liveChannel=CastPlayback.remote(getContext()).isLiveStream();liveNow=liveChannel&&CastPlayback.remote(getContext()).isPlaying()&&!isLive;image=CastPlayback.phoneArtwork(getContext());if(image==null){com.google.android.gms.cast.MediaInfo info=CastPlayback.remote(getContext()).getMediaInfo();com.google.android.gms.cast.MediaMetadata metadata=info==null?null:info.getMetadata();if(metadata!=null&&!metadata.getImages().isEmpty())image=metadata.getImages().get(0).getUrl();}running=CastPlayback.remote(getContext()).isPlaying()||CastPlayback.remote(getContext()).isBuffering();}
+  if(CastPlayback.hasMedia(getContext())){title=CastPlayback.title(getContext());isLive=LivePlayback.behind(CastPlayback.remote(getContext()));liveChannel=CastPlayback.remote(getContext()).isLiveStream();liveNow=liveChannel&&CastPlayback.remote(getContext()).isPlaying()&&!isLive;image=CastPlayback.phoneArtwork(getContext());if(image==null&&video!=null&&title.equals(video.title()))image=video.artwork();if(image==null){com.google.android.gms.cast.MediaInfo info=CastPlayback.remote(getContext()).getMediaInfo();com.google.android.gms.cast.MediaMetadata metadata=info==null?null:info.getMetadata();if(metadata!=null&&!metadata.getImages().isEmpty())image=metadata.getImages().get(0).getUrl();}running=CastPlayback.remote(getContext()).isPlaying()||CastPlayback.remote(getContext()).isBuffering();}
   else if(LocalAudioService.current()!=null){LocalMedia file=LocalAudioService.current();title=file.displayName();running=LocalAudioService.playing(file.uri);androidx.media3.common.Player player=LocalAudioService.player();if(player!=null){androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();image=metadata.artworkData!=null&&metadata.artworkData.length>0?metadata.artworkData:metadata.artworkUri;}}
-  else if(video!=null&&!video.title().isEmpty()){title=video.title();running=video.playing();isLive=video.needsLive();liveChannel=video.liveChannel();liveNow=video.liveNow();}
+  else if(video!=null&&!video.title().isEmpty()){title=video.title();running=video.playing();isLive=video.needsLive();liveChannel=video.liveChannel();liveNow=video.liveNow();image=video.artwork();}
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();liveChannel=true;liveNow=RadioPlaybackService.audioPlayer()!=null&&RadioPlaybackService.audioPlayer().isPlaying()&&!isLive;image=PlaybackArtwork.radioModel(getContext(),station);}}
   String localCover=LocalFileArtwork.asset(LocalAudioService.current());if(localCover!=null&&!CastPlayback.hasMedia(getContext()))image=localCover;
   updateArtwork(title.isEmpty()?null:image,title);

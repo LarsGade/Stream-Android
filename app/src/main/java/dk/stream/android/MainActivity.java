@@ -197,6 +197,11 @@ public final class MainActivity extends AppCompatActivity {
    public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
+   public Object artwork(){
+    if(selected==null)return null;String bundled=localLogos.find(selected.name);if(bundled!=null)return bundled;
+    if(!selected.logoUrl.isEmpty())return LogoRequests.model(selected.logoUrl,selected.url);
+    if(player!=null){androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();return metadata.artworkData!=null&&metadata.artworkData.length>0?metadata.artworkData:metadata.artworkUri;}return null;
+   }
    public String title(){return selected==null?"":selected.name;}
    public boolean playing(){return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
    public boolean liveChannel(){return playbackPanel.liveChannel();}
