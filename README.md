@@ -550,3 +550,7 @@ Play/stop-ikonerne i begge radiowidgets bruger nu den grå farve #555555. Mediea
 ### 1.28.2
 
 Widgetternes play/stop-ikoner bruger nu #989898, midt mellem den tidligere lyse #DADADA og den mørke #555555.
+
+### 1.28.3
+
+Play, pause og stop har let afrundede hjørner. Øvrige tegnede appikoner har fået en diskret afrunding af konturerne. Farver og knapstørrelser er bevaret; widgetternes allerede afrundede ikoner er uændrede.
