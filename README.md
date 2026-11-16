@@ -566,3 +566,7 @@ De fire programlogoer matches nu også på Pcloud-filer. Logoerne vises i Pcloud
 ### 1.28.6
 
 Afstanden mellem ikoner/logoer og tekst er samlet til 12 dp, samme afstand som TV-favoritter. Gælder radio, landemapper, lokale filer, Pcloud, filfavoritter, mappeoverskrifter og bundbaren.
+
+### 1.28.7
+
+Mappeikoner bruger nu den gule farve #FFC400 i lister og mappeoverskrifter, inklusive radiolandemapper, lokale filer, Pcloud og favoritter.
