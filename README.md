@@ -746,3 +746,7 @@ Rutinemeddelelser om stoppet afspilning, afsluttet casting og vellykket casting 
 ### 1.37.0
 
 Bluetooth-genforbindelse genoptager den afspiller, som faktisk blev afbrudt, uden at prioritere radio over podcast, Pcloud, lokale filer eller andre aktive medier. Afspilningen pauser ved mistet Bluetooth-lydudgang og fortsætter fra sin eksisterende kø/position, når Bluetooth kommer tilbage. Et nyt medievalg, manuelt stop/pause, valg af telefonhøjttaler eller lukning af appen annullerer den ventende genoptagelse. Bilens generelle play-kommando til radiosessionen videresendes til den senest aktive afspiller, hvis det var et andet medie. Tilstanden gælder den igangværende app-proces; Androids Bluetooth- og baggrundsbegrænsninger gælder fortsat.
+
+### 1.37.1
+
+Begge widgets har særskilte forhåndsvisninger med en cirkel mærket Radio i stedet for et kanallogo/appikon. Den brede forhåndsvisning beholder play-knappen og den mørke baggrund. Der er både previewLayout og previewImage til forskellige Android-/launcher-versioner. Installerede widgets viser fortsat den valgte stations logo.
