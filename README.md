@@ -620,3 +620,9 @@ Overskriften Favoritter er fjernet fra favoritforsiden, som nu kun viser de fire
 ### 1.30.7
 
 Hold på en af favoritforsidens fire knapper for at åbne Flyt op/Flyt ned. Rækkefølgen gemmes mellem appstarter og følger med JSON-eksport/import. Ikon og handling følger altid den tilhørende kategori.
+
+### 1.31.0
+
+Importér/Eksportér medtager hele den gemte opsætning: kilder og logins, TV-guide-links, Pcloud-konto, lokale mappereferencer, alle favoritter og deres inddeling/rækkefølge, forsideknappernes rækkefølge, startfaner, afspillerindstillinger, seneste afspilning, lyttede/sete-positioner, widgetternes kanalvalg og valgt lydudgang. Aktiv afspilningsposition gemmes inden eksport. Import erstatter opsætningen; filen valideres først, og ved skrivefejl forsøges den tidligere opsætning gendannet. Ældre JSON-backups understøttes fortsat og nulstiller indstillinger, de ikke indeholder.
+
+JSON-filen indeholder logins i læsbar form. Mediefiler og hentede katalog-/billed-/TV-guide-caches er ikke opsætning og medfølger ikke. Androids mappetilladelser, Bluetooth-parringer og placeringer af widgets kan ikke overføres via JSON; på en ny telefon skal disse oprettes igen. Widgetkanalvalg gendannes for eksisterende widget-id'er.

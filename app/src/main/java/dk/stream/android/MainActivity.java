@@ -463,22 +463,26 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void exportSettings(android.net.Uri uri){
   if(settingsTransferBusy)return;if(!storageReadable){Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return;}
-  byte[] bytes;try{bytes=SettingsBackup.encode(library);}catch(Exception invalid){Toast.makeText(this,"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();return;}settingsTransferBusy=true;
-  settingsWorker.execute(()->{boolean success=false;try{try(java.io.OutputStream output=getContentResolver().openOutputStream(uri,"wt")){if(output==null)throw new java.io.IOException();output.write(bytes);output.flush();}success=true;}catch(Exception failure){}boolean saved=success;runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,saved?"Opsætningen er eksporteret. JSON-filen indeholder også dine logins.":"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();});});
+  final String settings;final Map<String,Map<String,Object>> preferences;
+  try{PlaybackTracker.flushAll();CastHistory.capture(true);PlaybackHistory.flush(this);settings=library.toJson();preferences=AppSettingsState.capture(this);}catch(Exception invalid){Toast.makeText(this,"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();return;}settingsTransferBusy=true;
+  settingsWorker.execute(()->{boolean success=false;try{byte[] bytes=SettingsBackup.encode(Library.fromJson(settings),preferences);try(java.io.OutputStream output=getContentResolver().openOutputStream(uri,"wt")){if(output==null)throw new java.io.IOException();output.write(bytes);output.flush();}success=true;}catch(Exception failure){}boolean saved=success;runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,saved?"Hele opsætningen er eksporteret, inklusive logins og afspilningshistorik.":"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();});});
  }
  private void importSettings(android.net.Uri uri){
   if(settingsTransferBusy)return;settingsTransferBusy=true;
-  settingsWorker.execute(()->{try{Library imported;try(java.io.InputStream input=getContentResolver().openInputStream(uri)){imported=SettingsBackup.decode(input);}runOnUiThread(()->applyImportedSettings(imported));}catch(Exception invalid){runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,"Filen kunne ikke importeres. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
+  settingsWorker.execute(()->{try{SettingsBackup.Snapshot imported;try(java.io.InputStream input=getContentResolver().openInputStream(uri)){imported=SettingsBackup.decodeSnapshot(input);}runOnUiThread(()->applyImportedSettings(imported));}catch(Exception invalid){runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,"Filen kunne ikke importeres. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
  }
- private void applyImportedSettings(Library imported){
-  if(isDestroyed()||isFinishing())return;applyingSettings=true;
-  settingsWorker.execute(()->{try{store.save(imported);runOnUiThread(()->finishImportedSettings(imported));}catch(Exception failure){runOnUiThread(()->{if(isDestroyed())return;applyingSettings=false;settingsTransferBusy=false;Toast.makeText(this,"Opsætningen kunne ikke gemmes. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
+ private void applyImportedSettings(SettingsBackup.Snapshot imported){
+  if(isDestroyed()||isFinishing())return;
+  final Library previous;final Map<String,Map<String,Object>> previousPreferences;
+  try{PlaybackTracker.flushAll();CastHistory.capture(true);PlaybackHistory.flush(this);previous=Library.fromJson(library.toJson());previousPreferences=AppSettingsState.capture(this);}catch(Exception failure){settingsTransferBusy=false;Toast.makeText(this,"Opsætningen kunne ikke importeres.",Toast.LENGTH_LONG).show();return;}
+  applyingSettings=true;PlaybackHistory.suspend();PlaybackTracker.detachAll();PlaybackShutdown.stop(this);stopPlaybackState();
+  settingsWorker.execute(()->{try{store.save(imported.library);AppSettingsState.restore(this,imported.preferences);runOnUiThread(()->{PlaybackHistory.reload();finishImportedSettings(imported.library);});}catch(Exception failure){boolean recovered=true;try{store.save(previous);AppSettingsState.restore(this,previousPreferences);}catch(Exception rollbackFailure){recovered=false;}boolean restored=recovered;runOnUiThread(()->{PlaybackHistory.reload();if(isDestroyed())return;applyingSettings=false;settingsTransferBusy=false;Toast.makeText(this,restored?"Import mislykkedes. Den tidligere opsætning er gendannet.":"Import mislykkedes. Opsætningen kunne ikke gendannes fuldt. Prøv at importere igen.",Toast.LENGTH_LONG).show();});}});
  }
  private void finishImportedSettings(Library imported){
   if(isDestroyed()||isFinishing())return;getPreferences(0).edit().remove("playlist").apply();
-  PlaybackShutdown.stop(this);stopPlaybackState();library=imported;storageReadable=true;RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
+  library=imported;storageReadable=true;RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
   boolean folderAccess=hasLocalFolderAccess(imported);
-  Toast.makeText(this,folderAccess?"Opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale filer for at give adgang.",Toast.LENGTH_LONG).show();recreate();
+  Toast.makeText(this,folderAccess?"Hele opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale filer for at give adgang.",Toast.LENGTH_LONG).show();recreate();
  }
  private boolean hasLocalFolderAccess(Library settings){
   for(LocalMedia entry:settings.localFiles)if(entry.folder&&!PcloudDocument.is(entry.uri)){
