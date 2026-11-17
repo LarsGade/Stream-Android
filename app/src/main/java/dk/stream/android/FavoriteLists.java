@@ -1,0 +1,24 @@
+package dk.stream.android;
+import java.util.*;
+
+final class FavoriteLists {
+ static final String[] NAMES={"Streaming","Radio","Podcast","Musik"};
+ static boolean valid(String name){return Arrays.asList(NAMES).contains(name);}
+ static final class Item {
+  final Library.Entry stream;final RadioStation radio;final LocalMedia file;
+  Item(Library.Entry stream,RadioStation radio,LocalMedia file){this.stream=stream;this.radio=radio;this.file=file;}
+  String name(){return stream!=null?stream.channel.name:radio!=null?radio.displayName():file.displayFileName();}
+  String key(){return stream!=null?"stream:"+stream.sourceId+":"+stream.channel.kind+":"+stream.channel.seriesId+":"+stream.channel.url:radio!=null?"radio:"+radio.id:"file:"+file.uri;}
+  String defaultList(){if(stream!=null)return "Streaming";if(radio!=null)return "Radio";return file.folder||LocalFileArtwork.asset(file)!=null?"Podcast":"Musik";}
+  Playlist.Kind kind(){return stream!=null?stream.channel.kind:radio!=null?Playlist.Kind.TV:Playlist.Kind.FILM;}
+ }
+ static Item of(Library.Entry entry){return new Item(entry,null,null);}static Item of(RadioStation radio){return new Item(null,radio,null);}static Item of(LocalMedia file){return new Item(null,null,file);}
+ static List<Item> items(Library library,String list){List<Item> result=new ArrayList<>();for(Library.Entry entry:library.favorites)add(result,library,of(entry),list);for(RadioStation entry:library.radioFavorites)add(result,library,of(entry),list);for(LocalMedia entry:library.localFavorites)add(result,library,of(entry),list);for(LocalMedia entry:library.imageFavorites)add(result,library,of(entry),list);if(list.equals("Podcast")||list.equals("Musik"))Collections.sort(result,(a,b)->{boolean af=a.file!=null&&a.file.folder,bf=b.file!=null&&b.file.folder;return af!=bf?(af?-1:1):NaturalNameOrder.compare(a.name(),b.name());});if(!library.favoriteOrder.isEmpty())Collections.sort(result,(a,b)->{int ai=library.favoriteOrder.indexOf(a.key()),bi=library.favoriteOrder.indexOf(b.key());return Integer.compare(ai<0?Integer.MAX_VALUE:ai,bi<0?Integer.MAX_VALUE:bi);});return result;}
+ private static void add(List<Item> items,Library library,Item item,String list){if(list.equals((library.favoriteAssignments.containsKey(item.key())?library.favoriteAssignments.get(item.key()):item.defaultList())))items.add(item);}
+ static boolean contains(Library library,Item item){return item.stream!=null?library.isFavorite(item.stream):item.radio!=null?library.findRadio(item.radio.id)!=null:library.isLocalFavorite(item.file.uri);}
+ static void assign(Library library,Item item,String list){if(!valid(list))throw new IllegalArgumentException("Unknown favorite list");if(!contains(library,item)){if(item.stream!=null)library.toggleFavorite(item.stream);else if(item.radio!=null)library.addRadio(item.radio);else library.toggleLocalFavorite(item.file);}library.favoriteAssignments.put(item.key(),list);}
+ static void remove(Library library,Item item){if(contains(library,item)){if(item.stream!=null)library.toggleFavorite(item.stream);else if(item.radio!=null)library.removeRadio(item.radio.id);else library.toggleLocalFavorite(item.file);}library.favoriteAssignments.remove(item.key());library.favoriteOrder.remove(item.key());}
+ static void rekey(Library library,String oldKey,String newKey){if(oldKey.equals(newKey))return;String list=library.favoriteAssignments.remove(oldKey);if(list!=null)library.favoriteAssignments.put(newKey,list);int position=library.favoriteOrder.indexOf(oldKey);if(position>=0)library.favoriteOrder.set(position,newKey);}
+ static void move(Library library,String list,Item item,int direction){List<Item> items=items(library,list);int position=-1;for(int i=0;i<items.size();i++)if(items.get(i).key().equals(item.key()))position=i;int target=position+direction;if(position<0||target<0||target>=items.size())return;Collections.swap(items,position,target);for(Item entry:items)library.favoriteOrder.remove(entry.key());for(Item entry:items)library.favoriteOrder.add(entry.key());}
+ private FavoriteLists(){}
+}

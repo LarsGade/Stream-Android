@@ -84,6 +84,8 @@ public final class Library {
  }
  public final List<Source> sources=new ArrayList<>();
  public final List<Entry> favorites=new ArrayList<>();
+ public final Map<String,String> favoriteAssignments=new LinkedHashMap<>();
+ public final List<String> favoriteOrder=new ArrayList<>();
  public boolean favoritesOnStart,favoritesRadio,autoPlayLast,miniPlayer;
  public int favoritesStartTab,favoritesCurrentTab;
  public List<LocalMedia> sourceFavorites(boolean cloud){List<LocalMedia> result=new ArrayList<>();for(List<LocalMedia> list:java.util.Arrays.asList(localFavorites,imageFavorites))for(LocalMedia entry:list)if(PcloudDocument.is(entry.uri)==cloud)result.add(entry);return result;}
@@ -108,7 +110,7 @@ public final class Library {
  }
  public void removeSource(String id) {
   for(int i=sources.size()-1;i>=0;i--) if(sources.get(i).id.equals(id)) sources.remove(i);
-  for(int i=favorites.size()-1;i>=0;i--) if(favorites.get(i).sourceId.equals(id)) favorites.remove(i);
+  for(int i=favorites.size()-1;i>=0;i--) if(favorites.get(i).sourceId.equals(id)){String key=FavoriteLists.of(favorites.get(i)).key();favoriteAssignments.remove(key);favoriteOrder.remove(key);favorites.remove(i);}
   if(lastSourceId.equals(id)) lastSourceId=sources.isEmpty()?"":sources.get(0).id;
  }
  public boolean isFavorite(Entry entry) { for(Entry item:favorites) if(item.same(entry)) return true; return false; }
@@ -162,13 +164,13 @@ public final class Library {
     String epg=old.channel.kind+":"+old.channel.epgId,name=old.channel.kind+":"+LocalChannelLogos.key(old.channel.name);
     if(fresh==null && !old.channel.epgId.isEmpty() && !duplicateEpg.contains(epg)) fresh=byEpg.get(epg);
     if(fresh==null && !duplicateName.contains(name)) fresh=byName.get(name);
-    if(fresh!=null) favorites.set(i,new Entry(sourceId,fresh));
+    if(fresh!=null){Entry replacement=new Entry(sourceId,fresh);FavoriteLists.rekey(this,FavoriteLists.of(old).key(),FavoriteLists.of(replacement).key());favorites.set(i,replacement);}
    }
   }
  }
  private static String identity(Playlist.Channel item) { return item.kind.name()+":"+(item.seriesId==null?item.url:item.seriesId); }
  public String toJson() throws JSONException {
-  JSONObject root=new JSONObject();if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesCurrentTab",favoritesCurrentTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
+  JSONObject root=new JSONObject();root.put("favoriteAssignments",new JSONObject(favoriteAssignments));root.put("favoriteOrder",new JSONArray(favoriteOrder));if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesCurrentTab",favoritesCurrentTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   JSONArray photos=new JSONArray();for(LocalMedia photo:imageFavorites)photos.put(photo.json());root.put("imageFavorites",photos);
   root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
@@ -190,7 +192,7 @@ public final class Library {
   root.put("favorites",savedFavorites);JSONArray radios=new JSONArray();for(RadioStation station:radioFavorites) radios.put(station.toJson());root.put("radioFavorites",radios);return root.toString();
  }
  public static Library fromJson(String json) throws JSONException {
-  Library library=new Library();JSONObject root=new JSONObject(json);
+  Library library=new Library();JSONObject root=new JSONObject(json);JSONArray order=root.optJSONArray("favoriteOrder");if(order!=null)for(int i=0;i<order.length();i++)if(!library.favoriteOrder.contains(order.getString(i)))library.favoriteOrder.add(order.getString(i));JSONObject assignments=root.optJSONObject("favoriteAssignments");if(assignments!=null){java.util.Iterator<String> keys=assignments.keys();while(keys.hasNext()){String key=keys.next(),list=assignments.getString(key);if(!FavoriteLists.valid(list))throw new JSONException("Unknown favorite list");library.favoriteAssignments.put(key,list);}}
   if(root.optJSONObject("pcloud")!=null)library.pcloud=PcloudAccount.from(root.getJSONObject("pcloud"));
   if(root.optInt("version")!=1) throw new JSONException("Unsupported library format");
   library.favoritesOnStart=root.optBoolean("favoritesOnStart");library.favoritesRadio=root.optBoolean("favoritesRadio");library.favoritesLocal=root.optBoolean("favoritesLocal");library.favoritesImages=root.optBoolean("favoritesImages");library.favoritesStartTab=Math.max(0,Math.min(5,root.optInt("favoritesStartTab",library.favoritesImages?3:library.favoritesLocal?2:library.favoritesRadio?1:0)));

@@ -1,0 +1,27 @@
+package dk.stream.android;
+import android.content.*;
+import android.media.*;
+import android.graphics.Color;
+import android.view.View;
+import android.widget.*;
+import androidx.media3.exoplayer.ExoPlayer;
+import java.util.*;
+
+/** Routes this app's AudioTracks with the public preferred-device API (Android 6+). */
+@androidx.media3.common.util.UnstableApi
+@android.annotation.SuppressLint("ViewConstructor")
+final class BluetoothOutputButton extends androidx.appcompat.widget.AppCompatImageButton {
+ private static final Map<ExoPlayer,Context> players=new WeakHashMap<>();
+ private final Runnable tick=new Runnable(){public void run(){refresh();postDelayed(this,1000);}};
+ BluetoothOutputButton(Context context){super(context);setImageResource(R.drawable.ic_bluetooth);setBackgroundColor(Color.TRANSPARENT);int pad=Math.round(12*getResources().getDisplayMetrics().density);setPadding(pad,pad,pad,pad);setContentDescription("Vælg Bluetooth-enhed eller telefonhøjttaler");setOnClickListener(view->choose());}
+ private static boolean bluetooth(AudioDeviceInfo info){int type=info.getType();return type==AudioDeviceInfo.TYPE_BLUETOOTH_A2DP||type==AudioDeviceInfo.TYPE_BLUETOOTH_SCO||type==26||type==27||type==30;}
+ private static AudioDeviceInfo preferred(Context context){AudioManager manager=(AudioManager)context.getSystemService(Context.AUDIO_SERVICE);int id=context.getSharedPreferences("audio_output",0).getInt("device",-1);for(AudioDeviceInfo info:manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS))if(info.getId()==id&&info.getType()==context.getSharedPreferences("audio_output",0).getInt("type",info.getType()))return info;return null;}
+ static void register(Context context,ExoPlayer player){players.put(player,context.getApplicationContext());try{player.setPreferredAudioDevice(preferred(context));}catch(RuntimeException unsupported){}}
+ private void refresh(){AudioDeviceInfo selected=preferred(getContext());AudioManager manager=(AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);boolean active=false;try{active=selected!=null?bluetooth(selected):manager.isBluetoothA2dpOn();}catch(SecurityException unavailable){}if(CastPlayback.hasMedia(getContext()))active=false;setImageTintList(android.content.res.ColorStateList.valueOf(active?0xFF3686FF:Color.WHITE));}
+ private void choose(){if(CastPlayback.connected(getContext())){Toast.makeText(getContext(),"Stop casting for at vælge lydudgang på telefonen.",Toast.LENGTH_LONG).show();return;}
+  AudioManager manager=(AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);List<AudioDeviceInfo> devices=new ArrayList<>();List<String> names=new ArrayList<>();for(AudioDeviceInfo info:manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS))if(info.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER||bluetooth(info)&&info.getType()!=AudioDeviceInfo.TYPE_BLUETOOTH_SCO){devices.add(info);names.add(info.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER?"Telefonens højttaler":info.getProductName().toString());}
+  String[] labels=names.toArray(new String[0]);new androidx.appcompat.app.AlertDialog.Builder(getContext()).setTitle("Vælg lydudgang").setItems(labels,(dialog,position)->{AudioDeviceInfo device=devices.get(position);getContext().getSharedPreferences("audio_output",0).edit().putInt("device",device.getId()).putInt("type",device.getType()).apply();for(Map.Entry<ExoPlayer,Context> entry:new ArrayList<>(players.entrySet()))try{entry.getKey().setPreferredAudioDevice(device);}catch(IllegalStateException released){}refresh();}).setNeutralButton("Bluetooth-indstillinger",(dialog,which)->{try{getContext().startActivity(new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS));}catch(ActivityNotFoundException error){Toast.makeText(getContext(),"Bluetooth-indstillinger kunne ikke åbnes.",Toast.LENGTH_LONG).show();}}).setNegativeButton("Annuller",null).show();
+ }
+ @Override protected void onAttachedToWindow(){super.onAttachedToWindow();post(tick);}
+ @Override protected void onDetachedFromWindow(){removeCallbacks(tick);super.onDetachedFromWindow();}
+}

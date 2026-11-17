@@ -43,7 +43,7 @@ public final class LocalAudioService extends MediaSessionService {
    if(player!=null) player.pause();android.util.Log.e("StreamLocalPlayback","Android rejected foreground playback");
    android.widget.Toast.makeText(LocalAudioService.this,"Åbn Stream for at genoptage afspilningen.",android.widget.Toast.LENGTH_LONG).show();
   }});
-  player=new ExoPlayer.Builder(this,new DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(()->new PcloudDataSource(this))).build();
+  player=new ExoPlayer.Builder(this,new DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(()->new PcloudDataSource(this))).build();BluetoothOutputButton.register(this,player);
   player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_LOCAL);
   session=new MediaSession.Builder(this,player).setId("stream-local-playback").build();addSession(session);
   player.addListener(new Player.Listener() {

@@ -35,6 +35,7 @@ public final class MainActivity extends AppCompatActivity {
  private final Set<String> epgPending=new HashSet<>();
  private final Map<String,Long> epgAttempted=new HashMap<>();
  private boolean updatingAll,radioMode,favoritesPage,choosingFavoriteTab;
+ private FavoriteHub favoriteHub;private boolean favoriteHubMode;
  private Spinner favoriteCategories;
  private final List<Integer> favoriteCategoryIds=new ArrayList<>();
  private int currentFavoriteTab;
@@ -138,7 +139,7 @@ public final class MainActivity extends AppCompatActivity {
   getOnBackPressedDispatcher().addCallback(this,miniBack);
   fullscreenBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {exitFullscreen();}};
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
-  localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(radioMode&&radioPanel!=null)radioPanel.back();else if(pcloudMode&&pcloudPanel!=null)pcloudPanel.back();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
+  localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(favoriteHubMode)favoriteHub.back();else if(radioMode&&radioPanel!=null)radioPanel.back();else if(pcloudMode&&pcloudPanel!=null)pcloudPanel.back();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{
    androidx.core.graphics.Insets bars=insets.getInsetsIgnoringVisibility(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout());
    view.setPadding(bars.left+dp(12),bars.top+dp(8),bars.right+dp(12),bars.bottom+dp(8));return insets;
@@ -147,6 +148,7 @@ public final class MainActivity extends AppCompatActivity {
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(48)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
   FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,Math.round(dp(64)*0.72f),1));
   ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_icon);brand.setScaleX(0.648f);brand.setScaleY(0.648f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
+  header.addView(new BluetoothOutputButton(this),new LinearLayout.LayoutParams(dp(48),dp(48)));
   MediaRouteButton castButton=new MediaRouteButton(this){@Override public boolean performClick(){if(LocalAudioService.current()!=null&&android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};castRouteButton=castButton;header.addView(castButton,new LinearLayout.LayoutParams(dp(48),dp(48)));
   createDrawer();
   androidx.activity.OnBackPressedCallback closeDrawer=new androidx.activity.OnBackPressedCallback(false) {
@@ -196,6 +198,12 @@ public final class MainActivity extends AppCompatActivity {
   pcloudPanel=new PcloudPanel(this,new PcloudPanel.Actions(){
    public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
+  favoriteHub=new FavoriteHub(this,new FavoriteHub.Actions(){
+   public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
+   public void navigation(boolean back){if(favoriteHubMode)localBack.setEnabled(back);}
+   public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(item.stream!=null)open(item.stream);else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
+   public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
+  });favoriteHub.setVisibility(View.GONE);root.addView(favoriteHub,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
    public Object artwork(){
     if(selected==null)return null;String bundled=localLogos.find(selected.name);if(bundled!=null)return bundled;
@@ -219,14 +227,14 @@ public final class MainActivity extends AppCompatActivity {
     if(position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
     boolean favorite=library.isFavorite(entry);
-    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(changeLibrary(()->library.toggleFavorite(entry)))filter();return true;});list.addReorderActions(menu,position);menu.show();
+    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){if(changeLibrary(()->FavoriteLists.remove(library,FavoriteLists.of(entry))))filter();}else FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {if(from>=0&&from<visible.size()&&to>=0&&to<visible.size()) {Library.Entry entry=visible.remove(from);visible.add(to,entry);adapter.notifyDataSetChanged();}}
    public void commit() {List<Library.Entry> ordered=new ArrayList<>(visible);changeLibrary(()->library.reorderVisibleFavorites(ordered));filter();}
    public void cancel() {filter();}
   });
   list.setOnItemClickListener((parent,view,position,id)->open(visible.get(position)));
-  sections.setOnCheckedChangeListener((group,id)->{ minimizeVideo();for(int i=0;i<kindButtons.length;i++) if(kindButtons[i].getId()==id) currentKind=Playlist.Kind.values()[i];rebuildGroups(); });
+  sections.setOnCheckedChangeListener((group,id)->{ if(!favoriteHubMode)minimizeVideo();for(int i=0;i<kindButtons.length;i++) if(kindButtons[i].getId()==id) currentKind=Playlist.Kind.values()[i];rebuildGroups(); });
   groups.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
    public void onItemSelected(AdapterView<?> parent,View view,int position,long id) { filter(); }
    public void onNothingSelected(AdapterView<?> parent) { }
@@ -247,7 +255,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
  private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
  private void collapseSettings(){if(settingsContent==null||settingsToggle==null)return;settingsContent.setVisibility(View.GONE);settingsToggle.setSelected(false);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");}
- private void minimizeVideo(){videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
+ private void minimizeVideo(){favoriteHubMode=false;if(favoriteHub!=null)favoriteHub.setVisibility(View.GONE);videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
  private Spinner dropdown(){Spinner spinner=new Spinner(this,Spinner.MODE_DROPDOWN);spinner.setPopupBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0xFF505050));return spinner;}
@@ -268,8 +276,8 @@ public final class MainActivity extends AppCompatActivity {
   settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
   AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));settingsContent.addView(start);
   LinearLayout startChoice=column();settingsContent.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
-  Spinner startTab=dropdown();ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"TV","Film","Serier","Radio","Lokale filer","Pcloud"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
-  startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=Library.favoriteTabOrder().get(position);if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(Library.favoriteTabOrder().indexOf(library.favoritesStartTab));}});
+  Spinner startTab=dropdown();ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"Streaming","Radio","Podcast","Musik"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(library.favoritesStartTab>3?0:library.favoritesStartTab);startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
+  startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=position;if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(library.favoritesStartTab>3?0:library.favoritesStartTab);}});
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
    if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
@@ -390,14 +398,11 @@ public final class MainActivity extends AppCompatActivity {
   int position=favoriteCategoryIds.indexOf(currentFavoriteTab);if(position>=0&&favoriteCategories.getSelectedItemPosition()!=position)favoriteCategories.setSelection(position);
   favoriteCategories.setVisibility(favoritesPage&&!available.isEmpty()?View.VISIBLE:View.GONE);choosingFavoriteTab=false;
  }
- private void showFavoriteTab(int tab) {
-  minimizeVideo();
-  tab=Math.max(0,library.availableFavoriteTab(tab));
-  pcloudMode=false;pcloudPanel.setVisibility(View.GONE);exitFullscreen();list.cancelFavoriteGesture();favoritesPage=true;favoritesMode=true;radioMode=tab==1;localMode=tab==2||tab==3;localBack.setEnabled(false);
-  currentFavoriteTab=tab;
-  radioPanel.setVisibility(radioMode?View.VISIBLE:View.GONE);if(radioMode) radioPanel.open(true);
-  localPanel.setVisibility(localMode?View.VISIBLE:View.GONE);if(localMode) localPanel.open(true,tab==3);filter();
+ private void showFavoritesHome(){
+  minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;
+  radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
  }
+ private void showFavoriteTab(int tab){showFavoritesHome();favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":tab==3?"Musik":"Streaming");}
  private void openLocal(boolean favorites) {
   minimizeVideo();
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);
@@ -542,7 +547,7 @@ public final class MainActivity extends AppCompatActivity {
  private void openStreamingService() {navigate(false);}
  private void navigate(boolean favorites) {
   minimizeVideo();
-  if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoriteTab(library.favoritesCurrentTab);return;}
+  if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoritesHome();return;}
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
 
  }
@@ -559,7 +564,7 @@ public final class MainActivity extends AppCompatActivity {
   ArrayAdapter<String> choices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);choices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);groups.setAdapter(choices);filter();
  }
  private void filter() {
-  if(adapter==null) return;
+  if(adapter==null) return;if(favoriteHubMode){favoriteHub.refresh();return;}
   int previousFavoriteTab=selectedFavoriteTab();updateFavoriteTabVisibility();
   if(favoritesPage){int available=Math.max(0,library.availableFavoriteTab(previousFavoriteTab));if(available!=previousFavoriteTab){showFavoriteTab(available);return;}}
 
@@ -738,7 +743,7 @@ public final class MainActivity extends AppCompatActivity {
  private void cancelCatalogRestore(){catalogRestoreGeneration++;if(catalogRestoreTask!=null)catalogRestoreTask.cancel(true);}
  private void restoreCatalogs(){
   List<Library.Source> sources=new ArrayList<>(library.sources);
-  int restoreGeneration=++catalogRestoreGeneration;catalogRestoreTask=catalogReader.submit(()->{Map<Library.Source,Catalog> saved=new LinkedHashMap<>();CatalogStore cache=new CatalogStore(this);for(Library.Source source:sources){if(Thread.currentThread().isInterrupted())return;Catalog data=cache.load(source);if(data!=null)saved.put(source,data);}runOnUiThread(()->{if(isDestroyed()||applyingSettings||restoreGeneration!=catalogRestoreGeneration)return;for(Map.Entry<Library.Source,Catalog> entry:saved.entrySet()){Library.Source current=library.findSource(entry.getKey().id);if(current!=null&&CombinedCatalog.sameConnection(current,entry.getKey())&&!sourceCatalogs.containsKey(current.id)){sourceCatalogs.put(current.id,entry.getValue());cachedSourceConfigs.put(current.id,current);}}rebuildStreamingCatalog();chooseFirstKind();rebuildGroups();});});
+  int restoreGeneration=++catalogRestoreGeneration;catalogRestoreTask=catalogReader.submit(()->{Map<Library.Source,Catalog> saved=new LinkedHashMap<>();CatalogStore cache=new CatalogStore(this);for(Library.Source source:sources){if(Thread.currentThread().isInterrupted())return;Catalog data=cache.load(source);if(data!=null)saved.put(source,data);}runOnUiThread(()->{if(isDestroyed()||applyingSettings||restoreGeneration!=catalogRestoreGeneration)return;for(Map.Entry<Library.Source,Catalog> entry:saved.entrySet()){Library.Source current=library.findSource(entry.getKey().id);if(current!=null&&CombinedCatalog.sameConnection(current,entry.getKey())&&!sourceCatalogs.containsKey(current.id)){sourceCatalogs.put(current.id,entry.getValue());cachedSourceConfigs.put(current.id,current);}}rebuildStreamingCatalog();if(!favoriteHubMode)chooseFirstKind();rebuildGroups();});});
  }
  private void rebuildStreamingCatalog(){
   Set<String> keep=new HashSet<>();for(Library.Source source:library.sources){keep.add(source.id);if(!CombinedCatalog.sameConnection(source,cachedSourceConfigs.get(source.id)))sourceCatalogs.remove(source.id);}
@@ -850,7 +855,7 @@ public final class MainActivity extends AppCompatActivity {
   } else {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
-    player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
+    player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();video.setPlayer(player);BluetoothOutputButton.register(this,player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
     videoSession=new androidx.media3.session.MediaSession.Builder(this,player).setId("stream-video").setSessionActivity(android.app.PendingIntent.getActivity(this,10,new android.content.Intent(this,MainActivity.class).putExtra("openFullPlayer",true).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE)).build();
     player.addListener(new Player.Listener() {
      @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
@@ -935,7 +940,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
  private long imageFavoriteVersion=ImageSession.favoriteVersion;
- @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&localMode)localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
+ @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);library.favoriteAssignments.clear();library.favoriteAssignments.putAll(fresh.favoriteAssignments);library.favoriteOrder.clear();library.favoriteOrder.addAll(fresh.favoriteOrder);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&localMode)localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
  @Override protected void onResume() {super.onResume();if(LocalAudioService.current()!=null) syncLocalPlayback();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);
@@ -944,5 +949,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(favoriteHub!=null)favoriteHub.close();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

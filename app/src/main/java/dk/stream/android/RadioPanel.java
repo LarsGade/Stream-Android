@@ -58,7 +58,7 @@ public final class RadioPanel extends LinearLayout {
     if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new PopupMenu(context,anchor);
     boolean favorite=library.get().findRadio(station.id)!=null;
     if(favorite)menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
-    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{save.apply(()->{if(favorite)library.get().removeRadio(station.id);else library.get().addRadio(station);});filter();return true;});list.addReorderActions(menu,position);menu.show();
+    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){save.apply(()->FavoriteLists.remove(library.get(),FavoriteLists.of(station)));filter();}else FavoritePicker.show(getContext(),library.get(),save::apply,FavoriteLists.of(station),RadioPanel.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {RadioStation station=visible.remove(from);visible.add(to,station);adapter.notifyDataSetChanged();}
    public void commit() {List<RadioStation> order=new ArrayList<>(visible);save.apply(()->library.get().reorderRadio(order));filter();}
@@ -84,7 +84,7 @@ public final class RadioPanel extends LinearLayout {
   showMessage(favorites||folderList()?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
- private void play(RadioStation station) {beforePlay.run();if(CastPlayback.connected(getContext())) {CastPlayback.playRadio(getContext(),station);return;}androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
+ public void play(RadioStation station) {beforePlay.run();if(CastPlayback.connected(getContext())) {CastPlayback.playRadio(getContext(),station);return;}androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
  private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String error=RadioPlaybackService.error();playbackError.setText(error);playbackError.setVisibility(error.isEmpty()?GONE:VISIBLE);}
 
  private void rename(RadioStation station) {

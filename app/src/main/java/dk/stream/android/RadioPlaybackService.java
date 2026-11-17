@@ -45,7 +45,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
  }
  @Override public void onCreate() {
   super.onCreate();active=this;
-  player=new ExoPlayer.Builder(this).build();player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
+  player=new ExoPlayer.Builder(this).build();BluetoothOutputButton.register(this,player);player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
   setMediaNotificationProvider(new MediaNotification.Provider() {
    public MediaNotification createNotification(MediaSession mediaSession,com.google.common.collect.ImmutableList<CommandButton> buttons,MediaNotification.ActionFactory factory,MediaNotification.Provider.Callback callback) {return new MediaNotification(2001,notification(mediaSession));}
    public boolean handleCustomCommand(MediaSession mediaSession,String action,android.os.Bundle extras) {return false;}

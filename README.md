@@ -574,3 +574,9 @@ Mappeikoner bruger nu den gule farve #FFC400 i lister og mappeoverskrifter, inkl
 ### 1.28.8
 
 Bundbaren viser nu også logoet for TV, film og serier til venstre for navnet. Den bruger medfølgende kanallogo, kildens logo eller indlejret artwork, når tilgængeligt. Radio, lokale filer og Pcloud bevarer deres logoer; TV-logoet bruges også i telefonens bar under casting.
+
+### 1.29.0
+
+Favoritter åbner en forside med store knapper til Streaming, Radio, Podcast og Musik. Streaming indeholder TV, Film og Serier. Nye favoritter kan placeres i en valgt liste uanset kilde, og eksisterende favoritter bevares og fordeles automatisk. Flytning mellem lister og rækkefølge findes i hold-menuen. Mapper fra lokale filer og Pcloud kan åbnes inde i favoritlisten. Listevalg og rækkefølge følger med JSON-eksport/import.
+
+Bluetooth-knappen til venstre for cast findes i appens top og den fulde lydafspiller. Den viser tilsluttede Bluetooth-lydudgange og telefonens højttaler og sender valget til appens lydafspillere via Androids offentlige preferred-device-API. Valgt Bluetooth-udgang markeres blå. Parring og tilslutning af nye enheder sker i telefonens Bluetooth-indstillinger; casting afspilles fortsat på cast-enheden. Enheders faktiske routing skal verificeres på telefonen.

@@ -22,7 +22,8 @@ public final class SettingsBackup {
   if(root.has("format")){if(!FORMAT.equals(root.getString("format"))||root.getInt("backupVersion")!=1)throw new JSONException("Unsupported backup format");root=root.getJSONObject("settings");}
   if(root.getInt("version")!=1)throw new JSONException("Unsupported settings version");
   if(root.has("pcloud")&&!root.isNull("pcloud")&&!(root.get("pcloud") instanceof JSONObject))throw new JSONException("Invalid account");
-  for(String name:new String[]{"guides","localFiles","localFavorites","imageFavorites","radioFavorites"})if(root.has(name)&&!(root.get(name) instanceof JSONArray))throw new JSONException("Invalid settings list");
+  for(String name:new String[]{"guides","localFiles","localFavorites","imageFavorites","radioFavorites","favoriteOrder"})if(root.has(name)&&!(root.get(name) instanceof JSONArray))throw new JSONException("Invalid settings list");
+  if(root.has("favoriteAssignments")&&!(root.get("favoriteAssignments") instanceof JSONObject))throw new JSONException("Invalid favorite lists");
   JSONArray sources=root.getJSONArray("sources"),favorites=root.getJSONArray("favorites");Set<String> ids=new HashSet<>();
   for(int i=0;i<sources.length();i++){String id=sources.getJSONObject(i).getString("id");if(id.isEmpty()||!ids.add(id))throw new JSONException("Duplicate source");}
   for(int i=0;i<favorites.length();i++)if(!ids.contains(favorites.getJSONObject(i).getString("sourceId")))throw new JSONException("Favorite source missing");
