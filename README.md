@@ -650,3 +650,7 @@ Indstillinger → Forsideknapper, lige under Pcloud-konto, giver afkrydsningsfel
 ### 1.33.1
 
 Fane ved opstart har nu valgene Forside, TV, Film, Serier, Radio, Podcast og Musik. Det separate valg af Streaming-fane er fjernet. Eksisterende startvalg og JSON-backups bevarer den valgte TV-/Film-/Serier-liste.
+
+### 1.33.2
+
+Forsideknappernes hjørner er mindre afrundede (5 dp). Ikonerne har mere kantede rammer, stregender og former, mens hvid-blå gradient, størrelse og placering bevares.
