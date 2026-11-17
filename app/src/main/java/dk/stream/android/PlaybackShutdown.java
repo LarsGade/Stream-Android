@@ -6,6 +6,7 @@ import android.content.*;
 @androidx.media3.common.util.UnstableApi
 public final class PlaybackShutdown {
  public static void stop(Context context){
+  BluetoothPlayback.clear();
   if(LocalAudioService.player()!=null){LocalAudioService.player().pause();LocalAudioService.player().stop();LocalAudioService.player().clearMediaItems();}
   if(RadioPlaybackService.audioPlayer()!=null){RadioPlaybackService.audioPlayer().pause();RadioPlaybackService.audioPlayer().stop();RadioPlaybackService.audioPlayer().clearMediaItems();}
   CastPlayback.closeWithApp(context);

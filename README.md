@@ -742,3 +742,7 @@ Appikonets lille 52 × 50-pixel skærmbillede er erstattet med symbolet fra det 
 ### 1.36.1
 
 Rutinemeddelelser om stoppet afspilning, afsluttet casting og vellykket casting er fjernet. Stop skjuler og rydder statusfeltet, så der heller ikke står et tomt felt tilbage. Fejl ved afspilning, forbindelser og indlæsning vises fortsat.
+
+### 1.37.0
+
+Bluetooth-genforbindelse genoptager den afspiller, som faktisk blev afbrudt, uden at prioritere radio over podcast, Pcloud, lokale filer eller andre aktive medier. Afspilningen pauser ved mistet Bluetooth-lydudgang og fortsætter fra sin eksisterende kø/position, når Bluetooth kommer tilbage. Et nyt medievalg, manuelt stop/pause, valg af telefonhøjttaler eller lukning af appen annullerer den ventende genoptagelse. Bilens generelle play-kommando til radiosessionen videresendes til den senest aktive afspiller, hvis det var et andet medie. Tilstanden gælder den igangværende app-proces; Androids Bluetooth- og baggrundsbegrænsninger gælder fortsat.

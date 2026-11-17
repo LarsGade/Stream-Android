@@ -45,12 +45,12 @@ public final class RadioPlaybackService extends MediaLibraryService {
  }
  @Override public void onCreate() {
   super.onCreate();active=this;
-  player=new ExoPlayer.Builder(this).build();BluetoothOutputButton.register(this,player);player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
+  player=new ExoPlayer.Builder(this).build();BluetoothOutputButton.register(this,player,()->sessionPlayer.play());player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
   setMediaNotificationProvider(new MediaNotification.Provider() {
    public MediaNotification createNotification(MediaSession mediaSession,com.google.common.collect.ImmutableList<CommandButton> buttons,MediaNotification.ActionFactory factory,MediaNotification.Provider.Callback callback) {return new MediaNotification(2001,notification(mediaSession));}
    public boolean handleCustomCommand(MediaSession mediaSession,String action,android.os.Bundle extras) {return false;}
   });
-  sessionPlayer=new RadioSessionPlayer(player,this::foreground);
+  sessionPlayer=new RadioSessionPlayer(player,this::foreground,()->!BluetoothPlayback.resumeOther(player));
   carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog,()->onStartCommand(internalIntent(this,LIVE),0,0));
   session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(CarRadioCallback.liveButtons()).setMediaButtonPreferences(CarRadioCallback.liveButtons()).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,AudioPlayerActivity.class).putExtra("local",false).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
   player.addListener(new Player.Listener() {
@@ -136,5 +136,5 @@ public final class RadioPlaybackService extends MediaLibraryService {
   androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2001);RadioWidgetProvider.refresh(this);stopSelf();
  }
  @Override public void onTaskRemoved(Intent rootIntent) {artworkGeneration++;current=null;error="";behindLive=false;PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
- @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);artworkGeneration++;artworkWorker.shutdownNow();if(carCallback!=null) carCallback.close();if(active==this) active=null;if(session!=null) session.release();if(player!=null) player.release();RadioWidgetProvider.refresh(this);super.onDestroy();}
+ @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);artworkGeneration++;artworkWorker.shutdownNow();if(carCallback!=null) carCallback.close();if(active==this) active=null;if(session!=null) session.release();if(player!=null){BluetoothOutputButton.unregister(player);player.release();}RadioWidgetProvider.refresh(this);super.onDestroy();}
 }

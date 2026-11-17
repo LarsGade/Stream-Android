@@ -538,7 +538,7 @@ public final class MainActivity extends AppCompatActivity {
   LocalMedia current=LocalAudioService.current();
   if(current!=null&&current.uri.equals(entry.uri)) {return;}
   videoMinimized=false;requestNotificationPermission();
-  if(player!=null&&!localPlayerAttached) {stopPlaybackState();if(videoSession!=null) {videoSession.release();videoSession=null;}PlaybackTracker.detach(player);player.release();player=null;video.setPlayer(null);}
+  if(player!=null&&!localPlayerAttached) {stopPlaybackState();if(videoSession!=null) {videoSession.release();videoSession=null;}PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();player=null;video.setPlayer(null);}
   acceptLocalPlayback=true;resumeLocalPlayback=false;
   stopService(new android.content.Intent(this,RadioPlaybackService.class));
   try {androidx.core.content.ContextCompat.startForegroundService(this,LocalAudioService.playIntent(this,entry,queue).putExtra("position",position));}
@@ -553,7 +553,7 @@ public final class MainActivity extends AppCompatActivity {
   LocalMedia entry=LocalAudioService.current();ExoPlayer shared=LocalAudioService.player();
   if(entry==null||shared==null) {if(localPlayerAttached) {detachLocalPlayback();exitFullscreen();playbackPanel.setVisibility(View.GONE);updateMiniBack();}return;}
   if(!acceptLocalPlayback) return;
-  if(player!=null&&!localPlayerAttached) {if(videoSession!=null) {videoSession.release();videoSession=null;}PlaybackTracker.detach(player);player.release();}
+  if(player!=null&&!localPlayerAttached) {if(videoSession!=null) {videoSession.release();videoSession=null;}PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();}
   player=shared;localPlayerAttached=true;resumeLocalPlayback=false;
   if(entry.audio()) {selected=null;video.setPlayer(null);video.setKeepScreenOn(false);exitFullscreen();playbackPanel.setVisibility(View.GONE);}
   else {selected=new Playlist.Channel(entry.name,entry.uri,"",Playlist.Kind.FILM,null);video.setPlayer(player);video.setVisibility(View.VISIBLE);playbackPanel.setTitle(entry.name);playbackPanel.setVisibility(fullscreen||pipLayout||!videoMinimized?View.VISIBLE:View.GONE);video.setKeepScreenOn((fullscreen||pipLayout||!videoMinimized)&&player.isPlaying());}
@@ -971,6 +971,6 @@ public final class MainActivity extends AppCompatActivity {
   return handled;
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
- @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}PlaybackTracker.detach(player);player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
+ @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
  @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(favoriteHub!=null)favoriteHub.close();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }
