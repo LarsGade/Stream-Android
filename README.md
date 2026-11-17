@@ -690,3 +690,7 @@ Toplogoet er 25 % mindre end i 1.34.6. Forsideknapperne har 12 dp ekstra afstand
 ### 1.34.8
 
 Forsideikonernes farveforløb er justeret til logoets klare cyan, mættede blå og dybere blå skygger med en lys top. Ikonernes former, størrelser og placeringer er bevaret.
+
+### 1.34.9
+
+På favoritforsiden ligger burgermenuen centreret nederst, over en eventuel afspilningsbar. Toplogoet bevarer centreringen. På øvrige sider ligger burgermenuen fortsat øverst til venstre.

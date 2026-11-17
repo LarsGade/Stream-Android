@@ -10,13 +10,14 @@ import java.util.concurrent.*;
 @android.annotation.SuppressLint("ViewConstructor")
 @androidx.media3.common.util.UnstableApi
 final class FavoriteHub extends LinearLayout {
- interface Actions {Library library();boolean save(Runnable change);void play(FavoriteLists.Item item,List<LocalMedia> queue);boolean playing(FavoriteLists.Item item);void navigation(boolean back);}
- private final ImageButton back;private final Actions actions;private final LinearLayout home,body;private final ScrollView homeScroll;private final TextView title;private final RadioGroup kind;private int selectedKind;private final EditText search;private final ListView list;
+ interface Actions {Library library();boolean save(Runnable change);void play(FavoriteLists.Item item,List<LocalMedia> queue);boolean playing(FavoriteLists.Item item);void navigation(boolean back);void openMenu();}
+ private final ImageButton back,homeMenu;private final Actions actions;private final LinearLayout home,body;private final ScrollView homeScroll;private final TextView title;private final RadioGroup kind;private int selectedKind;private final EditText search;private final ListView list;
  private final ArrayList<FavoriteLists.Item> visible=new ArrayList<>();private final ArrayDeque<LocalMedia> folders=new ArrayDeque<>();private final List<LocalMedia> children=new ArrayList<>();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();private final Adapter adapter=new Adapter();private String category="";private int generation;private boolean closed;
  private final Runnable tick=new Runnable(){public void run(){if(!closed){adapter.notifyDataSetChanged();postDelayed(this,1000);}}};
  FavoriteHub(Context context,Actions actions){super(context);this.actions=actions;setOrientation(VERTICAL);
-  home=new LinearLayout(context);home.setOrientation(VERTICAL);home.setPadding(0,dp(12),0,0);homeScroll=new ScrollView(context);homeScroll.setFillViewport(true);homeScroll.addView(home);addView(homeScroll,new LayoutParams(-1,-1));
+  home=new LinearLayout(context);home.setOrientation(VERTICAL);home.setPadding(0,dp(12),0,0);homeScroll=new ScrollView(context);homeScroll.setFillViewport(true);homeScroll.addView(home);addView(homeScroll,new LayoutParams(-1,0,1));
+  homeMenu=new ImageButton(context);homeMenu.setImageResource(R.drawable.ic_menu);homeMenu.setContentDescription(context.getString(R.string.open_menu));homeMenu.setBackgroundColor(Color.TRANSPARENT);homeMenu.setPadding(dp(12),dp(12),dp(12),dp(12));LayoutParams menuPosition=new LayoutParams(dp(48),dp(48));menuPosition.gravity=Gravity.CENTER_HORIZONTAL;addView(homeMenu,menuPosition);homeMenu.setOnClickListener(view->actions.openMenu());
   rebuildHome();
   body=new LinearLayout(context);body.setOrientation(VERTICAL);addView(body,new LayoutParams(-1,-1));back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setBackgroundColor(Color.TRANSPARENT);LinearLayout navigation=new LinearLayout(context);navigation.setGravity(Gravity.CENTER_VERTICAL);body.addView(navigation,new LayoutParams(-1,-2));navigation.addView(back,new LayoutParams(dp(48),dp(48)));back.setOnClickListener(view->back());
   title=text("",20);title.setTypeface(null,Typeface.BOLD);title.setCompoundDrawablePadding(MediaListStyle.iconGap(title));title.setMaxLines(2);title.setEllipsize(android.text.TextUtils.TruncateAt.END);navigation.addView(title,new LayoutParams(0,-2,1));
@@ -29,8 +30,8 @@ final class FavoriteHub extends LinearLayout {
  private int dp(int size){return Math.round(size*getResources().getDisplayMetrics().density);}
  private TextView text(String label,int size){TextView view=new TextView(getContext());view.setText(label);view.setTextColor(Color.WHITE);view.setTextSize(size);return view;}
  void selectStreamingKind(int value){if(value>=0&&value<kind.getChildCount())kind.check(kind.getChildAt(value).getId());}
- void showHome(){rebuildHome();generation++;category="";folders.clear();home.setVisibility(VISIBLE);homeScroll.setVisibility(VISIBLE);body.setVisibility(GONE);actions.navigation(false);}
- void showList(String name){generation++;category=name;folders.clear();home.setVisibility(GONE);homeScroll.setVisibility(GONE);body.setVisibility(VISIBLE);search.setText("");refresh();}
+ void showHome(){rebuildHome();generation++;category="";folders.clear();home.setVisibility(VISIBLE);homeScroll.setVisibility(VISIBLE);homeMenu.setVisibility(VISIBLE);body.setVisibility(GONE);actions.navigation(false);}
+ void showList(String name){generation++;category=name;folders.clear();home.setVisibility(GONE);homeScroll.setVisibility(GONE);homeMenu.setVisibility(GONE);body.setVisibility(VISIBLE);search.setText("");refresh();}
  boolean canBack(){return !category.isEmpty();}
  void back(){if(!folders.isEmpty()){folders.removeLast();search.setText("");if(!folders.isEmpty())loadFolder();else{generation++;refresh();}}else showHome();}
  private List<LocalMedia> queue(){List<LocalMedia> queue=new ArrayList<>();for(FavoriteLists.Item item:visible)if(item.file!=null)queue.add(item.file);return queue;}

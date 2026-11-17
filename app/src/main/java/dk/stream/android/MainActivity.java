@@ -35,6 +35,7 @@ public final class MainActivity extends AppCompatActivity {
  private final Set<String> epgPending=new HashSet<>();
  private final Map<String,Long> epgAttempted=new HashMap<>();
  private boolean updatingAll,radioMode,favoritesPage,choosingFavoriteTab;
+ private ImageButton headerMenu;
  private FavoriteHub favoriteHub;private boolean favoriteHubMode;
  private Spinner favoriteCategories;
  private final List<Integer> favoriteCategoryIds=new ArrayList<>();
@@ -145,7 +146,7 @@ public final class MainActivity extends AppCompatActivity {
    view.setPadding(bars.left+dp(12),bars.top+dp(8),bars.right+dp(12),bars.bottom+dp(8));return insets;
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
-  ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(48)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
+  ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));headerMenu=menu;header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(48)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
   FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,dp(64),1));
   ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_banner);brand.setScaleX(0.972f);brand.setScaleY(0.972f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
   header.addView(new Space(this),new LinearLayout.LayoutParams(dp(48),1));
@@ -201,7 +202,8 @@ public final class MainActivity extends AppCompatActivity {
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   favoriteHub=new FavoriteHub(this,new FavoriteHub.Actions(){
    public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
-   public void navigation(boolean back){if(favoriteHubMode)localBack.setEnabled(back);}
+   public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(back?View.VISIBLE:View.INVISIBLE);}}
+   public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
    public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(item.stream!=null)open(item.stream);else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
    public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
   });favoriteHub.setVisibility(View.GONE);root.addView(favoriteHub,new LinearLayout.LayoutParams(-1,0,1));
@@ -258,7 +260,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
  private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
  private void collapseSettings(){if(settingsContent==null||settingsToggle==null)return;settingsContent.setVisibility(View.GONE);settingsToggle.setSelected(false);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");}
- private void minimizeVideo(){favoriteHubMode=false;if(favoriteHub!=null)favoriteHub.setVisibility(View.GONE);videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
+ private void minimizeVideo(){if(headerMenu!=null)headerMenu.setVisibility(View.VISIBLE);favoriteHubMode=false;if(favoriteHub!=null)favoriteHub.setVisibility(View.GONE);videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
  private ArrayAdapter<String> boldDropdown(String[] labels){return new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){
