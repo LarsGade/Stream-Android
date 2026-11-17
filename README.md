@@ -608,3 +608,7 @@ Favoritforsidens fire knapper har nyt design efter referencen: mørke afrundede 
 ### 1.30.4
 
 Favoritforsidens knapper følger den opdaterede reference: neutral mørkegrå baggrund uden blå glød, diskret grå kant og skillelinje, hvid-blå ikoner og Stream-logoet på Streaming-knappen.
+
+### 1.30.5
+
+Streaming-knappen på favoritforsiden har nu et afrundet play-ikon med samme hvid-blå gradient som de øvrige kategoriikoner.
