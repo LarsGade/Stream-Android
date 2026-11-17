@@ -758,3 +758,7 @@ Underteksten i medieoplysninger er nu Afspilles via Stream. Album-/ekstrafeltet 
 ### 1.37.3
 
 Ekstra album-/titelfelter viser kun grundtitlen uden sæson-/afsnitsangivelser, fx Anders og Anders i stedet for Anders og Anders – Afsnit 2. Overskrift/displaytitel bevarer hele titlen. Formater som S01E02, S1 · E2, 1x02, Season/Sæson, Episode og Afsnit understøttes; almindelige tal i titler bevares.
+
+### 1.37.4
+
+Vælg favoritliste viser nu TV, Film, Serier, Radio, Podcast og Musik direkte i forsideknappernes gemte rækkefølge. Streaming og det ekstra trin med streaming-underliste er fjernet fra vælgeren. Eksisterende favoritter og import/eksport bevarer deres inddeling.
