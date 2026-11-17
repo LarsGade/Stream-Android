@@ -686,3 +686,7 @@ Topbannerets skalering er fordoblet, og headeren giver plads til det større log
 ### 1.34.7
 
 Toplogoet er 25 % mindre end i 1.34.6. Forsideknapperne har 12 dp ekstra afstand over den første knap.
+
+### 1.34.8
+
+Forsideikonernes farveforløb er justeret til logoets klare cyan, mættede blå og dybere blå skygger med en lys top. Ikonernes former, størrelser og placeringer er bevaret.
