@@ -654,3 +654,7 @@ Fane ved opstart har nu valgene Forside, TV, Film, Serier, Radio, Podcast og Mus
 ### 1.33.2
 
 Forsideknappernes hjørner er mindre afrundede (5 dp). Ikonerne har mere kantede rammer, stregender og former, mens hvid-blå gradient, størrelse og placering bevares.
+
+### 1.34.0
+
+Rækker med afspilningsprogress viser gul prik ved delvis afspilning og grøn prik ved afsluttet afspilning. Aktiv afspilning vises fortsat hvidt. Prikkerne deler størrelse og placering med den eksisterende afspilningsmarkør på favorit-, lokale-, Pcloud-, streaming- og afsnitslister og følger den gemte historik samt Nulstil lyttede/sete.
