@@ -91,7 +91,7 @@ public final class MainActivity extends AppCompatActivity {
  private static final String VIDEO_TOGGLE="dk.stream.android.VIDEO_TOGGLE",VIDEO_STOP="dk.stream.android.VIDEO_STOP";
  private final androidx.activity.result.ActivityResultLauncher<String> notificationPermission=registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),granted->{});
  private final android.content.BroadcastReceiver videoTransport=new android.content.BroadcastReceiver() {
-  @Override public void onReceive(android.content.Context context,android.content.Intent intent) {if(LocalAudioService.CHANGED.equals(intent.getAction())) {if(activityStarted) syncLocalPlayback();}else if(VIDEO_STOP.equals(intent.getAction())) stopPlaybackState();else if(VIDEO_TOGGLE.equals(intent.getAction())) togglePlaybackState();}
+  @Override public void onReceive(android.content.Context context,android.content.Intent intent) {if(DailyGuideJob.CHANGED.equals(intent.getAction())){epgAttempted.clear();loadAssignedGuides(false);}else if(LocalAudioService.CHANGED.equals(intent.getAction())) {if(activityStarted) syncLocalPlayback();}else if(VIDEO_STOP.equals(intent.getAction())) stopPlaybackState();else if(VIDEO_TOGGLE.equals(intent.getAction())) togglePlaybackState();}
  };
  private long resumePosition;
  private boolean resumeLocalPlayback,pipLayout,pipWasFullscreen;
@@ -120,7 +120,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onCreate(Bundle state) {
   androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
   super.onCreate(state);CastPlayback.init(this);videoMinimized=state!=null?state.getBoolean("videoMinimized",false):LocalAudioService.current()!=null;if(state!=null) replacingLocalFolder=state.getString("replacingLocalFolder");androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
-  android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);transport.addAction(LocalAudioService.CHANGED);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
+  android.content.IntentFilter transport=new android.content.IntentFilter(VIDEO_TOGGLE);transport.addAction(VIDEO_STOP);transport.addAction(LocalAudioService.CHANGED);transport.addAction(DailyGuideJob.CHANGED);androidx.core.content.ContextCompat.registerReceiver(this,videoTransport,transport,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
   epgRepository=new EpgRepository(this);store=new LibraryStore(this);localLogos=LocalChannelLogos.load(this);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   try {
    library=store.load();
@@ -130,6 +130,7 @@ public final class MainActivity extends AppCompatActivity {
     getPreferences(0).edit().remove("playlist").apply();
    }
   } catch(Exception e) { storageReadable=false; }
+  if(storageReadable)DailyGuideJob.sync(this,library);
   favoritesPage=library.favoritesOnStart;favoritesMode=favoritesPage;
   drawer=new DrawerLayout(this);drawer.setBackgroundColor(Color.rgb(16,16,16));
   LinearLayout root=column();root.setBackgroundColor(Color.rgb(16,16,16));
@@ -295,6 +296,7 @@ public final class MainActivity extends AppCompatActivity {
    startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
   });
   playbackPreference(settingsContent,R.string.auto_play_last,false);playbackPreference(settingsContent,R.string.mini_player,true);
+  AppCompatCheckBox dailyGuide=new AppCompatCheckBox(this);dailyGuide.setText(R.string.daily_guide_update);dailyGuide.setChecked(library.dailyGuideUpdate);dailyGuide.setPadding(0,dp(12),0,dp(12));settingsContent.addView(dailyGuide);boolean[] revertingGuide={false};dailyGuide.setOnCheckedChangeListener((button,checked)->{if(revertingGuide[0])return;if(!changeLibrary(()->library.dailyGuideUpdate=checked)){revertingGuide[0]=true;dailyGuide.setChecked(library.dailyGuideUpdate);revertingGuide[0]=false;}});
   button(R.string.sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
   button(R.string.tv_guide_sources,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
   button(R.string.local_source_folder,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showLocalSourceOptions();});
@@ -487,7 +489,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void finishImportedSettings(Library imported){
   if(isDestroyed()||isFinishing())return;getPreferences(0).edit().remove("playlist").apply();
-  library=imported;storageReadable=true;RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
+  library=imported;storageReadable=true;DailyGuideJob.sync(this,library);RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
   boolean folderAccess=hasLocalFolderAccess(imported);
   Toast.makeText(this,folderAccess?"Hele opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale filer for at give adgang.",Toast.LENGTH_LONG).show();recreate();
  }
@@ -612,7 +614,7 @@ public final class MainActivity extends AppCompatActivity {
   if(!storageReadable) {status.setText(R.string.storage_failed);return false;}
   String previous;
   try {previous=library.toJson();} catch(Exception e) {status.setText(R.string.storage_failed);return false;}
-  try {change.run();store.save(library);RadioWidgetProvider.refresh(this);if(favoriteCategories!=null&&favoritesPage)favoriteCategories.post(()->{if(!isDestroyed()&&favoritesPage)filter();});return true;}
+  try {change.run();store.save(library);DailyGuideJob.sync(this,library);RadioWidgetProvider.refresh(this);if(favoriteCategories!=null&&favoritesPage)favoriteCategories.post(()->{if(!isDestroyed()&&favoritesPage)filter();});return true;}
   catch(Exception e) {
    try {library=Library.fromJson(previous);} catch(Exception ignored) {storageReadable=false;}
    status.setText(R.string.storage_failed);Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return false;

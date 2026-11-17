@@ -16,6 +16,8 @@ public final class EpgRepository {
  }
  private File file(Library.Guide guide) throws IOException {return new File(directory,hash(guide.id)+".bin");}
  public boolean fresh(Library.Guide guide,long now) {try {return now-file(guide).lastModified()<30*60*1000L;} catch(IOException e) {return false;}}
+ public void cancel(){client.dispatcher().cancelAll();}
+ public boolean dailyDue(Library.Guide guide,long now){try{File saved=file(guide);if(!saved.isFile()||now-saved.lastModified()>=DailyGuideJob.DAY||saved.lastModified()>now)return true;try(DataInputStream input=new DataInputStream(new FileInputStream(saved))){return !input.readUTF().equals(hash(guide.url));}}catch(IOException invalid){return true;}}
  public EpgData cached(Library.Guide guide) {
   try(DataInputStream input=new DataInputStream(new BufferedInputStream(new FileInputStream(file(guide))))) {if(!input.readUTF().equals(hash(guide.url))) return null;return EpgData.read(input);}
   catch(IOException e) {return null;}
@@ -30,12 +32,13 @@ public final class EpgRepository {
     InputStream decoded=a==31 && b==139?new GZIPInputStream(input):input;
     InputStream bounded=new FilterInputStream(decoded) {
      long count;
-     private void add(long n) throws IOException {if(n>0 && (count+=n)>256L*1024*1024) throw new IOException("EPG too large");}
+     private void add(long n) throws IOException {if(Thread.currentThread().isInterrupted())throw new InterruptedIOException();if(n>0 && (count+=n)>256L*1024*1024) throw new IOException("EPG too large");}
      @Override public int read() throws IOException {int value=in.read();if(value>=0) add(1);return value;}
      @Override public int read(byte[] bytes,int offset,int length) throws IOException {int n=in.read(bytes,offset,length);add(n);return n;}
     };
     result=EpgData.parse(bounded,now);
    }
+   if(Thread.currentThread().isInterrupted())throw new InterruptedIOException();
    if(!directory.exists()&&!directory.mkdirs()) throw new IOException("Cannot cache EPG");
    File destination=file(guide),temporary=File.createTempFile("epg-",".tmp",directory);
    try {

@@ -762,3 +762,7 @@ Ekstra album-/titelfelter viser kun grundtitlen uden sæson-/afsnitsangivelser, 
 ### 1.37.4
 
 Vælg favoritliste viser nu TV, Film, Serier, Radio, Podcast og Musik direkte i forsideknappernes gemte rækkefølge. Streaming og det ekstra trin med streaming-underliste er fjernet fra vælgeren. Eksisterende favoritter og import/eksport bevarer deres inddeling.
+
+### 1.38.0
+
+Mini-afspiller hedder nu Vis mini-afspiller. Lige under findes Opdatér TV-Guide hver dag (som standard slået fra). Når det vælges, planlægger Android et vedvarende døgnjob med netværkskrav, også efter genstart. Guider opdateres én ad gangen i baggrunden; gyldige caches fra det seneste døgn genbruges, og fejl bevarer eksisterende data. Fravalg annullerer jobbet. Indstillingen følger import/eksport, og åbne lister får opdaterede guideoplysninger. Android kan forskyde udførelsen pga. netværk, batteri og baggrundsbegrænsninger.

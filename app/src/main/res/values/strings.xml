@@ -78,7 +78,7 @@
  <string name="developer_credit">Udviklet af Lars Gade</string>
  <string name="remove_from_favorites">Fjern fra favoritter</string>
  <string name="auto_play_last">Afspil automatisk seneste</string>
- <string name="mini_player">Mini-afspiller</string>
+ <string name="mini_player">Vis mini-afspiller</string>
  <string name="choose_source">Vælg kilde</string>
  <string name="radio">Radio</string>
  <string name="radio_loading">Henter danske radiostationer …</string>
@@ -108,4 +108,5 @@
  <string name="radio_widget_wide_description">Stationslogo og play/stop på mørkegrå baggrund</string>
 <string name="reset_history">Nulstil lyttede/sete</string>
  <string name="home_buttons">Forsideknapper</string>
+ <string name="daily_guide_update">Opdatér TV-Guide hver dag</string>
 </resources>
