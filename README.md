@@ -706,3 +706,7 @@ Burgermenuikonet nederst på forsiden bruger nu samme mørkegrå farve (#252525)
 ### 1.35.2
 
 Appikonet bruger igen den oprindelige lyse blå/hvide palette med mørkeblåt S-bånd. Topbannerets cyan er tonet til blå, og forsideikonerne har et hvidt/lyseblåt/blåt farveforløb efter den nye reference. Størrelser og placeringer er bevaret.
+
+### 1.35.3
+
+Toplogoets S-symbol tegnes nu direkte fra samme originale blå/hvide billede som appikonet. Stream-ordmærkets oprindelige kontur bevares og får samme hvid/lyseblå/blå palette som forsideikonerne. Det tidligere cyanfarvede banner og farvefilter bruges ikke længere til symbolet. Størrelse og placering er bevaret.
