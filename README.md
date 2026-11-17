@@ -666,3 +666,7 @@ I fuldskærmsafspilleren for lyd er Bluetooth og Cast flyttet fra toppen til ned
 ### 1.34.2
 
 Bluetooth og Cast er fjernet fra hovedappens øverste højre hjørne; Stream-logoet er stadig centreret. I lydafspillerens fulde visning ligger Bluetooth og Cast til venstre på samme kontrollinje som play/pause, stop og Live. Billedvisningens udgangsvalg er også flyttet til kontrollinjen. Video beholder udgangsvalgene ved tidslinjen.
+
+### 1.34.3
+
+Cast-ikonerne bliver blå, når en Cast-session er tilsluttet. Tryk på ikonet under casting for at vælge Stop cast; dette stopper modtagerens afspilning og afslutter forbindelsen. Uden forbindelse åbnes enhedsvælgeren som før. De justerede placeringer fra 1.34.2 er medtaget.
