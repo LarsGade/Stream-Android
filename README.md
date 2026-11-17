@@ -634,3 +634,7 @@ Tilbage-knappen er fjernet fra de øverste favoritlister (Streaming, Radio, Podc
 ### 1.31.2
 
 Forsidens fire favoritknapper har halvt så afrundede hjørner: radius 9 dp i stedet for 18 dp, også på trykeffekten.
+
+### 1.32.0
+
+Streaming-knappen på favoritforsiden er erstattet af TV, Film og Serier, som åbner deres respektive favoritlister direkte. Radio, Podcast og Musik er bevaret. Alle seks knapper kan flyttes med hold → Flyt op/Flyt ned. Tidligere gemt rækkefølge og JSON-backups migreres ved at erstatte Streaming med de tre knapper på samme plads. Favoritternes inddeling og startindstillinger bevares.
