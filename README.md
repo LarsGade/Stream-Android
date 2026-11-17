@@ -612,3 +612,7 @@ Favoritforsidens knapper følger den opdaterede reference: neutral mørkegrå ba
 ### 1.30.5
 
 Streaming-knappen på favoritforsiden har nu et afrundet play-ikon med samme hvid-blå gradient som de øvrige kategoriikoner.
+
+### 1.30.6
+
+Overskriften Favoritter er fjernet fra favoritforsiden, som nu kun viser de fire kategoriknapper.
