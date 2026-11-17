@@ -600,3 +600,7 @@ Tilbagepilen står nu på samme række til venstre for mappeikon og mappetitel i
 ### 1.30.2
 
 Begge dropdown-menuer for opstart viser mulighederne med fed skrift, både den valgte værdi og punkterne i den åbne menu.
+
+### 1.30.3
+
+Favoritforsidens fire knapper har nyt design efter referencen: mørke afrundede kort, blå glød og kant, blå kategoriikoner, lodret skillelinje og stor fed hvid tekst. Kortene skalerer med skærmbredden og har trykfeedback.
