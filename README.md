@@ -674,3 +674,7 @@ Cast-ikonerne bliver blå, når en Cast-session er tilsluttet. Tryk på ikonet u
 ### 1.34.4
 
 Den valgte lydudgang vises med blå tekst i Bluetooth-/højttalervælgeren. Cast-menuen viser den tilsluttede enheds navn med blå tekst over Stop cast.
+
+### 1.34.5
+
+Logoet i appens top er erstattet med brugerens banner.png fra banner.zip. Den eksisterende størrelse, skalering og centrering af topfeltet er bevaret. Appens startskærmsikon er uændret.
