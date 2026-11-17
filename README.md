@@ -682,3 +682,7 @@ Logoet i appens top er erstattet med brugerens banner.png fra banner.zip. Den ek
 ### 1.34.6
 
 Topbannerets skalering er fordoblet, og headeren giver plads til det større logo. Standardopsætningen er nu Vis favoritter ved appstart, Forside som startfane, Afspil automatisk seneste og Mini-afspiller. Gemte valg og importerede indstillinger bevares; standarderne gælder nye/nulstillede opsætninger og manglende værdier.
+
+### 1.34.7
+
+Toplogoet er 25 % mindre end i 1.34.6. Forsideknapperne har 12 dp ekstra afstand over den første knap.

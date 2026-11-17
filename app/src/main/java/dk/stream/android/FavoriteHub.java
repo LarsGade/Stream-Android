@@ -16,7 +16,7 @@ final class FavoriteHub extends LinearLayout {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();private final Adapter adapter=new Adapter();private String category="";private int generation;private boolean closed;
  private final Runnable tick=new Runnable(){public void run(){if(!closed){adapter.notifyDataSetChanged();postDelayed(this,1000);}}};
  FavoriteHub(Context context,Actions actions){super(context);this.actions=actions;setOrientation(VERTICAL);
-  home=new LinearLayout(context);home.setOrientation(VERTICAL);homeScroll=new ScrollView(context);homeScroll.setFillViewport(true);homeScroll.addView(home);addView(homeScroll,new LayoutParams(-1,-1));
+  home=new LinearLayout(context);home.setOrientation(VERTICAL);home.setPadding(0,dp(12),0,0);homeScroll=new ScrollView(context);homeScroll.setFillViewport(true);homeScroll.addView(home);addView(homeScroll,new LayoutParams(-1,-1));
   rebuildHome();
   body=new LinearLayout(context);body.setOrientation(VERTICAL);addView(body,new LayoutParams(-1,-1));back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setBackgroundColor(Color.TRANSPARENT);LinearLayout navigation=new LinearLayout(context);navigation.setGravity(Gravity.CENTER_VERTICAL);body.addView(navigation,new LayoutParams(-1,-2));navigation.addView(back,new LayoutParams(dp(48),dp(48)));back.setOnClickListener(view->back());
   title=text("",20);title.setTypeface(null,Typeface.BOLD);title.setCompoundDrawablePadding(MediaListStyle.iconGap(title));title.setMaxLines(2);title.setEllipsize(android.text.TextUtils.TruncateAt.END);navigation.addView(title,new LayoutParams(0,-2,1));
