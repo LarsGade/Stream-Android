@@ -754,3 +754,7 @@ Begge widgets har særskilte forhåndsvisninger med en cirkel mærket Radio i st
 ### 1.37.2
 
 Underteksten i medieoplysninger er nu Afspilles via Stream. Album-/ekstrafeltet gentager titlen i stedet for at være tomt, så biler kan vise fx DR P1 og Afspilles via Stream / DR P1. Samme metadata bruges for radio, lokale/Pcloud-medier og streaming samt albumfelter ved casting af lyd.
+
+### 1.37.3
+
+Ekstra album-/titelfelter viser kun grundtitlen uden sæson-/afsnitsangivelser, fx Anders og Anders i stedet for Anders og Anders – Afsnit 2. Overskrift/displaytitel bevarer hele titlen. Formater som S01E02, S1 · E2, 1x02, Season/Sæson, Episode og Afsnit understøttes; almindelige tal i titler bevares.
