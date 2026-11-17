@@ -616,3 +616,7 @@ Streaming-knappen på favoritforsiden har nu et afrundet play-ikon med samme hvi
 ### 1.30.6
 
 Overskriften Favoritter er fjernet fra favoritforsiden, som nu kun viser de fire kategoriknapper.
+
+### 1.30.7
+
+Hold på en af favoritforsidens fire knapper for at åbne Flyt op/Flyt ned. Rækkefølgen gemmes mellem appstarter og følger med JSON-eksport/import. Ikon og handling følger altid den tilhørende kategori.
