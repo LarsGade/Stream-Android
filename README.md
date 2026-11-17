@@ -734,3 +734,7 @@ Toplogoet bruger de originale billedpixels fra det uploadede skærmbillede fra 2
 ### 1.35.9
 
 Det lille skærmbillede i toppen er erstattet med brugerens banner.jpg i 1005 × 378 pixels fra banner _1_.zip. Sort baggrund er fjernet, og eksisterende skalering og centrering er bevaret. Appikon og forsideikonernes farver er ikke ændret.
+
+### 1.36.0
+
+Appikonets lille 52 × 50-pixel skærmbillede er erstattet med symbolet fra det større banner. Symbolet er nu 217 × 245 pixels på en transparent flade; forholdet mellem symbol og flade samt launcher-indrykningerne er bevaret. Topbanner og forsideikoner er uændrede.
