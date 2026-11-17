@@ -726,3 +726,7 @@ Cast og Bluetooth ligger nu øverst til højre i videoafspilleren og følger kon
 ### 1.35.7
 
 I mini-videoafspilleren ligger Bluetooth og Cast helt oppe ved afspillerens øverste højre kant. Telefonens skærmudskæring tilføjer kun afstand i fuldskærm, og placeringen nulstilles straks ved skift tilbage til mini-afspilleren.
+
+### 1.35.8
+
+Toplogoet bruger de originale billedpixels fra det uploadede skærmbillede fra 23:28:53. Appikonets symbol er hentet fra samme billede, og forsideikonernes gradient bruger tilsvarende lyse/hvide og blå nuancer. Skærmbilledets baggrund og overskydende kanter er fjernet. Kilden er kun 202 × 65 pixels, så skarpheden er begrænset af originalen.
