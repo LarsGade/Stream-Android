@@ -670,3 +670,7 @@ Bluetooth og Cast er fjernet fra hovedappens øverste højre hjørne; Stream-log
 ### 1.34.3
 
 Cast-ikonerne bliver blå, når en Cast-session er tilsluttet. Tryk på ikonet under casting for at vælge Stop cast; dette stopper modtagerens afspilning og afslutter forbindelsen. Uden forbindelse åbnes enhedsvælgeren som før. De justerede placeringer fra 1.34.2 er medtaget.
+
+### 1.34.4
+
+Den valgte lydudgang vises med blå tekst i Bluetooth-/højttalervælgeren. Cast-menuen viser den tilsluttede enheds navn med blå tekst over Stop cast.
