@@ -766,3 +766,7 @@ Vælg favoritliste viser nu TV, Film, Serier, Radio, Podcast og Musik direkte i 
 ### 1.38.0
 
 Mini-afspiller hedder nu Vis mini-afspiller. Lige under findes Opdatér TV-Guide hver dag (som standard slået fra). Når det vælges, planlægger Android et vedvarende døgnjob med netværkskrav, også efter genstart. Guider opdateres én ad gangen i baggrunden; gyldige caches fra det seneste døgn genbruges, og fejl bevarer eksisterende data. Fravalg annullerer jobbet. Indstillingen følger import/eksport, og åbne lister får opdaterede guideoplysninger. Android kan forskyde udførelsen pga. netværk, batteri og baggrundsbegrænsninger.
+
+### 1.38.1
+
+TV-favoritter viser igen EPG-programtitlen under kanalnavnet. Den nye favoritliste er koblet til samme guideopslag som streaminglisten og opdateres ved indlæsning, manuel/daglig opdatering og programskift. Film, Serier og andre favoritlister beholder deres hidtidige visning.

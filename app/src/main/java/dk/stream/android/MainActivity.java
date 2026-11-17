@@ -52,7 +52,7 @@ public final class MainActivity extends AppCompatActivity {
  private androidx.activity.OnBackPressedCallback localBack;
  private RadioPanel radioPanel;
  private final Runnable epgTick=new Runnable() {
-  public void run() {if(isDestroyed()) return;if(adapter!=null) adapter.notifyDataSetChanged();loadAssignedGuides(false);list.postDelayed(this,60000);}
+  public void run() {if(isDestroyed()) return;if(adapter!=null) adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();loadAssignedGuides(false);list.postDelayed(this,60000);}
  };
  private Library library=new Library();
  private LibraryPersistence store;
@@ -206,6 +206,7 @@ public final class MainActivity extends AppCompatActivity {
    public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
    public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(back?View.VISIBLE:View.INVISIBLE);}}
    public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
+   public String programme(Library.Entry entry){return programmeTitle(entry,System.currentTimeMillis());}
    public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(item.stream!=null)open(item.stream);else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
    public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
   });favoriteHub.setVisibility(View.GONE);root.addView(favoriteHub,new LinearLayout.LayoutParams(-1,0,1));
@@ -699,7 +700,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void acceptGuide(Library.Guide guide,EpgData data) {
   if(isDestroyed()) return;Library.Guide current=library.findGuide(guide.id);
-  if(current!=null && current.url.equals(guide.url)) {epgData.put(guide.id,data);adapter.notifyDataSetChanged();}
+  if(current!=null && current.url.equals(guide.url)) {epgData.put(guide.id,data);adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();}
  }
  private void showGuides() {
   if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
@@ -715,7 +716,7 @@ public final class MainActivity extends AppCompatActivity {
   AlertDialog.Builder builder=new AlertDialog.Builder(this).setTitle(existing==null?R.string.add_epg:R.string.edit_epg).setView(form).setPositiveButton(R.string.save,null).setNegativeButton(android.R.string.cancel,null);
   if(existing!=null) builder.setNeutralButton(R.string.delete,(dialog,which)->{
    new AlertDialog.Builder(this).setTitle(R.string.delete_epg).setMessage(R.string.delete_epg_note).setNegativeButton(R.string.no,null).setPositiveButton(R.string.yes,(d,w)->{
-    if(changeLibrary(()->library.removeGuide(existing.id))) {epgData.remove(existing.id);epgRepository.remove(existing);adapter.notifyDataSetChanged();}
+    if(changeLibrary(()->library.removeGuide(existing.id))) {epgData.remove(existing.id);epgRepository.remove(existing);adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();}
    }).show();
   });
   AlertDialog dialog=builder.create();dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
@@ -755,7 +756,7 @@ public final class MainActivity extends AppCompatActivity {
     updatingAll=false;if(isDestroyed()) return;dialog.dismiss();
     boolean saved=changeLibrary(()->{for(Map.Entry<String,Catalog> entry:catalogs.entrySet()) library.refreshFavorites(entry.getKey(),entry.getValue().items);});
     for(Library.Source source:sources)if(catalogs.containsKey(source.id)){sourceCatalogs.put(source.id,catalogs.get(source.id));cachedSourceConfigs.put(source.id,source);}rebuildStreamingCatalog();
-    epgData.putAll(schedules);for(String id:schedules.keySet()) epgAttempted.put(id,System.currentTimeMillis());rebuildGroups();
+    epgData.putAll(schedules);if(favoriteHub!=null)favoriteHub.programmeChanged();for(String id:schedules.keySet()) epgAttempted.put(id,System.currentTimeMillis());rebuildGroups();
     String result=getResources().getQuantityString(R.plurals.updated_sources,catalogs.size(),catalogs.size())+"\n"+getResources().getQuantityString(R.plurals.updated_guides,schedules.size(),schedules.size())+"\n"+getResources().getQuantityString(R.plurals.update_failures,failures.size(),failures.size());
     if(!failures.isEmpty()) result+="\n\n"+getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures));
     if(!saved) result+="\n\n"+getString(R.string.storage_failed);
