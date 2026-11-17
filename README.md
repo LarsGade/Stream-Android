@@ -710,3 +710,7 @@ Appikonet bruger igen den oprindelige lyse blå/hvide palette med mørkeblåt S-
 ### 1.35.3
 
 Toplogoets S-symbol tegnes nu direkte fra samme originale blå/hvide billede som appikonet. Stream-ordmærkets oprindelige kontur bevares og får samme hvid/lyseblå/blå palette som forsideikonerne. Det tidligere cyanfarvede banner og farvefilter bruges ikke længere til symbolet. Størrelse og placering er bevaret.
+
+### 1.35.4
+
+Farveændringerne fra 1.35.2 og 1.35.3 er rullet tilbage. Appikon, topbanner og forsideikoner svarer igen til 1.35.1, versionen før ønsket om den blå/hvide palette. Versionsnummeret er øget, så APK'en kan installeres som en almindelig opdatering.
