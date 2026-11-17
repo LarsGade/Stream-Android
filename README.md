@@ -638,3 +638,7 @@ Forsidens fire favoritknapper har halvt så afrundede hjørner: radius 9 dp i st
 ### 1.32.0
 
 Streaming-knappen på favoritforsiden er erstattet af TV, Film og Serier, som åbner deres respektive favoritlister direkte. Radio, Podcast og Musik er bevaret. Alle seks knapper kan flyttes med hold → Flyt op/Flyt ned. Tidligere gemt rækkefølge og JSON-backups migreres ved at erstatte Streaming med de tre knapper på samme plads. Favoritternes inddeling og startindstillinger bevares.
+
+### 1.32.1
+
+Favoritforsidens TV, Film og Serier har nu forskellige ikoner: fjernsyn, filmklaptræ og stablede afsnitsskærme. De bruger samme hvid-blå gradient og afrundede streger som Radio, Podcast og Musik.
