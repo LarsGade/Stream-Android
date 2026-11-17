@@ -694,3 +694,7 @@ Forsideikonernes farveforløb er justeret til logoets klare cyan, mættede blå 
 ### 1.34.9
 
 På favoritforsiden ligger burgermenuen centreret nederst, over en eventuel afspilningsbar. Toplogoet bevarer centreringen. På øvrige sider ligger burgermenuen fortsat øverst til venstre.
+
+### 1.35.0
+
+Appikonets farver er opdateret til klar cyan og blå med lyse højdepunkter og mørkeblå S-bånd, så det passer til bannerets logo. De eksisterende launcher-indrykninger og baggrunde er bevaret.
