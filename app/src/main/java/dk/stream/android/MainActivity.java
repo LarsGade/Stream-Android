@@ -146,8 +146,8 @@ public final class MainActivity extends AppCompatActivity {
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(48)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
-  FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,Math.round(dp(64)*0.72f),1));
-  ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_banner);brand.setScaleX(0.648f);brand.setScaleY(0.648f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
+  FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,dp(64),1));
+  ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_banner);brand.setScaleX(1.296f);brand.setScaleY(1.296f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
   header.addView(new Space(this),new LinearLayout.LayoutParams(dp(48),1));
   MediaRouteButton castButton=new CastOutputButton(this){@Override public boolean performClick(){if(LocalAudioService.current()!=null&&android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};castRouteButton=castButton;
   createDrawer();

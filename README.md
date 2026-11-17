@@ -678,3 +678,7 @@ Den valgte lydudgang vises med blå tekst i Bluetooth-/højttalervælgeren. Cast
 ### 1.34.5
 
 Logoet i appens top er erstattet med brugerens banner.png fra banner.zip. Den eksisterende størrelse, skalering og centrering af topfeltet er bevaret. Appens startskærmsikon er uændret.
+
+### 1.34.6
+
+Topbannerets skalering er fordoblet, og headeren giver plads til det større logo. Standardopsætningen er nu Vis favoritter ved appstart, Forside som startfane, Afspil automatisk seneste og Mini-afspiller. Gemte valg og importerede indstillinger bevares; standarderne gælder nye/nulstillede opsætninger og manglende værdier.

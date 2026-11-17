@@ -49,7 +49,7 @@ public class LibraryTest {
   Library restored=Library.fromJson(library.toJson());assertTrue(restored.autoPlayLast);assertTrue(restored.miniPlayer);
   assertEquals(12345,restored.lastPlayedPosition);assertEquals(library.lastPlayed.url,restored.lastPlayed.url);assertEquals(Playlist.Kind.SERIES,restored.lastPlayed.kind);assertNull(restored.lastPlayed.seriesId);
   Library legacy=Library.fromJson("{\"version\":1,\"sources\":[],\"favorites\":[]}");
-  assertFalse(legacy.autoPlayLast);assertFalse(legacy.miniPlayer);assertNull(legacy.lastPlayed);
+  assertTrue(legacy.autoPlayLast);assertTrue(legacy.miniPlayer);assertNull(legacy.lastPlayed);
  }
  @Test public void favoritesAndStartupPreferenceSurviveReload() throws Exception {
   Library library=new Library();Library.Source source=library.addSource(Library.Source.m3u("Min liste","https://example.com/get.php?password=p%26x"));
@@ -141,7 +141,7 @@ public class LibraryTest {
   Library library=new Library();library.favoritesLocal=true;org.json.JSONObject old=new org.json.JSONObject(library.toJson());old.remove("favoritesStartTab");assertEquals(2,Library.fromJson(old.toString()).favoritesStartTab);old.put("favoritesLocal",false).put("favoritesRadio",true);assertEquals(1,Library.fromJson(old.toString()).favoritesStartTab);
  }
  @Test public void invalidSavedStartTabIsClampedToAnAvailableTab() throws Exception {
-  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(5,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
+  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(6,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
  }
 
 }
