@@ -658,3 +658,7 @@ Forsideknappernes hjørner er mindre afrundede (5 dp). Ikonerne har mere kantede
 ### 1.34.0
 
 Rækker med afspilningsprogress viser gul prik ved delvis afspilning og grøn prik ved afsluttet afspilning. Aktiv afspilning vises fortsat hvidt. Prikkerne deler størrelse og placering med den eksisterende afspilningsmarkør på favorit-, lokale-, Pcloud-, streaming- og afsnitslister og følger den gemte historik samt Nulstil lyttede/sete.
+
+### 1.34.1
+
+I fuldskærmsafspilleren for lyd er Bluetooth og Cast flyttet fra toppen til nederste venstre hjørne. I videoafspilleren vises de i kontrollinjen sammen med tidslinjen og følger kontrollernes vis/skjul. Cast bruger samme enhedsvælger og tilladelseshåndtering som før.

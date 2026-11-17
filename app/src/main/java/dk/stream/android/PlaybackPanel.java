@@ -17,7 +17,7 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}default boolean pictureInPicture(){return false;}
+  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
  }
  public final PlayerView video;
  private final Actions actions;
@@ -49,7 +49,9 @@ public final class PlaybackPanel extends FrameLayout {
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
-  LinearLayout progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(32)));
+  LinearLayout progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
+  progress.addView(new BluetoothOutputButton(context),new LinearLayout.LayoutParams(dp(44),-1));
+  androidx.mediarouter.app.MediaRouteButton castOutput=new androidx.mediarouter.app.MediaRouteButton(context){@Override public boolean performClick(){actions.chooseCast();return true;}};castOutput.setContentDescription("Cast");progress.addView(castOutput,new LinearLayout.LayoutParams(dp(44),-1));try{com.google.android.gms.cast.framework.CastButtonFactory.setUpMediaRouteButton(context,castOutput);}catch(RuntimeException ignored){castOutput.setVisibility(GONE);}
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
   timeline=new SeekBar(context);timeline.setMax(1000);timeline.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
   timeline.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

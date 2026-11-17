@@ -166,6 +166,7 @@ public final class MainActivity extends AppCompatActivity {
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
    public boolean liveChannel(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}
    public void goLive(){goToLive();}
+   public void chooseCast(){castRouteButton.performClick();}
    public void togglePlayback() {togglePlaybackState();}
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
@@ -219,6 +220,7 @@ public final class MainActivity extends AppCompatActivity {
    public boolean liveNow(){return playbackPanel.liveNow();}
    public boolean needsLive(){return playbackPanel.needsLive();}
    public void goLive(){goToLive();}
+   public void chooseCast(){castRouteButton.performClick();}
    public void toggle(){togglePlaybackState();}
    public void open(){if(LocalAudioService.current()!=null)syncLocalPlayback();enterFullscreen();}
   }),new LinearLayout.LayoutParams(-1,-2));
