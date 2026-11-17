@@ -592,3 +592,7 @@ Når en favorit placeres i Streaming, vælges også TV, Film eller Serier. Det v
 Afspilningsposition og varighed gemmes for ikke-live lyd/video fra lokale filer, Pcloud og streaming. En tynd blå progressbar vises i bunden af bundbaren og under mediets række i fillister, favoritter, film- og afsnitslister. Ny afspilning genoptages fra den gemte position; færdigafspillet indhold starter forfra. Positionerne gemmes løbende og ved pause, stop og lukning. Cast-afspilning bruger samme historik, når telefonen er tilsluttet sessionen.
 
 Nulstil lyttede/sete ligger lige over Nulstil app. Den rydder alle gemte positioner og sætter en igangværende ikke-live afspilning tilbage til starten. Livekanaler og billeder har ingen afspilningsprogress. Historikken gemmes separat fra opsætningen på telefonen og eksporteres ikke med opsætningsfilen.
+
+### 1.30.1
+
+Tilbagepilen står nu på samme række til venstre for mappeikon og mappetitel i Lokale filer, Pcloud, radiolandemapper og favoritter. Overskrifter i favoritlister har også tilbagepilen på samme række for at spare lodret plads.
