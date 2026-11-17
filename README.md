@@ -718,3 +718,7 @@ Farveændringerne fra 1.35.2 og 1.35.3 er rullet tilbage. Appikon, topbanner og 
 ### 1.35.5
 
 Logoet i toppen er 25 % større end i 1.35.4. Farver og centrering er bevaret.
+
+### 1.35.6
+
+Cast og Bluetooth ligger nu øverst til højre i videoafspilleren og følger kontrollernes vis/skjul samt skærmens udskæring. Cast-knappen åbner enhedsvælgeren fra sin egen tilknyttede visning i stedet for en løs, usynlig knap uden vinduestilknytning. Tilladelsessvaret åbner samme knap igen. Blå forbindelsesmarkering og Stop cast bevares.

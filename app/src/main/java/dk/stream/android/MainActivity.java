@@ -150,7 +150,7 @@ public final class MainActivity extends AppCompatActivity {
   FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,dp(64),1));
   ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_banner);brand.setScaleX(1.215f);brand.setScaleY(1.215f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
   header.addView(new Space(this),new LinearLayout.LayoutParams(dp(48),1));
-  MediaRouteButton castButton=new CastOutputButton(this){@Override public boolean performClick(){if(LocalAudioService.current()!=null&&android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};castRouteButton=castButton;
+
   createDrawer();
   androidx.activity.OnBackPressedCallback closeDrawer=new androidx.activity.OnBackPressedCallback(false) {
    @Override public void handleOnBackPressed() {drawer.closeDrawer(androidx.core.view.GravityCompat.START);}
@@ -175,6 +175,7 @@ public final class MainActivity extends AppCompatActivity {
    public boolean fullscreen() {return fullscreen;}
    public CastSession castSession() {return connectedCast();}
   });
+  castRouteButton=playbackPanel.castButton();
   video=playbackPanel.video;video.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->updateMiniBack());root.addView(playbackPanel,new LinearLayout.LayoutParams(-1,-2));panelIndex=root.indexOfChild(playbackPanel);
   sections=new RadioGroup(this);sections.setOrientation(RadioGroup.HORIZONTAL);root.addView(sections);
   int[] labels={R.string.tv,R.string.films,R.string.series};
@@ -251,8 +252,8 @@ public final class MainActivity extends AppCompatActivity {
   });
   favoriteCategories.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){if(choosingFavoriteTab||!favoritesPage)return;int selected=favoriteCategories.getSelectedItemPosition();if(selected<0||selected>=favoriteCategoryIds.size())return;int tab=favoriteCategoryIds.get(selected);if(tab==currentFavoriteTab)return;if(changeLibrary(()->library.favoritesCurrentTab=tab))showFavoriteTab(tab);else updateFavoriteTabVisibility();}});
   chooseFirstKind();rebuildGroups();loadAssignedGuides(false);if(favoritesPage) showFavoriteTab(library.favoritesStartTab);
-  try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
-  catch(Exception e) { castButton.setVisibility(View.INVISIBLE); }
+  try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castRouteButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
+  catch(Exception e) { castRouteButton.setVisibility(View.INVISIBLE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
   restoreCatalogs();
   restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);

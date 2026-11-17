@@ -27,7 +27,8 @@ public final class PlaybackPanel extends FrameLayout {
  private final TextView title,time;
  private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
  private int restoreVolume;
- private final LinearLayout controls;
+ private final LinearLayout controls,outputs;
+ private final CastOutputButton castOutput;
  private boolean fullscreenMode,tracking;
  private final Runnable hideControls=()->hideControls();
  private final Runnable progressTick=new Runnable() {
@@ -50,8 +51,6 @@ public final class PlaybackPanel extends FrameLayout {
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
   LinearLayout progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
-  progress.addView(new BluetoothOutputButton(context),new LinearLayout.LayoutParams(dp(44),-1));
-  androidx.mediarouter.app.MediaRouteButton castOutput=new CastOutputButton(context){@Override public boolean performClick(){actions.chooseCast();return true;}};castOutput.setContentDescription("Cast");progress.addView(castOutput,new LinearLayout.LayoutParams(dp(44),-1));try{com.google.android.gms.cast.framework.CastButtonFactory.setUpMediaRouteButton(context,castOutput);}catch(RuntimeException ignored){castOutput.setVisibility(GONE);}
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
   timeline=new SeekBar(context);timeline.setMax(1000);timeline.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
   timeline.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -62,9 +61,11 @@ public final class PlaybackPanel extends FrameLayout {
   settings=new ImageButton(context);settings.setImageResource(R.drawable.ic_settings);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackground(controlBackground());settings.setContentDescription(context.getString(R.string.player_settings));settings.setPadding(dp(8),dp(8),dp(8),dp(8));buttons.addView(settings,new LinearLayout.LayoutParams(0,-1,1));settings.setOnClickListener(this::showSettings);
   addView(controls,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
   back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setImageTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));back.setBackgroundColor(0x66000000);back.setPadding(dp(12),dp(12),dp(12),dp(12));FrameLayout.LayoutParams backPosition=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.START);backPosition.setMargins(dp(8),dp(8),dp(8),dp(8));addView(back,backPosition);back.setVisibility(GONE);back.setOnClickListener(view->{if(actions.fullscreen())actions.toggleFullscreen();});
+  outputs=new LinearLayout(context);outputs.setGravity(Gravity.CENTER_VERTICAL);outputs.setBackgroundColor(0x66000000);outputs.addView(new BluetoothOutputButton(context),new LinearLayout.LayoutParams(dp(48),dp(48)));
+  castOutput=new CastOutputButton(context){@Override public boolean performClick(){if(android.os.Build.VERSION.SDK_INT>=37&&context instanceof android.app.Activity&&context.checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){((android.app.Activity)context).requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};outputs.addView(castOutput,new LinearLayout.LayoutParams(dp(48),dp(48)));FrameLayout.LayoutParams outputPosition=new FrameLayout.LayoutParams(-2,dp(48),Gravity.TOP|Gravity.END);outputPosition.setMargins(dp(8),dp(8),dp(8),dp(8));addView(outputs,outputPosition);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this,(view,insets)->{
    androidx.core.graphics.Insets cutout=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout());
-   controls.setPadding(fullscreenMode?cutout.left:0,0,fullscreenMode?cutout.right:0,fullscreenMode?cutout.bottom:0);FrameLayout.LayoutParams position=(FrameLayout.LayoutParams)back.getLayoutParams();position.setMarginStart(dp(8)+cutout.left);position.topMargin=dp(8)+cutout.top;back.setLayoutParams(position);return insets;
+   controls.setPadding(fullscreenMode?cutout.left:0,0,fullscreenMode?cutout.right:0,fullscreenMode?cutout.bottom:0);FrameLayout.LayoutParams position=(FrameLayout.LayoutParams)back.getLayoutParams();position.setMarginStart(dp(8)+cutout.left);position.topMargin=dp(8)+cutout.top;back.setLayoutParams(position);FrameLayout.LayoutParams output=(FrameLayout.LayoutParams)outputs.getLayoutParams();output.setMarginEnd(dp(8)+cutout.right);output.topMargin=dp(8)+cutout.top;outputs.setLayoutParams(output);return insets;
   });
   restoreVolume=Math.max(1,audio.getStreamVolume(AudioManager.STREAM_MUSIC));hideControls();refresh();setVisibility(GONE);
  }
@@ -79,9 +80,10 @@ public final class PlaybackPanel extends FrameLayout {
   row.addView(button,new LinearLayout.LayoutParams(0,-1,1));button.setOnClickListener(view->{click.run();if(controlsVisible()) scheduleHide();});return button;
  }
  public void setTitle(CharSequence name) {if(!android.text.TextUtils.equals(title.getText(),name)){liveWasPaused=false;liveBaseline=androidx.media3.common.C.TIME_UNSET;}title.setText(name);}
+ public androidx.mediarouter.app.MediaRouteButton castButton(){return castOutput;}
  public boolean controlsVisible() {return controls.getVisibility()==VISIBLE;}
- public void showControls() {controls.setVisibility(VISIBLE);refresh();removeCallbacks(progressTick);post(progressTick);scheduleHide();}
- public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);video.hideController();}
+ public void showControls() {controls.setVisibility(VISIBLE);outputs.setVisibility(VISIBLE);refresh();removeCallbacks(progressTick);post(progressTick);scheduleHide();}
+ public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);outputs.setVisibility(GONE);video.hideController();}
  public void fullscreenLayout(boolean enabled) {
   fullscreenMode=enabled;controls.setPadding(0,0,0,0);
   video.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT);
