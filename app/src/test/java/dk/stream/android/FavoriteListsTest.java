@@ -13,4 +13,6 @@ public class FavoriteListsTest {
 
  @Test public void sourceRefreshKeepsChosenListWhenStreamUrlChanges(){Library library=new Library();Library.Source source=Library.Source.m3u("Test","https://example.com/list");library.sources.add(source);Library.Entry old=new Library.Entry(source.id,new Playlist.Channel("Channel","https://example.com/old",""));FavoriteLists.assign(library,FavoriteLists.of(old),"Podcast");library.refreshFavorites(source.id,java.util.Arrays.asList(new Playlist.Channel("Channel","https://example.com/new","")));assertEquals(1,FavoriteLists.items(library,"Podcast").size());assertEquals("https://example.com/new",FavoriteLists.items(library,"Podcast").get(0).stream.channel.url);library.removeSource(source.id);assertTrue(library.favoriteAssignments.isEmpty());}
 
+ @Test public void favoritesHomeStartupChoiceSurvivesBackup()throws Exception{Library library=new Library();library.favoritesOnStart=true;library.setFavoritesStartTab(6);Library restored=SettingsBackup.decode(new java.io.ByteArrayInputStream(SettingsBackup.encode(library)));assertTrue(restored.favoritesOnStart);assertEquals(6,restored.favoritesStartTab);}
+
 }

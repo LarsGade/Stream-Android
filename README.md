@@ -580,3 +580,7 @@ Bundbaren viser nu også logoet for TV, film og serier til venstre for navnet. D
 Favoritter åbner en forside med store knapper til Streaming, Radio, Podcast og Musik. Streaming indeholder TV, Film og Serier. Nye favoritter kan placeres i en valgt liste uanset kilde, og eksisterende favoritter bevares og fordeles automatisk. Flytning mellem lister og rækkefølge findes i hold-menuen. Mapper fra lokale filer og Pcloud kan åbnes inde i favoritlisten. Listevalg og rækkefølge følger med JSON-eksport/import.
 
 Bluetooth-knappen til venstre for cast findes i appens top og den fulde lydafspiller. Den viser tilsluttede Bluetooth-lydudgange og telefonens højttaler og sender valget til appens lydafspillere via Androids offentlige preferred-device-API. Valgt Bluetooth-udgang markeres blå. Parring og tilslutning af nye enheder sker i telefonens Bluetooth-indstillinger; casting afspilles fortsat på cast-enheden. Enheders faktiske routing skal verificeres på telefonen.
+
+### 1.29.1
+
+Streaming-favoritter bruger nu en vandret række med radiovalgene TV, Film og Serier i stedet for dropdown-menuen, ligesom den almindelige Streaming-side. Fane ved appstart har Forside som øverste mulighed; valget åbner favorittens forside og bevares i import/eksport. Stream-logoet i toppen er centreret på skærmen med Bluetooth- og cast-knapperne til højre.

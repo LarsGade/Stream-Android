@@ -146,6 +146,8 @@ public final class MainActivity extends AppCompatActivity {
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(48)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
+  // Balance the menu against Bluetooth and Cast so the brand stays centered.
+  header.addView(new Space(this),new LinearLayout.LayoutParams(dp(48),1));
   FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,Math.round(dp(64)*0.72f),1));
   ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_icon);brand.setScaleX(0.648f);brand.setScaleY(0.648f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
   header.addView(new BluetoothOutputButton(this),new LinearLayout.LayoutParams(dp(48),dp(48)));
@@ -247,7 +249,7 @@ public final class MainActivity extends AppCompatActivity {
   favoriteCategories.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){if(choosingFavoriteTab||!favoritesPage)return;int selected=favoriteCategories.getSelectedItemPosition();if(selected<0||selected>=favoriteCategoryIds.size())return;int tab=favoriteCategoryIds.get(selected);if(tab==currentFavoriteTab)return;if(changeLibrary(()->library.favoritesCurrentTab=tab))showFavoriteTab(tab);else updateFavoriteTabVisibility();}});
   chooseFirstKind();rebuildGroups();loadAssignedGuides(false);if(favoritesPage) showFavoriteTab(library.favoritesStartTab);
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
-  catch(Exception e) { castButton.setVisibility(View.GONE); }
+  catch(Exception e) { castButton.setVisibility(View.INVISIBLE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
   restoreCatalogs();
   restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
@@ -276,8 +278,8 @@ public final class MainActivity extends AppCompatActivity {
   settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
   AppCompatCheckBox start=new AppCompatCheckBox(this);start.setText(R.string.start_favorites);start.setChecked(library.favoritesOnStart);start.setPadding(0,dp(12),0,dp(12));settingsContent.addView(start);
   LinearLayout startChoice=column();settingsContent.addView(startChoice);TextView startLabel=text("Fane ved appstart",14,Color.WHITE);startChoice.addView(startLabel);
-  Spinner startTab=dropdown();ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"Streaming","Radio","Podcast","Musik"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(library.favoritesStartTab>3?0:library.favoritesStartTab);startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
-  startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=position;if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(library.favoritesStartTab>3?0:library.favoritesStartTab);}});
+  Spinner startTab=dropdown();ArrayAdapter<String> startOptions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"Forside","Streaming","Radio","Podcast","Musik"});startOptions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);startTab.setAdapter(startOptions);startTab.setSelection(library.favoritesStartTab==6?0:library.favoritesStartTab>3?1:library.favoritesStartTab+1);startChoice.addView(startTab);startChoice.setVisibility(library.favoritesOnStart?View.VISIBLE:View.GONE);
+  startTab.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){int tab=position==0?6:position-1;if(tab==library.favoritesStartTab)return;if(!changeLibrary(()->library.setFavoritesStartTab(tab)))startTab.setSelection(library.favoritesStartTab==6?0:library.favoritesStartTab>3?1:library.favoritesStartTab+1);}});
   boolean[] restoring={false};start.setOnCheckedChangeListener((button,checked)->{
    if(restoring[0]) return;
    if(!changeLibrary(()->library.favoritesOnStart=checked)) {restoring[0]=true;button.setChecked(library.favoritesOnStart);restoring[0]=false;}
@@ -402,7 +404,7 @@ public final class MainActivity extends AppCompatActivity {
   minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;
   radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
  }
- private void showFavoriteTab(int tab){showFavoritesHome();favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":tab==3?"Musik":"Streaming");}
+ private void showFavoriteTab(int tab){showFavoritesHome();if(tab==6)return;favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":tab==3?"Musik":"Streaming");}
  private void openLocal(boolean favorites) {
   minimizeVideo();
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);
