@@ -702,3 +702,7 @@ Appikonets farver er opdateret til klar cyan og blå med lyse højdepunkter og m
 ### 1.35.1
 
 Burgermenuikonet nederst på forsiden bruger nu samme mørkegrå farve (#252525) som forsideknapperne.
+
+### 1.35.2
+
+Appikonet bruger igen den oprindelige lyse blå/hvide palette med mørkeblåt S-bånd. Topbannerets cyan er tonet til blå, og forsideikonerne har et hvidt/lyseblåt/blåt farveforløb efter den nye reference. Størrelser og placeringer er bevaret.
