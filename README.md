@@ -722,3 +722,7 @@ Logoet i toppen er 25 % større end i 1.35.4. Farver og centrering er bevaret.
 ### 1.35.6
 
 Cast og Bluetooth ligger nu øverst til højre i videoafspilleren og følger kontrollernes vis/skjul samt skærmens udskæring. Cast-knappen åbner enhedsvælgeren fra sin egen tilknyttede visning i stedet for en løs, usynlig knap uden vinduestilknytning. Tilladelsessvaret åbner samme knap igen. Blå forbindelsesmarkering og Stop cast bevares.
+
+### 1.35.7
+
+I mini-videoafspilleren ligger Bluetooth og Cast helt oppe ved afspillerens øverste højre kant. Telefonens skærmudskæring tilføjer kun afstand i fuldskærm, og placeringen nulstilles straks ved skift tilbage til mini-afspilleren.
