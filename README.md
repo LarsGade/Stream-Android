@@ -604,3 +604,7 @@ Begge dropdown-menuer for opstart viser mulighederne med fed skrift, både den v
 ### 1.30.3
 
 Favoritforsidens fire knapper har nyt design efter referencen: mørke afrundede kort, blå glød og kant, blå kategoriikoner, lodret skillelinje og stor fed hvid tekst. Kortene skalerer med skærmbredden og har trykfeedback.
+
+### 1.30.4
+
+Favoritforsidens knapper følger den opdaterede reference: neutral mørkegrå baggrund uden blå glød, diskret grå kant og skillelinje, hvid-blå ikoner og Stream-logoet på Streaming-knappen.
