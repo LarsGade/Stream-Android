@@ -124,7 +124,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    else {
     stopService(new Intent(this,LocalAudioService.class));
     current=station;
-    MediaMetadata metadata=new MediaMetadata.Builder().setArtist(PlaybackText.SOURCE).setSubtitle(PlaybackText.SOURCE).setTitle(station.displayName()).setDisplayTitle(station.displayName()).setArtworkData(PlaybackArtwork.local(this,PlaybackArtwork.logoName(this,station)),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
+    MediaMetadata metadata=PlaybackText.metadata(station.displayName()).setDisplayTitle(station.displayName()).setArtworkData(PlaybackArtwork.local(this,PlaybackArtwork.logoName(this,station)),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
     player.setMediaItem(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build());player.prepare();player.play();behindLive=false;loadArtwork(station);
    }
    RadioWidgetProvider.refresh(this);

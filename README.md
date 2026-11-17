@@ -750,3 +750,7 @@ Bluetooth-genforbindelse genoptager den afspiller, som faktisk blev afbrudt, ude
 ### 1.37.1
 
 Begge widgets har særskilte forhåndsvisninger med en cirkel mærket Radio i stedet for et kanallogo/appikon. Den brede forhåndsvisning beholder play-knappen og den mørke baggrund. Der er både previewLayout og previewImage til forskellige Android-/launcher-versioner. Installerede widgets viser fortsat den valgte stations logo.
+
+### 1.37.2
+
+Underteksten i medieoplysninger er nu Afspilles via Stream. Album-/ekstrafeltet gentager titlen i stedet for at være tomt, så biler kan vise fx DR P1 og Afspilles via Stream / DR P1. Samme metadata bruges for radio, lokale/Pcloud-medier og streaming samt albumfelter ved casting af lyd.
