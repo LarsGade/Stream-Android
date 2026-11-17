@@ -662,3 +662,7 @@ Rækker med afspilningsprogress viser gul prik ved delvis afspilning og grøn pr
 ### 1.34.1
 
 I fuldskærmsafspilleren for lyd er Bluetooth og Cast flyttet fra toppen til nederste venstre hjørne. I videoafspilleren vises de i kontrollinjen sammen med tidslinjen og følger kontrollernes vis/skjul. Cast bruger samme enhedsvælger og tilladelseshåndtering som før.
+
+### 1.34.2
+
+Bluetooth og Cast er fjernet fra hovedappens øverste højre hjørne; Stream-logoet er stadig centreret. I lydafspillerens fulde visning ligger Bluetooth og Cast til venstre på samme kontrollinje som play/pause, stop og Live. Billedvisningens udgangsvalg er også flyttet til kontrollinjen. Video beholder udgangsvalgene ved tidslinjen.

@@ -146,12 +146,10 @@ public final class MainActivity extends AppCompatActivity {
   });
   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
   ImageButton menu=iconButton(R.drawable.ic_menu,getString(R.string.open_menu));header.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(48)));menu.setOnClickListener(v->drawer.openDrawer(androidx.core.view.GravityCompat.START));
-  // Balance the menu against Bluetooth and Cast so the brand stays centered.
-  header.addView(new Space(this),new LinearLayout.LayoutParams(dp(48),1));
   FrameLayout brandSlot=new FrameLayout(this);header.addView(brandSlot,new LinearLayout.LayoutParams(0,Math.round(dp(64)*0.72f),1));
   ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_icon);brand.setScaleX(0.648f);brand.setScaleY(0.648f);brand.setScaleType(ImageView.ScaleType.FIT_CENTER);brand.setAdjustViewBounds(true);brand.setContentDescription(getString(R.string.app_name));brand.setPadding(dp(8),dp(4),dp(8),dp(4));brandSlot.addView(brand,new FrameLayout.LayoutParams(-1,dp(64),Gravity.CENTER));
-  header.addView(new BluetoothOutputButton(this),new LinearLayout.LayoutParams(dp(48),dp(48)));
-  MediaRouteButton castButton=new MediaRouteButton(this){@Override public boolean performClick(){if(LocalAudioService.current()!=null&&android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};castRouteButton=castButton;header.addView(castButton,new LinearLayout.LayoutParams(dp(48),dp(48)));
+  header.addView(new Space(this),new LinearLayout.LayoutParams(dp(48),1));
+  MediaRouteButton castButton=new MediaRouteButton(this){@Override public boolean performClick(){if(LocalAudioService.current()!=null&&android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};castRouteButton=castButton;
   createDrawer();
   androidx.activity.OnBackPressedCallback closeDrawer=new androidx.activity.OnBackPressedCallback(false) {
    @Override public void handleOnBackPressed() {drawer.closeDrawer(androidx.core.view.GravityCompat.START);}
