@@ -714,3 +714,7 @@ Toplogoets S-symbol tegnes nu direkte fra samme originale blå/hvide billede som
 ### 1.35.4
 
 Farveændringerne fra 1.35.2 og 1.35.3 er rullet tilbage. Appikon, topbanner og forsideikoner svarer igen til 1.35.1, versionen før ønsket om den blå/hvide palette. Versionsnummeret er øget, så APK'en kan installeres som en almindelig opdatering.
+
+### 1.35.5
+
+Logoet i toppen er 25 % større end i 1.35.4. Farver og centrering er bevaret.
