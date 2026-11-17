@@ -43,7 +43,7 @@ public final class LocalAudioService extends MediaSessionService {
    if(player!=null) player.pause();android.util.Log.e("StreamLocalPlayback","Android rejected foreground playback");
    android.widget.Toast.makeText(LocalAudioService.this,"Åbn Stream for at genoptage afspilningen.",android.widget.Toast.LENGTH_LONG).show();
   }});
-  player=new ExoPlayer.Builder(this,new DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(()->new PcloudDataSource(this))).build();BluetoothOutputButton.register(this,player);
+  player=new ExoPlayer.Builder(this,new DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(()->new PcloudDataSource(this))).build();BluetoothOutputButton.register(this,player);PlaybackTracker.attach(this,player);
   player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_LOCAL);
   session=new MediaSession.Builder(this,player).setId("stream-local-playback").build();addSession(session);
   player.addListener(new Player.Listener() {
@@ -77,7 +77,7 @@ public final class LocalAudioService extends MediaSessionService {
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
     this.queue=queue.entries;pendingQueue=null;pendingToken=null;stopService(new Intent(this,RadioPlaybackService.class));
     List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);byte[] cover=LocalFileArtwork.bytes(this,file);if(cover!=null)media=media.buildUpon().setMediaMetadata(media.mediaMetadata.buildUpon().setArtworkData(cover,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build();items.add(media);network|=PcloudDocument.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
-    player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",0)));
+    player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",PlaybackHistory.get(this,entry.uri).resume())));
     // Establish foreground immediately, before asynchronous file/decoder preparation.
     PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
     PendingIntent stop=PendingIntent.getService(this,32,command(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
@@ -92,5 +92,5 @@ public final class LocalAudioService extends MediaSessionService {
   return START_NOT_STICKY;
  }
  @Override public void onTaskRemoved(Intent root) {PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
- @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null) player.release();changed();super.onDestroy();}
+ @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null){PlaybackTracker.detach(player);player.release();}changed();super.onDestroy();}
 }

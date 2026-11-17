@@ -69,7 +69,7 @@ public final class LocalFilesPanel extends LinearLayout {
    boolean playing=!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri));View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
    name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);
    row.setLayoutParams(new AbsListView.LayoutParams(-1,MediaRowHeight.pixels(name)));
-   return row;
+   return ProgressRows.wrap(row,entry.uri,!entry.folder&&!entry.image());
   }
  }
 }

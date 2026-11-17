@@ -584,3 +584,11 @@ Bluetooth-knappen til venstre for cast findes i appens top og den fulde lydafspi
 ### 1.29.1
 
 Streaming-favoritter bruger nu en vandret række med radiovalgene TV, Film og Serier i stedet for dropdown-menuen, ligesom den almindelige Streaming-side. Fane ved appstart har Forside som øverste mulighed; valget åbner favorittens forside og bevares i import/eksport. Stream-logoet i toppen er centreret på skærmen med Bluetooth- og cast-knapperne til højre.
+
+### 1.30.0
+
+Når en favorit placeres i Streaming, vælges også TV, Film eller Serier. Det valgte underafsnit gemmes uafhængigt af indholdets kilde. Ved Streaming som startfane kan et af de samme tre underafsnit vælges under Indstillinger. Valgene følger med JSON-eksport/import.
+
+Afspilningsposition og varighed gemmes for ikke-live lyd/video fra lokale filer, Pcloud og streaming. En tynd blå progressbar vises i bunden af bundbaren og under mediets række i fillister, favoritter, film- og afsnitslister. Ny afspilning genoptages fra den gemte position; færdigafspillet indhold starter forfra. Positionerne gemmes løbende og ved pause, stop og lukning. Cast-afspilning bruger samme historik, når telefonen er tilsluttet sessionen.
+
+Nulstil lyttede/sete ligger lige over Nulstil app. Den rydder alle gemte positioner og sætter en igangværende ikke-live afspilning tilbage til starten. Livekanaler og billeder har ingen afspilningsprogress. Historikken gemmes separat fra opsætningen på telefonen og eksporteres ikke med opsætningsfilen.
