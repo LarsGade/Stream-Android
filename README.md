@@ -698,3 +698,7 @@ På favoritforsiden ligger burgermenuen centreret nederst, over en eventuel afsp
 ### 1.35.0
 
 Appikonets farver er opdateret til klar cyan og blå med lyse højdepunkter og mørkeblå S-bånd, så det passer til bannerets logo. De eksisterende launcher-indrykninger og baggrunde er bevaret.
+
+### 1.35.1
+
+Burgermenuikonet nederst på forsiden bruger nu samme mørkegrå farve (#252525) som forsideknapperne.
