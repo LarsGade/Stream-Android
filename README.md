@@ -730,3 +730,7 @@ I mini-videoafspilleren ligger Bluetooth og Cast helt oppe ved afspillerens øve
 ### 1.35.8
 
 Toplogoet bruger de originale billedpixels fra det uploadede skærmbillede fra 23:28:53. Appikonets symbol er hentet fra samme billede, og forsideikonernes gradient bruger tilsvarende lyse/hvide og blå nuancer. Skærmbilledets baggrund og overskydende kanter er fjernet. Kilden er kun 202 × 65 pixels, så skarpheden er begrænset af originalen.
+
+### 1.35.9
+
+Det lille skærmbillede i toppen er erstattet med brugerens banner.jpg i 1005 × 378 pixels fra banner _1_.zip. Sort baggrund er fjernet, og eksisterende skalering og centrering er bevaret. Appikon og forsideikonernes farver er ikke ændret.
