@@ -596,3 +596,7 @@ Nulstil lyttede/sete ligger lige over Nulstil app. Den rydder alle gemte positio
 ### 1.30.1
 
 Tilbagepilen står nu på samme række til venstre for mappeikon og mappetitel i Lokale filer, Pcloud, radiolandemapper og favoritter. Overskrifter i favoritlister har også tilbagepilen på samme række for at spare lodret plads.
+
+### 1.30.2
+
+Begge dropdown-menuer for opstart viser mulighederne med fed skrift, både den valgte værdi og punkterne i den åbne menu.
