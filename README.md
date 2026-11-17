@@ -626,3 +626,7 @@ Hold på en af favoritforsidens fire knapper for at åbne Flyt op/Flyt ned. Ræk
 Importér/Eksportér medtager hele den gemte opsætning: kilder og logins, TV-guide-links, Pcloud-konto, lokale mappereferencer, alle favoritter og deres inddeling/rækkefølge, forsideknappernes rækkefølge, startfaner, afspillerindstillinger, seneste afspilning, lyttede/sete-positioner, widgetternes kanalvalg og valgt lydudgang. Aktiv afspilningsposition gemmes inden eksport. Import erstatter opsætningen; filen valideres først, og ved skrivefejl forsøges den tidligere opsætning gendannet. Ældre JSON-backups understøttes fortsat og nulstiller indstillinger, de ikke indeholder.
 
 JSON-filen indeholder logins i læsbar form. Mediefiler og hentede katalog-/billed-/TV-guide-caches er ikke opsætning og medfølger ikke. Androids mappetilladelser, Bluetooth-parringer og placeringer af widgets kan ikke overføres via JSON; på en ny telefon skal disse oprettes igen. Widgetkanalvalg gendannes for eksisterende widget-id'er.
+
+### 1.31.1
+
+Tilbage-knappen er fjernet fra de øverste favoritlister (Streaming, Radio, Podcast og Musik). Den vises kun inde i en mappe og går ét mappeniveau tilbage. Telefonens tilbagefunktion bevarer navigationen til favoritsidens forside.
