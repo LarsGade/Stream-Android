@@ -646,3 +646,7 @@ Favoritforsidens TV, Film og Serier har nu forskellige ikoner: fjernsyn, filmkla
 ### 1.33.0
 
 Indstillinger → Forsideknapper, lige under Pcloud-konto, giver afkrydsningsfelter til TV, Film, Serier, Radio, Podcast og Musik. Valget gemmes og medtages i import/eksport; skjulte knappers rækkefølge og favoritter bevares. Nulstil lyttede/sete og Opdatér alt har byttet plads, så rækkefølgen er Importér/Eksportér, Nulstil lyttede/sete, Opdatér alt, Nulstil app.
+
+### 1.33.1
+
+Fane ved opstart har nu valgene Forside, TV, Film, Serier, Radio, Podcast og Musik. Det separate valg af Streaming-fane er fjernet. Eksisterende startvalg og JSON-backups bevarer den valgte TV-/Film-/Serier-liste.

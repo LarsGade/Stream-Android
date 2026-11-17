@@ -90,6 +90,8 @@ public final class Library {
  public final List<String> favoriteOrder=new ArrayList<>();
  public final List<String> favoriteHomeOrder=new ArrayList<>(java.util.Arrays.asList(FavoriteHomeOrder.NAMES));
  public final Set<String> hiddenHomeButtons=new java.util.LinkedHashSet<>();
+ public int favoritesStartOption(){return favoritesStartTab==6?0:favoritesStartTab>=1&&favoritesStartTab<=3?favoritesStartTab+3:favoritesStartKind+1;}
+ public void setFavoritesStartOption(int option){if(option<0||option>6)throw new IllegalArgumentException("Unknown start option");setFavoritesStartTab(option==0?6:option<=3?0:option-3);if(option>=1&&option<=3)favoritesStartKind=option-1;}
  public void moveFavoriteHome(String name,int direction){int index=favoriteHomeOrder.indexOf(name);if(index<0||(direction!=-1&&direction!=1))throw new IllegalArgumentException("Unknown home button movement");int target=index+direction;if(target>=0&&target<favoriteHomeOrder.size())java.util.Collections.swap(favoriteHomeOrder,index,target);}
  public boolean favoritesOnStart,favoritesRadio,autoPlayLast,miniPlayer;
  public int favoritesStartTab,favoritesCurrentTab;
