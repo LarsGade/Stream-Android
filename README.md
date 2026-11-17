@@ -630,3 +630,7 @@ JSON-filen indeholder logins i læsbar form. Mediefiler og hentede katalog-/bill
 ### 1.31.1
 
 Tilbage-knappen er fjernet fra de øverste favoritlister (Streaming, Radio, Podcast og Musik). Den vises kun inde i en mappe og går ét mappeniveau tilbage. Telefonens tilbagefunktion bevarer navigationen til favoritsidens forside.
+
+### 1.31.2
+
+Forsidens fire favoritknapper har halvt så afrundede hjørner: radius 9 dp i stedet for 18 dp, også på trykeffekten.

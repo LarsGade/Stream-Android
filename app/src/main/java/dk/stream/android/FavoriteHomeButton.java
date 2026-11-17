@@ -12,7 +12,7 @@ import android.view.Gravity;
 final class FavoriteHomeButton extends androidx.appcompat.widget.AppCompatButton {
  FavoriteHomeButton(Context context,String label,int icon){
   super(context);setText(label);setAllCaps(false);setTextColor(Color.WHITE);setTypeface(Typeface.create("sans-serif",Typeface.BOLD));setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);setMaxLines(1);setEllipsize(android.text.TextUtils.TruncateAt.END);setMinHeight(0);setMinimumHeight(0);setMinWidth(0);setMinimumWidth(0);setStateListAnimator(null);setElevation(0);
-  GradientDrawable mask=new GradientDrawable();mask.setColor(Color.WHITE);mask.setCornerRadius(dp(18));setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF),new Card(icon),mask));androidx.core.view.ViewCompat.setBackgroundTintList(this,null);androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this,18,28,1,TypedValue.COMPLEX_UNIT_SP);
+  GradientDrawable mask=new GradientDrawable();mask.setColor(Color.WHITE);mask.setCornerRadius(dp(9));setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF),new Card(icon),mask));androidx.core.view.ViewCompat.setBackgroundTintList(this,null);androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this,18,28,1,TypedValue.COMPLEX_UNIT_SP);
  }
  private int dp(float value){return Math.round(value*getResources().getDisplayMetrics().density);}
  @Override protected void onSizeChanged(int width,int height,int oldWidth,int oldHeight){super.onSizeChanged(width,height,oldWidth,oldHeight);setPadding(Math.round(width*0.33f)+dp(20),0,dp(16),0);}
@@ -21,7 +21,7 @@ final class FavoriteHomeButton extends androidx.appcompat.widget.AppCompatButton
   private final int icon;private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);private final Path clip=new Path();private final RectF rect=new RectF();private int alpha=255;private ColorFilter filter;
   Card(int icon){this.icon=icon;}
   @Override public void draw(Canvas canvas){
-   Rect bounds=getBounds();float width=bounds.width(),height=bounds.height(),radius=dp(18),stroke=dp(0.8f);canvas.save();canvas.translate(bounds.left,bounds.top);rect.set(stroke/2,stroke/2,width-stroke/2,height-stroke/2);clip.reset();clip.addRoundRect(rect,radius,radius,Path.Direction.CW);canvas.clipPath(clip);paint.setAlpha(alpha);paint.setColorFilter(filter);paint.setStyle(Paint.Style.FILL);
+   Rect bounds=getBounds();float width=bounds.width(),height=bounds.height(),radius=dp(9),stroke=dp(0.8f);canvas.save();canvas.translate(bounds.left,bounds.top);rect.set(stroke/2,stroke/2,width-stroke/2,height-stroke/2);clip.reset();clip.addRoundRect(rect,radius,radius,Path.Direction.CW);canvas.clipPath(clip);paint.setAlpha(alpha);paint.setColorFilter(filter);paint.setStyle(Paint.Style.FILL);
    paint.setShader(new LinearGradient(0,0,width,height,new int[]{0xFF252525,0xFF1E1E1E},null,Shader.TileMode.CLAMP));canvas.drawRect(0,0,width,height,paint);
    paint.setShader(null);
    paint.setColor(0xFF626262);paint.setStrokeWidth(dp(0.8f));canvas.drawLine(width*0.33f,height*0.20f,width*0.33f,height*0.80f,paint);
