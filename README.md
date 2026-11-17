@@ -642,3 +642,7 @@ Streaming-knappen på favoritforsiden er erstattet af TV, Film og Serier, som å
 ### 1.32.1
 
 Favoritforsidens TV, Film og Serier har nu forskellige ikoner: fjernsyn, filmklaptræ og stablede afsnitsskærme. De bruger samme hvid-blå gradient og afrundede streger som Radio, Podcast og Musik.
+
+### 1.33.0
+
+Indstillinger → Forsideknapper, lige under Pcloud-konto, giver afkrydsningsfelter til TV, Film, Serier, Radio, Podcast og Musik. Valget gemmes og medtages i import/eksport; skjulte knappers rækkefølge og favoritter bevares. Nulstil lyttede/sete og Opdatér alt har byttet plads, så rækkefølgen er Importér/Eksportér, Nulstil lyttede/sete, Opdatér alt, Nulstil app.

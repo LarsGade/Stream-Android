@@ -298,9 +298,10 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.local_source_folder,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showLocalSourceOptions();});
   button(R.string.refresh_radio,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioPanel.refreshStations();});
   button(R.string.pcloud_account,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
+  button(R.string.home_buttons,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showHomeButtons();});
   button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
-  button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
   button(R.string.reset_history,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);PlaybackHistory.clear(this);PlaybackTracker.resetPlayers();CastPlayback.resetProgress(this);resumePosition=0;changeLibrary(()->library.lastPlayedPosition=0);localPanel.playbackChanged();pcloudPanel.playbackChanged();favoriteHub.refresh();adapter.notifyDataSetChanged();Toast.makeText(this,"Lyttede/sete er nulstillet.",Toast.LENGTH_SHORT).show();});
+  button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
   Button resetButton=button(R.string.reset_app,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});resetButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFD32F2F));resetButton.setTextColor(Color.WHITE);
   navigation.addView(new Space(this),new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(16),0,0);navigation.addView(credit,new LinearLayout.LayoutParams(-1,-2));
@@ -452,6 +453,10 @@ public final class MainActivity extends AppCompatActivity {
    error.setText("Bekræft login på din mail");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
    localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openPcloud();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText("Bekræft login på din mail\n\n"+(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes."));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
   }));dialog.show();
+ }
+ private void showHomeButtons(){
+  String[] names=FavoriteHomeOrder.NAMES.clone();boolean[] checked=new boolean[names.length];for(int i=0;i<names.length;i++)checked[i]=!library.hiddenHomeButtons.contains(names[i]);
+  new AlertDialog.Builder(this).setTitle(R.string.home_buttons).setMultiChoiceItems(names,checked,(dialog,which,selected)->checked[which]=selected).setNegativeButton("Annuller",null).setPositiveButton("Gem",(dialog,which)->{if(changeLibrary(()->{library.hiddenHomeButtons.clear();for(int i=0;i<names.length;i++)if(!checked[i])library.hiddenHomeButtons.add(names[i]);}))favoriteHub.rebuildHome();}).show();
  }
  private void showSettingsTransfer(){
   if(settingsTransferBusy){Toast.makeText(this,"Vent, til overførslen er færdig.",Toast.LENGTH_SHORT).show();return;}

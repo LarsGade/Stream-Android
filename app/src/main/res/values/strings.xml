@@ -107,4 +107,5 @@
  <string name="radio_widget_wide">Stream radio 2 × 1</string>
  <string name="radio_widget_wide_description">Stationslogo og play/stop på mørkegrå baggrund</string>
 <string name="reset_history">Nulstil lyttede/sete</string>
+ <string name="home_buttons">Forsideknapper</string>
 </resources>
