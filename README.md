@@ -738,3 +738,7 @@ Det lille skærmbillede i toppen er erstattet med brugerens banner.jpg i 1005 ×
 ### 1.36.0
 
 Appikonets lille 52 × 50-pixel skærmbillede er erstattet med symbolet fra det større banner. Symbolet er nu 217 × 245 pixels på en transparent flade; forholdet mellem symbol og flade samt launcher-indrykningerne er bevaret. Topbanner og forsideikoner er uændrede.
+
+### 1.36.1
+
+Rutinemeddelelser om stoppet afspilning, afsluttet casting og vellykket casting er fjernet. Stop skjuler og rydder statusfeltet, så der heller ikke står et tomt felt tilbage. Fejl ved afspilning, forbindelser og indlæsning vises fortsat.

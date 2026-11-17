@@ -108,7 +108,7 @@ public final class MainActivity extends AppCompatActivity {
  private final SessionManagerListener<CastSession> sessions=new SessionManagerListener<CastSession>() {
   public void onSessionStarted(CastSession s,String id) { if(!ImageSession.viewing()&&selected!=null&&!selected.url.startsWith("content:")) play(selected); }
   public void onSessionResumed(CastSession s,boolean suspended) { if(!ImageSession.viewing()&&selected!=null&&!selected.url.startsWith("content:")) play(selected); }
-  public void onSessionEnded(CastSession s,int error) {watchRemote();if(playbackPanel!=null) playbackPanel.refresh();if(adapter!=null) adapter.notifyDataSetChanged();status.setText(R.string.cast_ended); }
+  public void onSessionEnded(CastSession s,int error) {watchRemote();if(playbackPanel!=null) playbackPanel.refresh();if(adapter!=null) adapter.notifyDataSetChanged(); }
   public void onSessionStarting(CastSession s) { }
   public void onSessionStartFailed(CastSession s,int error) { status.setText(R.string.cast_failed); }
   public void onSessionEnding(CastSession s) { }
@@ -873,7 +873,7 @@ public final class MainActivity extends AppCompatActivity {
    String type=path.endsWith(".m3u8")?"application/x-mpegURL":path.endsWith(".mpd")?"application/dash+xml":path.endsWith(".mp4")?"video/mp4":path.endsWith(".mkv")?"video/x-matroska":path.endsWith(".avi")?"video/x-msvideo":path.endsWith(".mp3")?"audio/mpeg":path.endsWith(".aac")?"audio/aac":path.endsWith(".m4a")?"audio/mp4":path.endsWith(".flac")?"audio/flac":path.endsWith(".wav")?"audio/wav":path.endsWith(".ogg")?"audio/ogg":"video/mp2t";
    if(type.startsWith("audio/")){metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);metadata.putString(MediaMetadata.KEY_SUBTITLE,PlaybackText.SOURCE);metadata.putString(MediaMetadata.KEY_ARTIST,PlaybackText.SOURCE);}
    MediaInfo media=new MediaInfo.Builder(channel.url).setContentType(type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
-   CastHistory.beforeLoad();session.getRemoteMediaClient().load(new MediaLoadRequestData.Builder().setMediaInfo(media).setCurrentTime(savedPosition).setAutoplay(true).build()).setResultCallback(result->{if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);if(!isDestroyed()) status.setText(result.getStatus().isSuccess()?getString(R.string.casting,channel.name):getString(R.string.cast_stream_failed));});
+   CastHistory.beforeLoad();session.getRemoteMediaClient().load(new MediaLoadRequestData.Builder().setMediaInfo(media).setCurrentTime(savedPosition).setAutoplay(true).build()).setResultCallback(result->{if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);if(!isDestroyed()&&!result.getStatus().isSuccess()){status.setVisibility(View.VISIBLE);status.setText(R.string.cast_stream_failed);}});
   } else {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
@@ -923,7 +923,7 @@ public final class MainActivity extends AppCompatActivity {
   rememberPlayback();videoArtworkGeneration++;resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
   if(localPlayerAttached) {acceptLocalPlayback=false;startService(LocalAudioService.command(this,LocalAudioService.STOP));detachLocalPlayback();}else if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
-  status.setVisibility(View.VISIBLE);status.setText(R.string.playback_stopped);
+  status.setText("");status.setVisibility(View.GONE);
  }
  private void enterFullscreen() {
   if(fullscreen || connectedCast()!=null || selected==null || player==null) return;
