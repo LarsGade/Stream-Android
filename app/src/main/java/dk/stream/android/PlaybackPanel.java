@@ -27,7 +27,8 @@ public final class PlaybackPanel extends FrameLayout {
  private final TextView title,time;
  private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
  private int restoreVolume;
- private final LinearLayout controls,outputs;
+ private final LinearLayout controls,outputs,buttons;
+ private int compactControlsWidth;
  private final CastOutputButton castOutput;
  private boolean fullscreenMode,tracking;private int outputCutoutTop,outputCutoutRight;
  private final Runnable hideControls=()->hideControls();
@@ -42,7 +43,7 @@ public final class PlaybackPanel extends FrameLayout {
   video.setOnTouchListener((view,event)->{if(event.getActionMasked()==MotionEvent.ACTION_UP) view.performClick();return true;});
   controls=new LinearLayout(context);controls.setOrientation(LinearLayout.VERTICAL);controls.setBackgroundColor(0xDD101010);
   title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
-  LinearLayout buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
+  buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setContentDescription("Gå til live");live.setPadding(dp(8),dp(8),dp(8),dp(8));live.setBackground(controlBackground());buttons.addView(live,new LinearLayout.LayoutParams(dp(44),-1));live.setOnClickListener(view->{liveWasPaused=false;actions.goLive();refresh();scheduleHide();});
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
@@ -69,6 +70,8 @@ public final class PlaybackPanel extends FrameLayout {
  }
  @Override protected void onMeasure(int widthSpec,int heightSpec) {
   if(!fullscreenMode && MeasureSpec.getMode(heightSpec)!=MeasureSpec.EXACTLY) heightSpec=MeasureSpec.makeMeasureSpec(dp(210),MeasureSpec.EXACTLY);
+  int width=MeasureSpec.getSize(widthSpec);if(!fullscreenMode&&width>0)compactControlsWidth=width;
+  int reference=compactControlsWidth>0?compactControlsWidth:Math.min(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels);int rowWidth=fullscreenMode?Math.min(Math.max(0,width-controls.getPaddingLeft()-controls.getPaddingRight()),reference):-1;LinearLayout.LayoutParams buttonPosition=(LinearLayout.LayoutParams)buttons.getLayoutParams();if(buttonPosition.width!=rowWidth){buttonPosition.width=rowWidth;buttonPosition.gravity=Gravity.CENTER_HORIZONTAL;buttons.setLayoutParams(buttonPosition);}
   super.onMeasure(widthSpec,heightSpec);
  }
  private android.graphics.drawable.Drawable controlBackground() {return new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x663686FF),null,new android.graphics.drawable.ColorDrawable(Color.WHITE));}
@@ -81,7 +84,7 @@ public final class PlaybackPanel extends FrameLayout {
  public androidx.mediarouter.app.MediaRouteButton castButton(){return castOutput;}
  public boolean controlsVisible() {return controls.getVisibility()==VISIBLE;}
  public void showControls() {controls.setVisibility(VISIBLE);outputs.setVisibility(VISIBLE);refresh();removeCallbacks(progressTick);post(progressTick);scheduleHide();}
- public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);outputs.setVisibility(GONE);video.hideController();}
+ public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);outputs.setVisibility(GONE);back.setVisibility(GONE);video.hideController();}
  public void fullscreenLayout(boolean enabled) {
   fullscreenMode=enabled;controls.setPadding(0,0,0,0);positionOutputs();
   video.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT);
@@ -151,7 +154,7 @@ public final class PlaybackPanel extends FrameLayout {
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));
  }
  public void refresh() {
-  back.setVisibility(fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
+  back.setVisibility(controlsVisible()&&fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
   boolean playing=actions.playing();play.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?R.string.pause_action:R.string.play_action));
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));
   try {

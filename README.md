@@ -794,3 +794,7 @@ Stop-ikonet på begge radiowidgets er lidt lysere (#B8B8B8) end play-ikonet (#98
 ### 1.40.4
 
 Stop-ikonet på radiowidgets er lysnet yderligere til #D0D0D0. Play beholder #989898.
+
+### 1.40.5
+
+Videoens knaprække bevarer mini-afspillerens bredde og indbyrdes afstand i fuldskærm, hvor rækken centreres. Tilbage-knappen vises og skjules sammen med kontrollinjen, også når afspillerstatus opdateres, mens kontrollerne er skjult.
