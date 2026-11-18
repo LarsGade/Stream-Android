@@ -790,3 +790,7 @@ Spol 10 sekunder tilbage/frem-knapperne er fjernet fra videoafspilleren i både 
 ### 1.40.3
 
 Stop-ikonet på begge radiowidgets er lidt lysere (#B8B8B8) end play-ikonet (#989898), også i den lille widgets kortvarige betjeningsvisning.
+
+### 1.40.4
+
+Stop-ikonet på radiowidgets er lysnet yderligere til #D0D0D0. Play beholder #989898.
