@@ -14,7 +14,8 @@ public final class AudioPlayerActivity extends AppCompatActivity {
  private TextView title,time;
  private ImageView artwork;private Object artworkModel;
  private SeekBar progress;
- private ImageButton toggle;
+ private ImageButton toggle,previous,next;
+ private Library navigationLibrary=new Library();
  private ImageButton live;
  private androidx.mediarouter.app.MediaRouteButton castButton;
  private boolean local,tracking;
@@ -23,7 +24,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
  private Player player(){return local?LocalAudioService.player():RadioPlaybackService.audioPlayer();}
  private RemoteMediaClient remote(){return CastPlayback.hasMedia(this)?CastPlayback.remote(this):null;}
  @Override public void onCreate(Bundle state){
-  super.onCreate(state);CastPlayback.init(this);local=getIntent().getBooleanExtra("local",false);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
+  super.onCreate(state);try{navigationLibrary=new LibraryStore(this).load();}catch(Exception ignored){}CastPlayback.init(this);local=getIntent().getBooleanExtra("local",false);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
   LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setGravity(Gravity.CENTER);root.setPadding(24,24,24,24);root.setBackgroundColor(0xFF101010);setContentView(root);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{androidx.core.graphics.Insets bars=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout());view.setPadding(bars.left+24,bars.top+24,bars.right+24,bars.bottom+24);return insets;});
   LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);root.addView(top,new LinearLayout.LayoutParams(-1,-2));ImageButton back=new ImageButton(this);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);top.addView(back,new LinearLayout.LayoutParams(backSize,backSize));top.addView(new Space(this),new LinearLayout.LayoutParams(0,backSize,1));back.setOnClickListener(view->finish());
@@ -41,10 +42,16 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   LinearLayout liveControls=new LinearLayout(this);controlBar.addView(liveControls,new FrameLayout.LayoutParams(-2,-1,Gravity.RIGHT|Gravity.CENTER_VERTICAL));
   LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER);controlBar.addView(controls,new FrameLayout.LayoutParams(-2,-1,Gravity.CENTER));
   live=icon(liveControls,R.drawable.ic_live,"Gå til live");live.setVisibility(android.view.View.GONE);live.setOnClickListener(view->{RemoteMediaClient remote=remote();if(remote!=null)LivePlayback.goLive(remote);else if(!local)startService(RadioPlaybackService.internalIntent(this,RadioPlaybackService.LIVE));refresh();});
+  previous=icon(controls,R.drawable.ic_previous,"Forrige");previous.setOnClickListener(view->move(-1));
   toggle=icon(controls,R.drawable.ic_play,"Afspil");toggle.setOnClickListener(view->{RemoteMediaClient remote=remote();if(remote!=null)CastPlayback.toggle(this);else {Player player=player();if(player!=null){if(player.getPlaybackState()==Player.STATE_ENDED){player.seekTo(0);player.play();}else if(player.getPlayWhenReady())player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE)player.prepare();player.play();}}}refresh();});
-  ImageButton stop=icon(controls,R.drawable.ic_stop,"Stop");stop.setOnClickListener(view->{if(remote()!=null)CastPlayback.stop(this);else if(local)startService(LocalAudioService.command(this,LocalAudioService.STOP));else startService(RadioPlaybackService.internalIntent(this,RadioPlaybackService.STOP));finish();});controlBar.addView(outputs,new FrameLayout.LayoutParams(-2,-1,Gravity.LEFT|Gravity.CENTER_VERTICAL));refresh();
+  ImageButton stop=icon(controls,R.drawable.ic_stop,"Stop");stop.setOnClickListener(view->{if(remote()!=null)CastPlayback.stop(this);else if(local)startService(LocalAudioService.command(this,LocalAudioService.STOP));else startService(RadioPlaybackService.internalIntent(this,RadioPlaybackService.STOP));finish();});next=icon(controls,R.drawable.ic_next,"Næste");next.setOnClickListener(view->move(1));
+  controlBar.removeAllViews();LinearLayout transport=new LinearLayout(this);transport.setGravity(Gravity.CENTER_VERTICAL);while(outputs.getChildCount()>0){android.view.View child=outputs.getChildAt(0);outputs.removeViewAt(0);transport.addView(child,new LinearLayout.LayoutParams(0,-1,1));}while(controls.getChildCount()>0){android.view.View child=controls.getChildAt(0);controls.removeViewAt(0);transport.addView(child,new LinearLayout.LayoutParams(0,-1,1));}liveControls.removeView(live);transport.addView(live,new LinearLayout.LayoutParams(0,-1,1));controlBar.addView(transport,new FrameLayout.LayoutParams(-1,-1));refresh();
  }
  private ImageButton icon(LinearLayout parent,int resource,String description){ImageButton button=new ImageButton(this);button.setImageResource(resource);button.setContentDescription(description);button.setBackgroundColor(Color.TRANSPARENT);float density=getResources().getDisplayMetrics().density;int size=Math.round(64*density);int padding=Math.round((64-(resource==R.drawable.ic_live?28.8f:48))/2f*density);button.setPadding(padding,padding,padding,padding);button.setScaleType(ImageView.ScaleType.FIT_CENTER);parent.addView(button,new LinearLayout.LayoutParams(size,size));return button;}
+ private RadioStation radioTarget(int direction){RemoteMediaClient remote=remote();RadioStation current=RadioPlaybackService.selectedStation();String id=current==null?"":current.id;if(remote!=null){id="";String name=CastPlayback.title(this);for(RadioStation station:RadioFavoriteNavigation.stations(navigationLibrary))if(station.displayName().equals(name)){id=station.id;break;}}return RadioFavoriteNavigation.adjacent(navigationLibrary,id,direction);}
+ private boolean castRadio(RemoteMediaClient remote){return remote!=null&&remote.isLiveStream()&&remote.getMediaInfo()!=null&&remote.getMediaInfo().getMetadata()!=null&&remote.getMediaInfo().getMetadata().getMediaType()==com.google.android.gms.cast.MediaMetadata.MEDIA_TYPE_MUSIC_TRACK;}
+ private boolean canMove(int direction){RemoteMediaClient remote=remote();if(remote!=null)return castRadio(remote)?radioTarget(direction)!=null:PlaybackNavigation.canMove(remote,direction);return local?PlaybackNavigation.canMove(player(),direction):radioTarget(direction)!=null;}
+ private void move(int direction){if(!canMove(direction))return;RemoteMediaClient remote=remote();if(remote!=null){if(castRadio(remote))CastPlayback.playRadio(this,radioTarget(direction));else PlaybackNavigation.move(remote,direction);}else if(local)PlaybackNavigation.move(player(),direction);else startService(RadioPlaybackService.internalIntent(this,direction<0?RadioPlaybackService.PREVIOUS:RadioPlaybackService.NEXT));refresh();}
  private String format(long ms){long seconds=Math.max(0,ms/1000);return String.format(java.util.Locale.ROOT,"%d:%02d",seconds/60,seconds%60);}
  private void refresh(){
   RemoteMediaClient remote=remote();Player player=player();long duration,position;boolean seekable,running;
@@ -53,6 +60,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   boolean liveChannel=remote!=null?remote.isLiveStream():!local&&RadioPlaybackService.selectedStation()!=null;
   boolean liveNow=liveChannel&&(remote!=null?remote.isPlaying()&&!LivePlayback.behind(remote):player!=null&&player.isPlaying()&&!RadioPlaybackService.needsLive());
   live.setVisibility(liveChannel?android.view.View.VISIBLE:android.view.View.GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(liveNow?0xFFFF3B30:Color.WHITE));live.setContentDescription(liveNow?"Live":"Gå til live");live.setSelected(liveNow);
+  previous.setEnabled(canMove(-1));previous.setAlpha(previous.isEnabled()?1f:0.35f);next.setEnabled(canMove(1));next.setAlpha(next.isEnabled()?1f:0.35f);
   updateArtwork(remote,player);
   progress.setEnabled(seekable);if(!tracking)progress.setProgress(seekable?(int)Math.min(1000,position*1000/duration):0);time.setText(format(position)+(duration>0?" / "+format(duration):""));toggle.setImageResource(running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(running?"Pause":"Afspil");
  }

@@ -11,20 +11,24 @@ import java.util.*;
 /** All disk and Radio Browser work happens outside the media session's main thread. */
 @androidx.media3.common.util.UnstableApi
 public final class CarRadioCallback implements MediaLibrarySession.Callback {
- private final CarRadioCatalog catalog;private final Runnable liveAction;
+ private final CarRadioCatalog catalog;private final Runnable liveAction,previousAction,nextAction;
  private final ListeningExecutorService worker=MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newSingleThreadExecutor());
  public CarRadioCallback(CarRadioCatalog catalog) {this(catalog,null);}
- public CarRadioCallback(CarRadioCatalog catalog,Runnable liveAction){this.catalog=catalog;this.liveAction=liveAction;}
+ public CarRadioCallback(CarRadioCatalog catalog,Runnable liveAction){this(catalog,liveAction,null,null);}
+ public CarRadioCallback(CarRadioCatalog catalog,Runnable liveAction,Runnable previousAction,Runnable nextAction){this.catalog=catalog;this.liveAction=liveAction;this.previousAction=previousAction;this.nextAction=nextAction;}
  public static java.util.List<CommandButton> liveButtons(){return java.util.Collections.singletonList(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_live).setDisplayName("Live").setSessionCommand(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).setSlots(CommandButton.SLOT_FORWARD,CommandButton.SLOT_BACK).build());}
+ public static java.util.List<CommandButton> transportButtons(){java.util.List<CommandButton> buttons=new java.util.ArrayList<>();buttons.add(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_previous).setDisplayName("Forrige kanal").setSessionCommand(new SessionCommand(RadioPlaybackService.PREVIOUS,Bundle.EMPTY)).setSlots(CommandButton.SLOT_BACK).build());buttons.add(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_next).setDisplayName("Næste kanal").setSessionCommand(new SessionCommand(RadioPlaybackService.NEXT,Bundle.EMPTY)).setSlots(CommandButton.SLOT_FORWARD).build());buttons.add(new CommandButton.Builder(CommandButton.ICON_UNDEFINED).setCustomIconResId(R.drawable.ic_live).setDisplayName("Live").setSessionCommand(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).setSlots(CommandButton.SLOT_OVERFLOW).build());return buttons;}
  public void close() {worker.shutdownNow();}
  @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {
   if(liveAction==null)return MediaSession.ConnectionResult.accept(MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
-  SessionCommands commands=MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).build();
+  SessionCommands commands=MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(new SessionCommand(RadioPlaybackService.LIVE,Bundle.EMPTY)).add(new SessionCommand(RadioPlaybackService.PREVIOUS,Bundle.EMPTY)).add(new SessionCommand(RadioPlaybackService.NEXT,Bundle.EMPTY)).build();
   Player.Commands playerCommands=MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon().remove(Player.COMMAND_SEEK_TO_NEXT).remove(Player.COMMAND_SEEK_TO_PREVIOUS).remove(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM).remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM).remove(Player.COMMAND_SEEK_BACK).remove(Player.COMMAND_SEEK_FORWARD).build();
-  return new MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(commands).setAvailablePlayerCommands(playerCommands).setCustomLayout(liveButtons()).setMediaButtonPreferences(liveButtons()).build();
+  return new MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(commands).setAvailablePlayerCommands(playerCommands).setCustomLayout(previousAction==null?liveButtons():transportButtons()).setMediaButtonPreferences(previousAction==null?liveButtons():transportButtons()).build();
  }
  @Override public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,MediaSession.ControllerInfo controller,SessionCommand command,Bundle args){
   if(liveAction!=null&&RadioPlaybackService.LIVE.equals(command.customAction)){liveAction.run();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}
+  if(previousAction!=null&&RadioPlaybackService.PREVIOUS.equals(command.customAction)){previousAction.run();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}
+  if(nextAction!=null&&RadioPlaybackService.NEXT.equals(command.customAction)){nextAction.run();return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));}
   return Futures.immediateFuture(new SessionResult(SessionError.ERROR_NOT_SUPPORTED));
  }
  @Override public ListenableFuture<LibraryResult<MediaItem>> onGetLibraryRoot(MediaLibrarySession session,MediaSession.ControllerInfo controller,LibraryParams params) {

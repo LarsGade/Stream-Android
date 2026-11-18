@@ -774,3 +774,7 @@ TV-favoritter viser igen EPG-programtitlen under kanalnavnet. Den nye favoritlis
 ### 1.39.0
 
 Radioafspilleren genoprettes ved streamfejl, uventet afslutning eller fastlåst buffering. Der forsøges højst fem genstarter med stigende ventetid; et nyt tryk på Afspil opretter en frisk ExoPlayer og frigiver den gamle lydudgang/lydfokus, så en anden app ikke skal bruges for at nulstille afspilleren. Almindelig pause på en søgbar stream bevarer positionen; fejlgenopretning går til live. Manuel pause/stop, Bluetooth-afbrydelse og tab af lydfokus udløser ikke automatisk genstart. Fuldskærmslydafspilleren bevares under genopretning. Rettelsen gælder radiomotoren generelt, herunder DR-streams; fysiske enheder og specifikke DR-udfald kan ikke reproduceres automatisk i testmiljøet.
+
+### 1.40.0
+
+Meddelelsesafspilleren får Forrige/Næste: radio skifter mellem Radio-favoritterne i gemt rækkefølge og går rundt ved enderne; lokale/Pcloud-filer bruger afspilningskøen. Der er tilsvarende knapper i fuldskærmslydafspilleren og ved tilgængelige køelementer i videoafspilleren. Cast-køer understøttes også. Uden et relevant forrige/næste emne deaktiveres eller skjules knapperne. Android bestemmer, hvor mange meddelelsesknapper der er synlige i kompakt/udfoldet visning.

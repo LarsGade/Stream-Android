@@ -17,12 +17,12 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
+  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean canSkip(int direction){return false;}default void skip(int direction){}default boolean pictureInPicture(){return false;}
  }
  public final PlayerView video;
  private final Actions actions;
  private final AudioManager audio;
- private final ImageButton play,mute,fullscreen,rewind,forward,settings,back;
+ private final ImageButton play,mute,fullscreen,rewind,forward,settings,back,previous,next;
  private final SeekBar timeline;
  private final TextView title,time;
  private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
@@ -45,7 +45,9 @@ public final class PlaybackPanel extends FrameLayout {
   LinearLayout buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setContentDescription("Gå til live");live.setPadding(dp(8),dp(8),dp(8),dp(8));live.setBackground(controlBackground());buttons.addView(live,new LinearLayout.LayoutParams(dp(44),-1));live.setOnClickListener(view->{liveWasPaused=false;actions.goLive();refresh();scheduleHide();});
   rewind=button(buttons,R.drawable.ic_rewind,R.string.seek_back,()->seekBy(-10000));
+  previous=button(buttons,R.drawable.ic_previous,R.string.previous_action,()->actions.skip(-1));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
+  next=button(buttons,R.drawable.ic_next,R.string.next_action,()->actions.skip(1));
   forward=button(buttons,R.drawable.ic_forward,R.string.seek_forward,()->seekBy(10000));
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
@@ -154,6 +156,7 @@ public final class PlaybackPanel extends FrameLayout {
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));
  }
  public void refresh() {
+  previous.setVisibility(actions.canSkip(-1)?VISIBLE:GONE);next.setVisibility(actions.canSkip(1)?VISIBLE:GONE);
   back.setVisibility(fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
   boolean playing=actions.playing();play.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?R.string.pause_action:R.string.play_action));
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));

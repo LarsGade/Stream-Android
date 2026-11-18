@@ -12,6 +12,7 @@ import org.json.JSONObject;
 /** Radio owns a foreground media session, so launcher widgets also work after the UI closes. */
 @androidx.media3.common.util.UnstableApi
 public final class RadioPlaybackService extends MediaLibraryService {
+ public static final String PREVIOUS="dk.stream.android.RADIO_PREVIOUS",NEXT="dk.stream.android.RADIO_NEXT";
  public static final String WIDE_WIDGET_TOGGLE="dk.stream.android.RADIO_WIDE_WIDGET_TOGGLE";
  public static final String LIVE="dk.stream.android.RADIO_LIVE",PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
  private static RadioPlaybackService active;
@@ -55,8 +56,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
    public MediaNotification createNotification(MediaSession mediaSession,com.google.common.collect.ImmutableList<CommandButton> buttons,MediaNotification.ActionFactory factory,MediaNotification.Provider.Callback callback) {return new MediaNotification(2001,notification(mediaSession));}
    public boolean handleCustomCommand(MediaSession mediaSession,String action,android.os.Bundle extras) {return false;}
   });
-  carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog,()->onStartCommand(internalIntent(this,LIVE),0,0));
-  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(CarRadioCallback.liveButtons()).setMediaButtonPreferences(CarRadioCallback.liveButtons()).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,AudioPlayerActivity.class).putExtra("local",false).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
+  carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog,()->onStartCommand(internalIntent(this,LIVE),0,0),()->onStartCommand(internalIntent(this,PREVIOUS),0,0),()->onStartCommand(internalIntent(this,NEXT),0,0));
+  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(CarRadioCallback.transportButtons()).setMediaButtonPreferences(CarRadioCallback.transportButtons()).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,AudioPlayerActivity.class).putExtra("local",false).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
   recoveryHandler.postDelayed(recoveryTick,2000);
  }
  private void createPlayer(){
@@ -106,7 +107,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
   super.onStartCommand(intent,flags,startId);
   if(intent==null) return START_NOT_STICKY;
   String action=intent.getAction();
-  if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE,WIDE_WIDGET_TOGGLE,LIVE).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
+  if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE,WIDE_WIDGET_TOGGLE,LIVE,PREVIOUS,NEXT).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
+  if(PREVIOUS.equals(action)||NEXT.equals(action)){try{RadioStation station=RadioFavoriteNavigation.adjacent(new LibraryStore(this).load(),current==null?"":current.id,PREVIOUS.equals(action)?-1:1);if(station==null)return START_NOT_STICKY;intent=playIntent(this,station);action=PLAY;}catch(Exception unavailable){return START_NOT_STICKY;}}
   if(android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH.equals(action)) {
    String query=intent.getStringExtra(android.app.SearchManager.QUERY);if(query==null||query.trim().isEmpty()) return START_NOT_STICKY;
    foreground();MediaItem request=new MediaItem.Builder().setRequestMetadata(new MediaItem.RequestMetadata.Builder().setSearchQuery(query).build()).build();

@@ -109,4 +109,6 @@
 <string name="reset_history">Nulstil lyttede/sete</string>
  <string name="home_buttons">Forsideknapper</string>
  <string name="daily_guide_update">Opdatér TV-Guide hver dag</string>
+ <string name="previous_action">Forrige</string>
+ <string name="next_action">Næste</string>
 </resources>

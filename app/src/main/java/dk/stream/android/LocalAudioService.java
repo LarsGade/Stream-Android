@@ -10,6 +10,7 @@ import java.util.*;
 /** Owns local playback across screens, including mixed audio/video queues. */
 @androidx.media3.common.util.UnstableApi
 public final class LocalAudioService extends MediaSessionService {
+ public static final String PREVIOUS="local.PREVIOUS",NEXT="local.NEXT";
  public static final String PLAY="local.PLAY",TOGGLE="local.TOGGLE",STOP="local.STOP",CHANGED="dk.stream.android.LOCAL_CHANGED";
  private static LocalAudioService active;
  private static LocalQueue pendingQueue;
@@ -70,6 +71,8 @@ public final class LocalAudioService extends MediaSessionService {
   super.onStartCommand(intent,flags,startId);if(intent==null) return START_NOT_STICKY;
   if(STOP.equals(intent.getAction())) {current=null;queue=Collections.emptyList();pendingQueue=null;pendingToken=null;player.pause();player.stop();player.clearMediaItems();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();}
   else if(TOGGLE.equals(intent.getAction())) {if(current!=null) {if(player.getPlaybackState()==Player.STATE_ENDED) {player.seekTo(0);player.play();}else if(player.getPlayWhenReady()) player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE) player.prepare();player.play();}}}
+  else if(PREVIOUS.equals(intent.getAction())){if(player.hasPreviousMediaItem())player.seekToPreviousMediaItem();}
+  else if(NEXT.equals(intent.getAction())){if(player.hasNextMediaItem())player.seekToNextMediaItem();}
   else if(PLAY.equals(intent.getAction())) {
    try {
     LocalMedia entry=new LocalMedia(intent.getStringExtra("uri"),intent.getStringExtra("name"),intent.getStringExtra("mime"),false);

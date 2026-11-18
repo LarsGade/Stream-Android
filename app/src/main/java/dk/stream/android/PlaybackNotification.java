@@ -29,11 +29,17 @@ public final class PlaybackNotification {
   Notification.Builder builder=Build.VERSION.SDK_INT>=26?new Notification.Builder(context,channel):new Notification.Builder(context);
   Player player=session.getPlayer();androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();boolean playing=player.getPlayWhenReady();
   builder.setColor(0xFF3686FF).setSmallIcon(R.drawable.ic_play).setContentTitle(metadata.title==null?context.getString(R.string.app_name):metadata.title)
-   .setContentText(PlaybackText.SOURCE).setContentIntent(session.getSessionActivity()).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false)
-   .addAction(playing?(liveRadio?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play,context.getString(playing?(liveRadio?R.string.stop_action:R.string.pause_action):R.string.play_action),toggle);
-  if(!liveRadio) builder.addAction(R.drawable.ic_stop,context.getString(R.string.stop_action),stop);
-  if(live!=null)builder.addAction(R.drawable.ic_live,atLive?"Live":"Gå til live",live);
-  builder.setStyle(new Notification.MediaStyle().setMediaSession(session.getPlatformToken()).setShowActionsInCompactView(live!=null?new int[]{0,2,1}:liveRadio?new int[]{0}:new int[]{0,1}));
+   .setContentText(PlaybackText.SOURCE).setContentIntent(session.getSessionActivity()).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false);
+  boolean radio=live!=null,local="stream_local".equals(channel);PendingIntent previous=null,next=null;
+  if(radio){previous=PendingIntent.getService(context,4,RadioPlaybackService.internalIntent(context,RadioPlaybackService.PREVIOUS),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);next=PendingIntent.getService(context,5,RadioPlaybackService.internalIntent(context,RadioPlaybackService.NEXT),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
+  else if(local){if(player.hasPreviousMediaItem())previous=PendingIntent.getService(context,34,LocalAudioService.command(context,LocalAudioService.PREVIOUS),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);if(player.hasNextMediaItem())next=PendingIntent.getService(context,35,LocalAudioService.command(context,LocalAudioService.NEXT),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
+  java.util.List<Integer> compact=new java.util.ArrayList<>();int index=0;
+  if(previous!=null){builder.addAction(R.drawable.ic_previous,"Forrige",previous);compact.add(index++);}
+  builder.addAction(playing?(liveRadio?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play,context.getString(playing?(liveRadio?R.string.stop_action:R.string.pause_action):R.string.play_action),toggle);compact.add(index++);
+  if(next!=null){builder.addAction(R.drawable.ic_next,"Næste",next);compact.add(index++);}
+  if(!liveRadio){builder.addAction(R.drawable.ic_stop,context.getString(R.string.stop_action),stop);if(compact.size()<3)compact.add(index);index++;}
+  if(live!=null){builder.addAction(R.drawable.ic_live,atLive?"Live":"Gå til live",live);if(compact.size()<3)compact.add(index);}
+  int[] visible=new int[compact.size()];for(int i=0;i<visible.length;i++)visible[i]=compact.get(i);builder.setStyle(new Notification.MediaStyle().setMediaSession(session.getPlatformToken()).setShowActionsInCompactView(visible));
   if(Build.VERSION.SDK_INT>=26) builder.setColorized(true);
   if(metadata.artworkData!=null) {android.graphics.Bitmap artwork=BitmapFactory.decodeByteArray(metadata.artworkData,0,metadata.artworkData.length);if(artwork!=null) builder.setLargeIcon(artwork);}
   return builder.build();
