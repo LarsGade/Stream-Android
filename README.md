@@ -798,3 +798,7 @@ Stop-ikonet på radiowidgets er lysnet yderligere til #D0D0D0. Play beholder #98
 ### 1.40.5
 
 Videoens knaprække bevarer mini-afspillerens bredde og indbyrdes afstand i fuldskærm, hvor rækken centreres. Tilbage-knappen vises og skjules sammen med kontrollinjen, også når afspillerstatus opdateres, mens kontrollerne er skjult.
+
+### 1.40.6
+
+Kategorioverskrifterne TV, Film, Serier, Radio, Podcast og Musik er skjult på favoritlisterne uden at efterlade tom plads. Inde i mapper bevares mappenavn og tilbageknap. TV-favoritter med EPG bruger automatisk rækkehøjde og fuld programtekst uden linjebegrænsning; den sædvanlige rækkehøjde er minimum.

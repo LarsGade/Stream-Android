@@ -841,7 +841,7 @@ public final class MainActivity extends AppCompatActivity {
    Library.Entry entry=getItem(position);Playlist.Channel channel=entry.channel;row.name.setText(channel.name);
    Library.Source source=library.findSource(entry.sourceId);
    if(favoritesMode) {
-    String programme=programmeTitle(entry,System.currentTimeMillis());row.group.setText(programme);row.group.setMaxLines(2);row.group.setTextColor(Color.rgb(170,170,170));row.group.setVisibility(programme.isEmpty()?View.GONE:View.VISIBLE);
+    String programme=programmeTitle(entry,System.currentTimeMillis());row.group.setText(programme);row.group.setMaxLines(Integer.MAX_VALUE);row.group.setEllipsize(null);row.group.setTextColor(Color.rgb(170,170,170));row.group.setVisibility(programme.isEmpty()?View.GONE:View.VISIBLE);
    } else {row.group.setMaxLines(1);row.group.setText(channel.group);row.group.setVisibility(View.VISIBLE);}
    row.logo.setContentDescription(getString(R.string.logo_for,channel.name));
    String bundled=localLogos.find(channel.name);
