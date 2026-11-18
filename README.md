@@ -786,3 +786,7 @@ I lyd-fuldskærmsafspilleren er Bluetooth og Cast flyttet op i højre hjørne, s
 ### 1.40.2
 
 Spol 10 sekunder tilbage/frem-knapperne er fjernet fra videoafspilleren i både mini- og fuldskærmsvisning. Play/pause og Stop ligger nu direkte ved siden af hinanden. Tidslinjen kan stadig bruges til at vælge afspilningsposition.
+
+### 1.40.3
+
+Stop-ikonet på begge radiowidgets er lidt lysere (#B8B8B8) end play-ikonet (#989898), også i den lille widgets kortvarige betjeningsvisning.

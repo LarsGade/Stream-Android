@@ -15,7 +15,7 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
  static void showFeedback(Context context,int widgetId,boolean play) {
   if(widgetId==AppWidgetManager.INVALID_APPWIDGET_ID) return;
   boolean alreadyShowing=feedbackVisible(widgetId);Feedback state=new Feedback(play);feedback.put(widgetId,state);Context app=context.getApplicationContext();
-  RemoteViews pulse=new RemoteViews(app.getPackageName(),R.layout.radio_widget);pulse.setImageViewResource(R.id.widget_play,play?R.drawable.ic_play:R.drawable.ic_stop);
+  RemoteViews pulse=new RemoteViews(app.getPackageName(),R.layout.radio_widget);pulse.setImageViewResource(R.id.widget_play,play?R.drawable.ic_play:R.drawable.ic_stop);pulse.setInt(R.id.widget_play,"setColorFilter",play?0xFF989898:0xFFB8B8B8);
   if(!alreadyShowing) pulse.setDisplayedChild(R.id.widget_feedback,1);
   partialUpdate(app,widgetId,pulse);
   feedbackHandler.postDelayed(()->{
@@ -51,7 +51,7 @@ public final class RadioWidgetProvider extends AppWidgetProvider {
   Intent configure=new Intent(context,RadioWidgetConfigureActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId).setData(Uri.parse("stream://radio-widget/config/"+widgetId));
   PendingIntent config=PendingIntent.getActivity(context,widgetId,configure,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   if(station!=null) {
-   boolean playing=RadioPlaybackService.playing(station.id);Feedback pulse=feedback.get(widgetId);boolean show=feedbackVisible(widgetId);views.setDisplayedChild(R.id.widget_feedback,show?1:0);views.setImageViewResource(R.id.widget_play,show && !pulse.play?R.drawable.ic_stop:R.drawable.ic_play);views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.radio_stop:R.string.radio_start));
+   boolean playing=RadioPlaybackService.playing(station.id);Feedback pulse=feedback.get(widgetId);boolean show=feedbackVisible(widgetId);views.setDisplayedChild(R.id.widget_feedback,show?1:0);views.setImageViewResource(R.id.widget_play,show && !pulse.play?R.drawable.ic_stop:R.drawable.ic_play);views.setInt(R.id.widget_play,"setColorFilter",show&&!pulse.play?0xFFB8B8B8:0xFF989898);views.setContentDescription(R.id.widget_play,context.getString(playing?R.string.radio_stop:R.string.radio_start));
    Intent toggle=RadioPlaybackService.internalIntent(context,RadioPlaybackService.WIDGET_TOGGLE).setData(Uri.parse("stream://radio-widget/play/"+widgetId)).putExtra("favoriteId",station.id).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);
    PendingIntent action=android.os.Build.VERSION.SDK_INT>=26?PendingIntent.getForegroundService(context,widgetId,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE):PendingIntent.getService(context,widgetId,toggle,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
    views.setOnClickPendingIntent(R.id.widget_root,action);views.setOnClickPendingIntent(R.id.widget_logo,action);views.setOnClickPendingIntent(R.id.widget_play,action);
