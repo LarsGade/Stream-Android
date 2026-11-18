@@ -770,3 +770,7 @@ Mini-afspiller hedder nu Vis mini-afspiller. Lige under findes Opdatér TV-Guide
 ### 1.38.1
 
 TV-favoritter viser igen EPG-programtitlen under kanalnavnet. Den nye favoritliste er koblet til samme guideopslag som streaminglisten og opdateres ved indlæsning, manuel/daglig opdatering og programskift. Film, Serier og andre favoritlister beholder deres hidtidige visning.
+
+### 1.39.0
+
+Radioafspilleren genoprettes ved streamfejl, uventet afslutning eller fastlåst buffering. Der forsøges højst fem genstarter med stigende ventetid; et nyt tryk på Afspil opretter en frisk ExoPlayer og frigiver den gamle lydudgang/lydfokus, så en anden app ikke skal bruges for at nulstille afspilleren. Almindelig pause på en søgbar stream bevarer positionen; fejlgenopretning går til live. Manuel pause/stop, Bluetooth-afbrydelse og tab af lydfokus udløser ikke automatisk genstart. Fuldskærmslydafspilleren bevares under genopretning. Rettelsen gælder radiomotoren generelt, herunder DR-streams; fysiske enheder og specifikke DR-udfald kan ikke reproduceres automatisk i testmiljøet.
