@@ -22,7 +22,7 @@ public final class PlaybackPanel extends FrameLayout {
  public final PlayerView video;
  private final Actions actions;
  private final AudioManager audio;
- private final ImageButton play,mute,fullscreen,rewind,forward,settings,back;
+ private final ImageButton play,mute,fullscreen,settings,back;
  private final SeekBar timeline;
  private final TextView title,time;
  private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
@@ -44,11 +44,9 @@ public final class PlaybackPanel extends FrameLayout {
   title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
   LinearLayout buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setContentDescription("Gå til live");live.setPadding(dp(8),dp(8),dp(8),dp(8));live.setBackground(controlBackground());buttons.addView(live,new LinearLayout.LayoutParams(dp(44),-1));live.setOnClickListener(view->{liveWasPaused=false;actions.goLive();refresh();scheduleHide();});
-  rewind=button(buttons,R.drawable.ic_rewind,R.string.seek_back,()->seekBy(-10000));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
-  forward=button(buttons,R.drawable.ic_forward,R.string.seek_forward,()->seekBy(10000));
-  mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
+  mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
   LinearLayout progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
@@ -133,7 +131,6 @@ public final class PlaybackPanel extends FrameLayout {
   if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().seek(target);
   else if(video.getPlayer()!=null) video.getPlayer().seekTo(target);
  }
- private void seekBy(long delta) {seekTo(position()+delta);refreshProgress();}
  private String clock(long ms) {long seconds=Math.max(0,ms/1000);return String.format(java.util.Locale.ROOT,"%d:%02d",seconds/60,seconds%60);}
  public boolean liveChannel(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isLiveStream();Player player=video.getPlayer();return actions.liveChannel()||player!=null&&player.isCurrentMediaItemLive();}
  public boolean liveNow(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isLiveStream()&&session.getRemoteMediaClient().isPlaying()&&!needsLive();Player player=video.getPlayer();return liveChannel()&&player!=null&&player.isPlaying()&&!needsLive();}
@@ -149,7 +146,7 @@ public final class PlaybackPanel extends FrameLayout {
  }
  private void refreshProgress() {
   boolean now=liveNow();live.setVisibility(liveChannel()?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(now?0xFFFF3B30:Color.WHITE));live.setContentDescription(now?"Live":"Gå til live");live.setSelected(now);
-  boolean enabled=seekable();timeline.setEnabled(enabled);rewind.setEnabled(enabled);forward.setEnabled(enabled);
+  boolean enabled=seekable();timeline.setEnabled(enabled);
   if(!tracking) timeline.setProgress(enabled?(int)(position()*1000/Math.max(1,duration())):0);
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));
  }

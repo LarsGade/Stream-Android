@@ -782,3 +782,7 @@ Meddelelsesafspilleren får Forrige/Næste: radio skifter mellem Radio-favoritte
 ### 1.40.1
 
 I lyd-fuldskærmsafspilleren er Bluetooth og Cast flyttet op i højre hjørne, så de nederste transportknapper får mere plads. Forrige/Næste er fjernet fra videoafspilleren; videoens spoleknapper er bevaret. Meddelelsesafspilleren og lydafspillerens Forrige/Næste er uændrede.
+
+### 1.40.2
+
+Spol 10 sekunder tilbage/frem-knapperne er fjernet fra videoafspilleren i både mini- og fuldskærmsvisning. Play/pause og Stop ligger nu direkte ved siden af hinanden. Tidslinjen kan stadig bruges til at vælge afspilningsposition.
