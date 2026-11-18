@@ -167,8 +167,6 @@ public final class MainActivity extends AppCompatActivity {
    public boolean liveChannel(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}
    public void goLive(){goToLive();}
    public void chooseCast(){castRouteButton.performClick();}
-   public boolean canSkip(int direction){CastSession session=connectedCast();return session!=null?PlaybackNavigation.canMove(session.getRemoteMediaClient(),direction):PlaybackNavigation.canMove(player,direction);}
-   public void skip(int direction){CastSession session=connectedCast();if(session!=null)PlaybackNavigation.move(session.getRemoteMediaClient(),direction);else PlaybackNavigation.move(player,direction);}
    public void togglePlayback() {togglePlaybackState();}
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}

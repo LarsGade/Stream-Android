@@ -778,3 +778,7 @@ Radioafspilleren genoprettes ved streamfejl, uventet afslutning eller fastlåst 
 ### 1.40.0
 
 Meddelelsesafspilleren får Forrige/Næste: radio skifter mellem Radio-favoritterne i gemt rækkefølge og går rundt ved enderne; lokale/Pcloud-filer bruger afspilningskøen. Der er tilsvarende knapper i fuldskærmslydafspilleren og ved tilgængelige køelementer i videoafspilleren. Cast-køer understøttes også. Uden et relevant forrige/næste emne deaktiveres eller skjules knapperne. Android bestemmer, hvor mange meddelelsesknapper der er synlige i kompakt/udfoldet visning.
+
+### 1.40.1
+
+I lyd-fuldskærmsafspilleren er Bluetooth og Cast flyttet op i højre hjørne, så de nederste transportknapper får mere plads. Forrige/Næste er fjernet fra videoafspilleren; videoens spoleknapper er bevaret. Meddelelsesafspilleren og lydafspillerens Forrige/Næste er uændrede.
