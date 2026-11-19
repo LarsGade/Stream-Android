@@ -57,12 +57,13 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   RemoteMediaClient remote=remote();Player player=player();long duration,position;boolean seekable,running;
   if(remote!=null){title.setText(CastPlayback.title(this));duration=remote.getStreamDuration();position=remote.getApproximateStreamPosition();seekable=duration>0&&remote.getMediaInfo().getStreamType()!=com.google.android.gms.cast.MediaInfo.STREAM_TYPE_LIVE;running=remote.isPlaying()||remote.isBuffering();}
   else {if(player==null||player.getPlaybackState()==Player.STATE_IDLE&&(local||!RadioPlaybackService.recovering())){finish();return;}LocalMedia file=local?LocalAudioService.current():null;RadioStation station=local?null:RadioPlaybackService.selectedStation();CharSequence name=file!=null?file.displayName():station!=null?station.displayName():"";title.setText(name);duration=player.getDuration();position=player.getCurrentPosition();seekable=duration>0&&duration!=C.TIME_UNSET&&player.isCurrentMediaItemSeekable();running=player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
-  boolean liveChannel=remote!=null?remote.isLiveStream():!local&&RadioPlaybackService.selectedStation()!=null;
+  boolean liveChannel=remote!=null?remote.isLiveStream():!local&&RadioPlaybackService.selectedStation()!=null;boolean liveContent=liveChannel||player!=null&&player.isCurrentMediaItemLive();
+  progress.setVisibility(liveContent?android.view.View.GONE:android.view.View.VISIBLE);time.setVisibility(liveContent?android.view.View.GONE:android.view.View.VISIBLE);seekable=seekable&&!liveContent;
   boolean liveNow=liveChannel&&(remote!=null?remote.isPlaying()&&!LivePlayback.behind(remote):player!=null&&player.isPlaying()&&!RadioPlaybackService.needsLive());
   live.setVisibility(liveChannel?android.view.View.VISIBLE:android.view.View.GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(liveNow?0xFFFF3B30:Color.WHITE));live.setContentDescription(liveNow?"Live":"Gå til live");live.setSelected(liveNow);
   previous.setEnabled(canMove(-1));previous.setAlpha(previous.isEnabled()?1f:0.35f);next.setEnabled(canMove(1));next.setAlpha(next.isEnabled()?1f:0.35f);
   updateArtwork(remote,player);
-  progress.setEnabled(seekable);if(!tracking)progress.setProgress(seekable?(int)Math.min(1000,position*1000/duration):0);time.setText(format(position)+(duration>0?" / "+format(duration):""));toggle.setImageResource(running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(running?"Pause":"Afspil");
+  progress.setEnabled(seekable);if(!tracking)progress.setProgress(seekable?(int)Math.min(1000,position*1000/duration):0);time.setText(liveContent?"":format(position)+(duration>0?" / "+format(duration):""));toggle.setImageResource(running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(running?"Pause":"Afspil");
  }
  private void updateArtwork(RemoteMediaClient remote,Player player){
   Object model=null;

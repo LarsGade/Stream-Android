@@ -27,7 +27,7 @@ public final class PlaybackPanel extends FrameLayout {
  private final TextView title,time;
  private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
  private int restoreVolume;
- private final LinearLayout controls,outputs,buttons;
+ private final LinearLayout controls,outputs,buttons,progress;
  private int compactControlsWidth;
  private final CastOutputButton castOutput;
  private boolean fullscreenMode,tracking;private int outputCutoutTop,outputCutoutRight;
@@ -49,7 +49,7 @@ public final class PlaybackPanel extends FrameLayout {
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
-  LinearLayout progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
+  progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
   timeline=new SeekBar(context);timeline.setMax(1000);timeline.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
   timeline.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -149,6 +149,7 @@ public final class PlaybackPanel extends FrameLayout {
  }
  private void refreshProgress() {
   boolean now=liveNow();live.setVisibility(liveChannel()?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(now?0xFFFF3B30:Color.WHITE));live.setContentDescription(now?"Live":"Gå til live");live.setSelected(now);
+  boolean isLive=liveChannel();progress.setVisibility(isLive?GONE:VISIBLE);if(isLive){time.setText("");return;}
   boolean enabled=seekable();timeline.setEnabled(enabled);
   if(!tracking) timeline.setProgress(enabled?(int)(position()*1000/Math.max(1,duration())):0);
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));

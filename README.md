@@ -802,3 +802,7 @@ Videoens knaprække bevarer mini-afspillerens bredde og indbyrdes afstand i fuld
 ### 1.40.6
 
 Kategorioverskrifterne TV, Film, Serier, Radio, Podcast og Musik er skjult på favoritlisterne uden at efterlade tom plads. Inde i mapper bevares mappenavn og tilbageknap. TV-favoritter med EPG bruger automatisk rækkehøjde og fuld programtekst uden linjebegrænsning; den sædvanlige rækkehøjde er minimum.
+
+### 1.40.7
+
+Live-TV og radio viser ikke længere progressbar eller tidtæller i mini-/fuldskærmsvideo eller fuldskærmslyd, heller ikke ved casting. Tidslinjens plads fjernes helt ved liveindhold. Optagelser, film og andre ikke-live-filer beholder tidsvisning og spoling.
