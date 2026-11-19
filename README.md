@@ -806,3 +806,7 @@ Kategorioverskrifterne TV, Film, Serier, Radio, Podcast og Musik er skjult på f
 ### 1.40.7
 
 Live-TV og radio viser ikke længere progressbar eller tidtæller i mini-/fuldskærmsvideo eller fuldskærmslyd, heller ikke ved casting. Tidslinjens plads fjernes helt ved liveindhold. Optagelser, film og andre ikke-live-filer beholder tidsvisning og spoling.
+
+### 1.40.8
+
+Den store 2 × 1-radiowidgets baggrund og forhåndsvisning bruger nu næsten sort #0D0D0D efter farvereferencen. De afrundede hjørner og knapfarver er bevaret.
