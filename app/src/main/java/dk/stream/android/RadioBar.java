@@ -12,7 +12,7 @@ public final class RadioBar extends LinearLayout {
  public interface VideoActions {default long position(){return 0;}default long duration(){return 0;}default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
  private final TextView name;
  private final ImageView artwork;private Object artworkModel;
- private final ImageButton toggle,live;
+ private final ImageButton toggle;
  private final Runnable beforePlay;
  private final VideoActions video;
  private final Runnable tick=new Runnable(){public void run(){refresh();postDelayed(this,500);}};
@@ -23,7 +23,6 @@ public final class RadioBar extends LinearLayout {
   toggle=new ImageButton(context);toggle.setBackgroundColor(Color.TRANSPARENT);sizeButtonIcon(toggle,43.2f);toggle.setOnClickListener(view->transport());
   artwork=new ImageView(context);artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);int artSize=Math.round(size*1.25f);artwork.setPadding(artSize/12,artSize/12,artSize/12,artSize/12);artwork.setVisibility(GONE);LayoutParams artParams=new LayoutParams(artSize,artSize);artParams.setMarginEnd(MediaListStyle.iconGap(artwork));addView(artwork,artParams);
   name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);addView(name,new LayoutParams(0,-2,1));
-  live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setBackgroundColor(Color.TRANSPARENT);sizeButtonIcon(live,28.8f);live.setContentDescription("Gå til live");addView(live,new LayoutParams(size,size));live.setOnClickListener(view->{beforePlay.run();if(CastPlayback.hasMedia(getContext()))LivePlayback.goLive(CastPlayback.remote(getContext()));else if(video!=null&&!video.title().isEmpty()&&LocalAudioService.current()==null)video.goLive();else getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.LIVE));refresh();});
   addView(toggle,new LayoutParams(size,size));
   setOnClickListener(view->open());refresh();
  }
@@ -39,7 +38,8 @@ public final class RadioBar extends LinearLayout {
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();liveChannel=true;liveNow=RadioPlaybackService.audioPlayer()!=null&&RadioPlaybackService.audioPlayer().isPlaying()&&!isLive;image=PlaybackArtwork.radioModel(getContext(),station);}}
   String localCover=LocalFileArtwork.asset(LocalAudioService.current());if(localCover!=null&&!CastPlayback.hasMedia(getContext()))image=localCover;
   updateArtwork(title.isEmpty()?null:image,title);
-  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?R.drawable.ic_pause:R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?"Pause":"Afspil");toggle.setEnabled(!title.isEmpty());live.setVisibility(liveChannel?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(liveNow?0xFFFF3B30:Color.WHITE));live.setContentDescription(liveNow?"Live":"Gå til live");live.setSelected(liveNow);invalidate();
+  boolean radioContent=liveChannel&&LocalAudioService.current()==null&&(video==null||video.title().isEmpty());
+  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(radioContent?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?(radioContent?"Stop":"Pause"):"Afspil");toggle.setEnabled(!title.isEmpty());invalidate();
  }
  @Override protected void onMeasure(int widthSpec,int heightSpec){super.onMeasure(widthSpec,View.MeasureSpec.makeMeasureSpec(MediaRowHeight.pixels(name),View.MeasureSpec.EXACTLY));}
  @Override protected void onDraw(android.graphics.Canvas canvas){super.onDraw(canvas);android.graphics.Paint paint=new android.graphics.Paint();paint.setColor(Color.WHITE);canvas.drawRect(0,0,getWidth(),getPaddingTop(),paint);if(progressDuration>0){int height=Math.max(1,Math.round(2*getResources().getDisplayMetrics().density));paint.setColor(0xFF343434);canvas.drawRect(0,getHeight()-height,getWidth(),getHeight(),paint);paint.setColor(0xFF3686FF);canvas.drawRect(0,getHeight()-height,(float)(getWidth()*Math.max(0,Math.min(1,progressPosition/(double)progressDuration))),getHeight(),paint);}}
@@ -53,11 +53,11 @@ public final class RadioBar extends LinearLayout {
  }
  private void transport(){
   if(CastPlayback.image(getContext())){open();return;}
-  if(CastPlayback.hasMedia(getContext())){CastPlayback.toggle(getContext());return;}
+  if(CastPlayback.hasMedia(getContext())){com.google.android.gms.cast.framework.media.RemoteMediaClient remote=CastPlayback.remote(getContext());if(remote.isLiveStream()&&remote.getMediaInfo()!=null&&remote.getMediaInfo().getMetadata()!=null&&remote.getMediaInfo().getMetadata().getMediaType()==com.google.android.gms.cast.MediaMetadata.MEDIA_TYPE_MUSIC_TRACK&&(remote.isPlaying()||remote.isBuffering()))CastPlayback.stop(getContext());else CastPlayback.toggle(getContext());return;}
   if(LocalAudioService.current()!=null){getContext().startService(LocalAudioService.command(getContext(),LocalAudioService.TOGGLE));return;}
   if(video!=null&&!video.title().isEmpty()){video.toggle();return;}
   RadioStation station=RadioPlaybackService.selectedStation();if(station==null)return;
-  getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.TRANSPORT_TOGGLE));post(this::refresh);
+  getContext().startService(RadioPlaybackService.internalIntent(getContext(),RadioPlaybackService.playing(station.id)?RadioPlaybackService.STOP:RadioPlaybackService.LIVE));post(this::refresh);
  }
  private void open(){
   if(CastPlayback.image(getContext())){getContext().startActivity(ImageViewerActivity.reopenIntent(getContext()));return;}

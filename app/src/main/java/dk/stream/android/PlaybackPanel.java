@@ -25,7 +25,7 @@ public final class PlaybackPanel extends FrameLayout {
  private final ImageButton play,mute,fullscreen,settings,back;
  private final SeekBar timeline;
  private final TextView title,time;
- private final ImageButton live;private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
+ private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
  private int restoreVolume;
  private final LinearLayout controls,outputs,buttons,progress;
  private int compactControlsWidth;
@@ -44,7 +44,6 @@ public final class PlaybackPanel extends FrameLayout {
   controls=new LinearLayout(context);controls.setOrientation(LinearLayout.VERTICAL);controls.setBackgroundColor(0xDD101010);
   title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
   buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
-  live=new ImageButton(context);live.setImageResource(R.drawable.ic_live);live.setContentDescription("Gå til live");live.setPadding(dp(8),dp(8),dp(8),dp(8));live.setBackground(controlBackground());buttons.addView(live,new LinearLayout.LayoutParams(dp(44),-1));live.setOnClickListener(view->{liveWasPaused=false;actions.goLive();refresh();scheduleHide();});
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
@@ -148,7 +147,6 @@ public final class PlaybackPanel extends FrameLayout {
   return liveWasPaused||offset!=androidx.media3.common.C.TIME_UNSET&&liveBaseline!=androidx.media3.common.C.TIME_UNSET&&offset>liveBaseline+5000;
  }
  private void refreshProgress() {
-  boolean now=liveNow();live.setVisibility(liveChannel()?VISIBLE:GONE);live.setImageTintList(android.content.res.ColorStateList.valueOf(now?0xFFFF3B30:Color.WHITE));live.setContentDescription(now?"Live":"Gå til live");live.setSelected(now);
   boolean isLive=liveChannel();progress.setVisibility(isLive?GONE:VISIBLE);if(isLive){time.setText("");return;}
   boolean enabled=seekable();timeline.setEnabled(enabled);
   if(!tracking) timeline.setProgress(enabled?(int)(position()*1000/Math.max(1,duration())):0);

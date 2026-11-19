@@ -66,7 +66,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   BluetoothOutputButton.register(this,player,()->sessionPlayer.play());player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
   sessionPlayer=new RadioSessionPlayer(player,this::foreground,()->!BluetoothPlayback.resumeOther(player),this::resumeRadio);player.addListener(radioEvents);
  }
- private void resumeRadio(){if(player.getCurrentMediaItem()==null)return;recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(null,false);}
+ private void resumeRadio(){if(player.getCurrentMediaItem()==null)return;recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(null,true);}
  private void restartPlayer(MediaItem replacement,boolean live){
   MediaItem item=replacement!=null?replacement:player.getCurrentMediaItem();if(item==null)return;long position=!live&&replacement==null&&player.isCurrentMediaItemSeekable()?player.getCurrentPosition():C.TIME_UNSET;boolean wasBehind=behindLive;
   ExoPlayer previous=player;previous.removeListener(radioEvents);BluetoothOutputButton.unregister(previous);previous.pause();previous.stop();
@@ -86,7 +86,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
  @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}
  @Override public MediaLibrarySession onGetSession(MediaSession.ControllerInfo controller) {return session;}
  private Notification notification(MediaSession mediaSession) {
-  PendingIntent toggle=PendingIntent.getService(this,2,internalIntent(this,TRANSPORT_TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+  PendingIntent toggle=PendingIntent.getService(this,2,internalIntent(this,LIVE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   PendingIntent stop=PendingIntent.getService(this,1,internalIntent(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   PendingIntent live=PendingIntent.getService(this,3,internalIntent(this,LIVE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   return PlaybackNotification.radio(this,mediaSession,toggle,stop,live,mediaSession.getPlayer().isPlaying()&&!needsLive());

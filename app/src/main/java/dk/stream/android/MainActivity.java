@@ -917,8 +917,8 @@ public final class MainActivity extends AppCompatActivity {
   if(localPlayerAttached) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
   CastSession session=connectedCast();
   if(session!=null && session.getRemoteMediaClient()!=null) {
-   var remote=session.getRemoteMediaClient();if(remote.isPlaying()) remote.pause();else remote.play();
-  } else if(player!=null) {if(player.getPlayWhenReady()) player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE) player.prepare();player.play();}}
+   var remote=session.getRemoteMediaClient();if(remote.isPlaying()) remote.pause();else if(remote.isLiveStream())LivePlayback.goLive(remote);else remote.play();
+  } else if(player!=null) {if(player.getPlayWhenReady()) player.pause();else if(playbackPanel.liveChannel())goToLive();else {if(player.getPlaybackState()==Player.STATE_IDLE) player.prepare();player.play();}}
   else if(selected!=null) play(selected);
   playbackPanel.refresh();updateMiniBack();
  }

@@ -1,3 +1,7 @@
+## 1.41.0
+
+Live-knapperne er fjernet. Radio og live-TV genoptages ved livepunktet efter pause eller stop. Lydafspillerens frem- og tilbageikoner er 25 % mindre. Radioafspilleren har kun Play og Stop.
+
 # Stream til Android
 
 Android-app til M3U-kanallister, afspilning med Media3 og Google Cast.
