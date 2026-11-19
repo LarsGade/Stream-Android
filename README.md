@@ -1,3 +1,7 @@
+## 1.41.1
+
+Radioafspilleren har én knap, som skifter mellem Play og Stop. Afspilleren forbliver åben efter stop, så samme station kan startes live igen.
+
 ## 1.41.0
 
 Live-knapperne er fjernet. Radio og live-TV genoptages ved livepunktet efter pause eller stop. Lydafspillerens frem- og tilbageikoner er 25 % mindre. Radioafspilleren har kun Play og Stop.
