@@ -1,3 +1,7 @@
+## 1.41.3
+
+Billedvisning har en slideshow-knap i stedet for stjernen. Slideshow skifter billede hvert 10. sekund og stopper efter sidste billede. Manuel navigation virker fortsat og starter intervallet forfra.
+
 ## 1.41.2
 
 Telefonens lydstyrkeknapper styrer Cast-enhedens lydstyrke, mens appen er åben. Cast af radio viser stationens logo, også når logoet ligger i appen. Cast-metadata viser ikke længere afspillernavn som undertitel. En særskilt Stream-modtager er klargjort i cast-receiver; aktivering kræver et registreret Google Cast-app-id. Indtil da hedder Googles modtager fortsat Default Media Receiver.
