@@ -171,6 +171,9 @@ public final class MainActivity extends AppCompatActivity {
   status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
    public FavoriteLists.Item downloadItem(){FavoriteLists.Item item=MediaDownloads.current(MainActivity.this);return item!=null?item:selected!=null&&selected.kind!=Playlist.Kind.TV?FavoriteLists.of(new Library.Entry("",selected)):null;}
+   public boolean recordingAvailable(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}
+   public boolean recording(){return TvRecordingService.active();}
+   public void toggleRecording(){confirmTvRecording();}
    public boolean backupAvailable(){return tvAnchor!=null&&selected!=null&&selected.kind==Playlist.Kind.TV;}
    public void switchBackup(){switchTvBackup();}
    public boolean liveChannel(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}
@@ -217,7 +220,7 @@ public final class MainActivity extends AppCompatActivity {
    public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(back?View.VISIBLE:View.INVISIBLE);updateHeaderOutputs();}}
    public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
    public String programme(Library.Entry entry){return programmeTitle(entry,System.currentTimeMillis());}
-   public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(item.stream!=null){if(item.stream.channel.kind==Playlist.Kind.TV&&favoriteHub.tvListIndex()==0){tvAnchor=item.stream;tvBackupIndex=0;tvActiveUrl=item.stream.channel.url;MainActivity.this.play(item.stream.channel);}else open(item.stream);}else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
+   public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(recordingBlocked())return;if(item.stream!=null){if(item.stream.channel.kind==Playlist.Kind.TV&&favoriteHub.tvListIndex()==0){tvAnchor=item.stream;tvBackupIndex=0;tvActiveUrl=item.stream.channel.url;MainActivity.this.play(item.stream.channel);}else open(item.stream);}else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
    public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
   });favoriteHub.setVisibility(View.GONE);root.addView(favoriteHub,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
@@ -268,10 +271,11 @@ public final class MainActivity extends AppCompatActivity {
   try { cast=CastContext.getSharedInstance(this);CastButtonFactory.setUpMediaRouteButton(this,castRouteButton);cast.getSessionManager().addSessionManagerListener(sessions,CastSession.class); }
   catch(Exception e) { castRouteButton.setVisibility(View.INVISIBLE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
+  getOnBackPressedDispatcher().addCallback(this,new androidx.activity.OnBackPressedCallback(true){public void handleOnBackPressed(){if(recordingBlocked())return;setEnabled(false);getOnBackPressedDispatcher().onBackPressed();setEnabled(true);}});
   restoreCatalogs();
   if(getIntent().getBooleanExtra("resumeCastFile",false))resumeCastFileOnPhone(getIntent());else if(getIntent().hasExtra("resumeCastUrl"))resumeCastOnPhone(getIntent());else if(!getIntent().getBooleanExtra("favoritesHome",false))restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
  }
- @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("resumeCastFile",false))resumeCastFileOnPhone(intent);if(intent.hasExtra("resumeCastUrl"))resumeCastOnPhone(intent);if(intent.getBooleanExtra("favoritesHome",false)){intent.removeExtra("favoritesHome");showFavoritesHome();}if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
+ @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(TvRecordingService.active())return;if(intent.getBooleanExtra("resumeCastFile",false))resumeCastFileOnPhone(intent);if(intent.hasExtra("resumeCastUrl"))resumeCastOnPhone(intent);if(intent.getBooleanExtra("favoritesHome",false)){intent.removeExtra("favoritesHome");showFavoritesHome();}if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
  private void resumeCastFileOnPhone(android.content.Intent intent){intent.removeExtra("resumeCastFile");LocalQueue queue=CastPlayback.takePhoneQueue();if(queue!=null)playLocal(queue.entries.get(queue.start),Math.max(0,intent.getLongExtra("resumeCastPosition",0)),queue.entries);}
  private void resumeCastOnPhone(android.content.Intent intent){String url=intent.getStringExtra("resumeCastUrl");if(url==null)return;intent.removeExtra("resumeCastUrl");Playlist.Kind kind;try{kind=Playlist.Kind.valueOf(intent.getStringExtra("resumeCastKind"));}catch(Exception invalid){kind=Playlist.Kind.FILM;}long position=Math.max(0,intent.getLongExtra("resumeCastPosition",0));Playlist.Channel channel=new Playlist.Channel(intent.getStringExtra("resumeCastName"),url,"",kind,null,intent.getStringExtra("resumeCastLogo"));selected=null;resumePosition=position;play(channel);if(kind!=Playlist.Kind.TV&&player!=null)player.seekTo(position);}
  private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
@@ -430,12 +434,12 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void updateHeaderOutputs(){if(headerOutputs==null)return;boolean home=atFavoritesHome();headerOutputs.setVisibility(home?View.GONE:View.VISIBLE);FrameLayout.LayoutParams position=(FrameLayout.LayoutParams)headerBrandSlot.getLayoutParams();int margin=dp(home?48:96);if(position.leftMargin!=margin||position.rightMargin!=margin){position.leftMargin=margin;position.rightMargin=margin;headerBrandSlot.setLayoutParams(position);}}
  private boolean atFavoritesHome(){return favoriteHubMode&&favoriteHub!=null&&favoriteHub.isHome();}
- private void showFavoritesHome(){
+ private void showFavoritesHome(){if(recordingBlocked())return;
   minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;
   radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groupControls.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
  }
  private void showFavoriteTab(int tab){showFavoritesHome();if(tab==6)return;favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":tab==3?"Musik":"Streaming");if(tab==0)favoriteHub.selectStreamingKind(library.favoritesStartKind);}
- private void openLocal(boolean favorites) {
+ private void openLocal(boolean favorites) {if(recordingBlocked())return;
   minimizeVideo();
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();
@@ -453,7 +457,7 @@ public final class MainActivity extends AppCompatActivity {
    }
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
- private void openPcloud(){
+ private void openPcloud(){if(recordingBlocked())return;
   minimizeVideo();
   exitFullscreen();drawer.closeDrawer(androidx.core.view.GravityCompat.START);list.cancelFavoriteGesture();pcloudMode=true;localMode=false;radioMode=false;favoritesPage=false;favoritesMode=false;localPanel.setVisibility(View.GONE);radioPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.VISIBLE);pcloudPanel.open();filter();
  }
@@ -476,7 +480,7 @@ public final class MainActivity extends AppCompatActivity {
   }));dialog.show();
  }
  private void showTvBackupLists(){new AlertDialog.Builder(this).setTitle("TV backup-lister").setItems(new String[]{"TV 2","TV 3","TV 4"},(dialog,index)->{showFavoritesHome();favoriteHub.showTvList(index+1);}).setNegativeButton("Luk",null).show();}
- private void switchTvBackup(){if(tvAnchor==null)return;TvFavorites.Match match=TvFavorites.next(library,tvAnchor,tvBackupIndex,selected==null?tvActiveUrl:selected.url);if(match==null){Toast.makeText(this,"Ingen anden TV-liste har en kanal med samme navn.",Toast.LENGTH_SHORT).show();return;}tvBackupIndex=match.index;tvActiveUrl=match.entry.channel.url;play(match.entry.channel);playbackPanel.showControls();if(adapter!=null)adapter.notifyDataSetChanged();favoriteHub.programmeChanged();}
+ private void switchTvBackup(){if(recordingBlocked())return;if(tvAnchor==null)return;TvFavorites.Match match=TvFavorites.next(library,tvAnchor,tvBackupIndex,selected==null?tvActiveUrl:selected.url);if(match==null){Toast.makeText(this,"Ingen anden TV-liste har en kanal med samme navn.",Toast.LENGTH_SHORT).show();return;}tvBackupIndex=match.index;tvActiveUrl=match.entry.channel.url;play(match.entry.channel);playbackPanel.showControls();if(adapter!=null)adapter.notifyDataSetChanged();favoriteHub.programmeChanged();}
  private void showGroupFavoriteMenu(View anchor,String group){PopupMenu menu=new StablePopupMenu(this,anchor);menu.getMenu().add("Tilføj gruppe til favoritter").setOnMenuItemClickListener(item->{addGroupToFavorites(group);return true;});if(currentKind!=Playlist.Kind.TV){List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));MediaDownloads.addGroup(menu,this,entries,group);}menu.show();}
  private void addGroupToFavorites(String group){List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));if(entries.isEmpty())return;String[] choices=currentKind==Playlist.Kind.TV?new String[]{"TV 1","TV 2","TV 3","TV 4"}:new String[]{currentKind==Playlist.Kind.FILM?"Film":"Serier"};new AlertDialog.Builder(this).setTitle("Tilføj gruppen til favoritliste").setItems(choices,(dialog,index)->{if(changeLibrary(()->{if(entries.get(0).channel.kind==Playlist.Kind.TV)TvFavorites.addGroup(library,entries,index);else{for(Library.Entry entry:entries)FavoriteLists.assignStreaming(library,FavoriteLists.of(entry),entry.channel.kind.ordinal());List<String> order=new ArrayList<>();for(FavoriteLists.Item item:FavoriteLists.items(library,"Streaming"))order.add(item.key());for(Library.Entry entry:entries)order.remove(FavoriteLists.of(entry).key());for(Library.Entry entry:entries)order.add(FavoriteLists.of(entry).key());library.favoriteOrder.removeAll(order);library.favoriteOrder.addAll(order);}})){Toast.makeText(this,entries.size()+" kanaler tilføjet til "+choices[index],Toast.LENGTH_SHORT).show();filter();}}).setNegativeButton("Annuller",null).show();}
  private void showHomeButtons(){
@@ -538,7 +542,7 @@ public final class MainActivity extends AppCompatActivity {
   try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {Toast.makeText(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
  }
  @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);state.putBoolean("videoMinimized",videoMinimized);super.onSaveInstanceState(state);}
- @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7303&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)headerCast.performClick();if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
+ @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7320){if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)confirmTvRecording();else Toast.makeText(this,"Tillad adgang for at optage og vise optagelsesnotifikationen.",Toast.LENGTH_LONG).show();}if(request==7303&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)headerCast.performClick();if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
   super.onActivityResult(request,result,data);
   if(request==7210||request==7211){if(result==RESULT_OK&&data!=null&&data.getData()!=null){if(request==7210)importSettings(data.getData());else exportSettings(data.getData());}return;}
@@ -555,6 +559,7 @@ public final class MainActivity extends AppCompatActivity {
  private void playLocal(LocalMedia entry) {playLocal(entry,PlaybackHistory.get(this,entry.uri).resume());}
  private void playLocal(LocalMedia entry,long position) {playLocal(entry,position,localPanel.playbackEntries());}
  private void playLocal(LocalMedia entry,long position,List<LocalMedia> queue) {
+  if(recordingBlocked())return;
   if(position<=0)position=PlaybackHistory.get(this,entry.uri).resume();
   if(entry.image()){if(player!=null&&(LocalAudioService.current()==null||!LocalAudioService.current().audio()))player.pause();startActivity(ImageViewerActivity.intent(this,entry,queue));return;}
   if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
@@ -582,7 +587,7 @@ public final class MainActivity extends AppCompatActivity {
   else {selected=new Playlist.Channel(entry.name,entry.uri,"",Playlist.Kind.FILM,null);video.setPlayer(player);video.setVisibility(View.VISIBLE);playbackPanel.setTitle(entry.name);playbackPanel.setVisibility(fullscreen||pipLayout||!videoMinimized?View.VISIBLE:View.GONE);video.setKeepScreenOn((fullscreen||pipLayout||!videoMinimized)&&player.isPlaying());}
   playbackPanel.refresh();updateMiniBack();hideFullscreenSystemBars();
  }
- private void openRadio(boolean favorites) {
+ private void openRadio(boolean favorites) {if(recordingBlocked())return;
   minimizeVideo();
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);
   exitFullscreen();list.cancelFavoriteGesture();drawer.closeDrawer(androidx.core.view.GravityCompat.START);
@@ -590,7 +595,7 @@ public final class MainActivity extends AppCompatActivity {
   favoritesPage=false;favoritesMode=false;radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(false);
  }
  private void openStreamingService() {navigate(false);}
- private void navigate(boolean favorites) {
+ private void navigate(boolean favorites) {if(recordingBlocked())return;
   minimizeVideo();
   if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoritesHome();return;}
   pcloudMode=false;if(pcloudPanel!=null)pcloudPanel.setVisibility(View.GONE);localMode=false;localPanel.setVisibility(View.GONE);localBack.setEnabled(false);favoritesPage=false;list.cancelFavoriteGesture();radioMode=false;radioPanel.setVisibility(View.GONE);drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesMode=favorites;search.setText("");chooseFirstKind();rebuildGroups();
@@ -827,6 +832,7 @@ public final class MainActivity extends AppCompatActivity {
   status.setText(message);
  }
  private void open(Library.Entry entry) {
+  if(recordingBlocked())return;
   tvAnchor=null;tvBackupIndex=0;tvActiveUrl=null;
   if(entry.channel.seriesId!=null) {
    Library.Source source=library.findSource(entry.sourceId);
@@ -885,7 +891,25 @@ public final class MainActivity extends AppCompatActivity {
   CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?(session.getRemoteMediaClient().isPlaying()||session.getRemoteMediaClient().isBuffering()):player!=null && player.isPlaying();
  }
  private static final class Row {ImageView logo;TextView name,group;View indicator;}
+ private boolean recordingTouchBlocked;
+ @Override public boolean dispatchTouchEvent(android.view.MotionEvent event){
+  if(event.getActionMasked()==android.view.MotionEvent.ACTION_DOWN){recordingTouchBlocked=false;if(TvRecordingService.active()&&playbackPanel!=null){int[] location=new int[2];playbackPanel.getLocationOnScreen(location);android.graphics.Rect bounds=new android.graphics.Rect(location[0],location[1],location[0]+playbackPanel.getWidth(),location[1]+playbackPanel.getHeight());if(!bounds.contains((int)event.getRawX(),(int)event.getRawY())){recordingBlocked();recordingTouchBlocked=true;}}}
+  if(recordingTouchBlocked){if(event.getActionMasked()==android.view.MotionEvent.ACTION_UP||event.getActionMasked()==android.view.MotionEvent.ACTION_CANCEL)recordingTouchBlocked=false;return true;}return super.dispatchTouchEvent(event);
+ }
+ private boolean recordingBlocked(){if(!TvRecordingService.active())return false;Toast.makeText(this,"Stop optagelsen, før du skifter afspilning eller forlader siden.",Toast.LENGTH_SHORT).show();return true;}
+ private void confirmTvRecording(){
+  if(TvRecordingService.active()){TvRecordingService.stop(this);playbackPanel.refresh();return;}
+  if(selected==null||selected.kind!=Playlist.Kind.TV)return;
+  Playlist.Channel channel=selected;
+  new AlertDialog.Builder(this).setTitle("Start TV-optagelse?").setMessage("Vil du optage "+channel.name+"?\n\nOptagelsen gemmes i Download. Du kan ikke skifte kanal eller lukke appen med tilbage-knappen, før optagelsen er stoppet.").setNegativeButton("Annuller",null).setPositiveButton("Start optagelse",(dialog,which)->{
+   if(selected==null||!selected.url.equals(channel.url)||TvRecordingService.active())return;
+   if(android.os.Build.VERSION.SDK_INT<=28&&checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},7320);return;}
+   if(android.os.Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},7320);return;}
+   try{TvRecordingService.start(this,channel);playbackPanel.refresh();}catch(RuntimeException error){Toast.makeText(this,"Optagelsen kunne ikke startes.",Toast.LENGTH_LONG).show();}
+  }).show();
+ }
  private void play(Playlist.Channel channel) {
+  if(recordingBlocked())return;
   if(tvAnchor!=null&&(channel.kind!=Playlist.Kind.TV||!channel.url.equals(tvActiveUrl))){tvAnchor=null;tvBackupIndex=0;tvActiveUrl=null;}
   final int castRequest=++castLoadGeneration;
   videoMinimized=false;
@@ -946,6 +970,7 @@ public final class MainActivity extends AppCompatActivity {
   else if(player!=null&&player.isCurrentMediaItemLive()){player.seekToDefaultPosition();player.play();}
  }
  private void togglePlaybackState() {
+  if(recordingBlocked())return;
   CastSession output=connectedCast();boolean liveTv=selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");if(output!=null&&output.getRemoteMediaClient()!=null&&output.getRemoteMediaClient().getMediaInfo()!=null)liveTv=liveTv&&output.getRemoteMediaClient().isLiveStream();
   if(liveTv){
    CastSession castSession=connectedCast();if(castSession!=null&&castSession.getRemoteMediaClient()!=null){var remote=castSession.getRemoteMediaClient();if(remote.isPlaying()||remote.isBuffering())stopPlaybackState();else play(selected);}
@@ -962,6 +987,7 @@ public final class MainActivity extends AppCompatActivity {
   playbackPanel.refresh();updateMiniBack();
  }
  private void stopPlaybackState() {
+  if(recordingBlocked())return;
   castLoadGeneration++;
   rememberPlayback();tvAnchor=null;tvActiveUrl=null;tvBackupIndex=0;videoArtworkGeneration++;resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null)CastPlayback.stop(this);
@@ -1014,6 +1040,6 @@ public final class MainActivity extends AppCompatActivity {
   return handled;
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
- @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
+ @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null&&!TvRecordingService.active()){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
  @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);castLoadGeneration++;castStreamWorker.shutdownNow();videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(favoriteHub!=null)favoriteHub.close();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

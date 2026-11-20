@@ -1,3 +1,11 @@
+## 1.46.0
+
+Live-TV har en rød optageknap på kontrollinjen i både mini- og fuldskærmsvisning. Før start vises en bekræftelse med kanalnavn, Annuller og Start optagelse. Under optagelse skifter ikonet til stop optagelse; samme handling findes i notifikationen “Optagelse i gang”. Den afsluttede fil gemmes automatisk i Download. Appens tilbage-navigation, lister og afspilningsskift spærres, mens optagelsen kører. Androids Home-knap og tvangslukning kan ikke spærres; den separate foreground-service fortsætter ved normal baggrundslægning.
+
+Optagelsen kopierer TV-kildens kodede data uden genkodning. MPEG-TS og HLS med samlet lyd/video understøttes, inklusive AES-128 TS og ukrypteret fragmenteret MP4. DRM, byte-range-HLS og separate lydrenditioner afvises med besked frem for at gemme en defekt fil. Optagelsen åbner en separat forbindelse til TV-kilden, som derfor skal tillade samtidig afspilning og optagelse. Ingen tomme eller rene MP4-initialiseringsfiler udgives som optagelser.
+
+Valideret med debug-build, lint og 11 JVM-tests for HLS-sekvenser, URL-opløsning, kryptering og ikke-understøttede formater. Optagelse på fysisk TV-kilde/telefon er ikke afprøvet i dette miljø.
+
 ## 1.45.2
 
 Downloads gemmes automatisk i telefonens Download-mappe uden filvælger. Download-notifikationen viser procent hentet sammen med progressbar og Pause/Fortsæt samt Annuller.

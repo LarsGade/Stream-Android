@@ -111,4 +111,6 @@
  <string name="daily_guide_update">Opdatér TV-Guide hver dag</string>
  <string name="previous_action">Forrige</string>
  <string name="next_action">Næste</string>
-<string name="tv_backup_lists">TV backup-lister</string><string name="tv_backup_next">Skift til næste TV-backup med samme kanalnavn</string></resources>
+<string name="tv_backup_lists">TV backup-lister</string><string name="tv_backup_next">Skift til næste TV-backup med samme kanalnavn</string> <string name="record_tv">Optag TV</string>
+ <string name="stop_recording">Stop optagelse</string>
+</resources>

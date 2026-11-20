@@ -17,7 +17,7 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();default FavoriteLists.Item downloadItem(){return null;}default boolean backupAvailable(){return false;}default void switchBackup(){}default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
+  boolean playing();boolean fullscreen();CastSession castSession();default FavoriteLists.Item downloadItem(){return null;}default boolean recordingAvailable(){return false;}default boolean recording(){return false;}default void toggleRecording(){}default boolean backupAvailable(){return false;}default void switchBackup(){}default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
  }
  public final PlayerView video;
  private final Actions actions;
@@ -35,7 +35,7 @@ public final class PlaybackPanel extends FrameLayout {
  private final Runnable progressTick=new Runnable() {
   @Override public void run() {if(controls.getVisibility()==VISIBLE) {refreshProgress();postDelayed(this,500);}}
  };
- private ImageButton backup;
+ private ImageButton backup,record;
  public PlaybackPanel(Context context,Actions actions) {
   super(context);this.actions=actions;audio=(AudioManager)context.getSystemService(Context.AUDIO_SERVICE);setBackgroundColor(Color.BLACK);
   video=new PlayerView(context);video.setUseController(false);video.setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER);
@@ -50,6 +50,7 @@ public final class PlaybackPanel extends FrameLayout {
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
   backup=button(buttons,R.drawable.ic_tv_backup,R.string.tv_backup_next,actions::switchBackup);backup.setVisibility(GONE);
+  record=button(buttons,R.drawable.ic_record,R.string.record_tv,actions::toggleRecording);record.setVisibility(GONE);
   progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
   timeline=new SeekBar(context);timeline.setMax(1000);timeline.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
@@ -148,7 +149,9 @@ public final class PlaybackPanel extends FrameLayout {
   if(target!=androidx.media3.common.C.TIME_UNSET)liveBaseline=target;else if(liveBaseline==androidx.media3.common.C.TIME_UNSET&&player!=null&&player.isPlaying()&&offset!=androidx.media3.common.C.TIME_UNSET)liveBaseline=offset;
   return liveWasPaused||offset!=androidx.media3.common.C.TIME_UNSET&&liveBaseline!=androidx.media3.common.C.TIME_UNSET&&offset>liveBaseline+5000;
  }
+ private void refreshRecording(){boolean active=actions.recording();record.setVisibility(actions.recordingAvailable()?VISIBLE:GONE);record.setImageResource(active?R.drawable.ic_record_stop:R.drawable.ic_record);record.setContentDescription(getContext().getString(active?R.string.stop_recording:R.string.record_tv));play.setEnabled(!active);stop.setEnabled(!active);backup.setEnabled(!active);for(int index=0;index<outputs.getChildCount();index++)outputs.getChildAt(index).setEnabled(!active);}
  private void refreshProgress() {
+  refreshRecording();
   boolean isLive=liveChannel();progress.setVisibility(isLive?GONE:VISIBLE);if(isLive){time.setText("");return;}
   boolean enabled=seekable();timeline.setEnabled(enabled);
   if(!tracking) timeline.setProgress(enabled?(int)(position()*1000/Math.max(1,duration())):0);
@@ -156,6 +159,7 @@ public final class PlaybackPanel extends FrameLayout {
  }
  public void refresh() {
   backup.setVisibility(actions.backupAvailable()?VISIBLE:GONE);
+  record.setVisibility(actions.recordingAvailable()?VISIBLE:GONE);record.setImageResource(actions.recording()?R.drawable.ic_record_stop:R.drawable.ic_record);record.setContentDescription(getContext().getString(actions.recording()?R.string.stop_recording:R.string.record_tv));
   back.setVisibility(controlsVisible()&&fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
   boolean playing=actions.playing(),live=liveChannel();stop.setVisibility(live?GONE:VISIBLE);play.setImageResource(playing?(live?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?(live?R.string.stop_action:R.string.pause_action):R.string.play_action));
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));
