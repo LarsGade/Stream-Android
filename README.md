@@ -1,3 +1,7 @@
+## 1.43.8
+
+Streaming er omdøbt til Streamingtjeneste i appens synlige tekster. Underteksten (TV, Film, Serier) er fjernet fra menuknappen.
+
 ## 1.43.7
 
 Stop lukker videoafspilleren helt, også for live-TV. Stream og videobuffer tømmes, afspilleren skjules, og videoens meddelelsesafspiller fjernes.
