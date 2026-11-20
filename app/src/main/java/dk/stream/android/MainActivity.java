@@ -139,7 +139,8 @@ public final class MainActivity extends AppCompatActivity {
   content=root;drawer.addView(root,new DrawerLayout.LayoutParams(-1,-1));
   FrameLayout screen=new FrameLayout(this);screen.addView(drawer,new FrameLayout.LayoutParams(-1,-1));
   fullscreenHost=new FrameLayout(this);fullscreenHost.setBackgroundColor(Color.BLACK);fullscreenHost.setVisibility(View.GONE);screen.addView(fullscreenHost,new FrameLayout.LayoutParams(-1,-1));setContentView(screen);
-  miniBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {if(!enterMiniPlayer()) finish();}};
+  getOnBackPressedDispatcher().addCallback(this,new androidx.activity.OnBackPressedCallback(true){public void handleOnBackPressed(){if(!atFavoritesHome())showFavoritesHome();else{setEnabled(false);try{getOnBackPressedDispatcher().onBackPressed();}finally{setEnabled(true);}}}});
+  miniBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {if(!atFavoritesHome())showFavoritesHome();else if(!enterMiniPlayer())finish();}};
   getOnBackPressedDispatcher().addCallback(this,miniBack);
   fullscreenBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {exitFullscreen();}};
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
@@ -260,9 +261,9 @@ public final class MainActivity extends AppCompatActivity {
   catch(Exception e) { castRouteButton.setVisibility(View.INVISIBLE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
   restoreCatalogs();
-  restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
+  if(!getIntent().getBooleanExtra("favoritesHome",false))restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
  }
- @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
+ @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("favoritesHome",false)){intent.removeExtra("favoritesHome");showFavoritesHome();}if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
  private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
  private void collapseSettings(){if(settingsContent==null||settingsToggle==null)return;settingsContent.setVisibility(View.GONE);settingsToggle.setSelected(false);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");}
  private void minimizeVideo(){if(headerMenu!=null)headerMenu.setVisibility(View.VISIBLE);favoriteHubMode=false;if(favoriteHub!=null)favoriteHub.setVisibility(View.GONE);videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
@@ -416,6 +417,7 @@ public final class MainActivity extends AppCompatActivity {
   int position=favoriteCategoryIds.indexOf(currentFavoriteTab);if(position>=0&&favoriteCategories.getSelectedItemPosition()!=position)favoriteCategories.setSelection(position);
   favoriteCategories.setVisibility(favoritesPage&&!available.isEmpty()?View.VISIBLE:View.GONE);choosingFavoriteTab=false;
  }
+ private boolean atFavoritesHome(){return favoriteHubMode&&favoriteHub!=null&&favoriteHub.isHome();}
  private void showFavoritesHome(){
   minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;
   radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
@@ -973,7 +975,7 @@ public final class MainActivity extends AppCompatActivity {
  @Override public void onWindowFocusChanged(boolean hasFocus) {super.onWindowFocusChanged(hasFocus);if(hasFocus) hideFullscreenSystemBars();}
  @Override public void onConfigurationChanged(android.content.res.Configuration configuration) {super.onConfigurationChanged(configuration);hideFullscreenSystemBars();}
  private long imageFavoriteVersion=ImageSession.favoriteVersion;
- @Override protected void onStart() {super.onStart();if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);library.favoriteAssignments.clear();library.favoriteAssignments.putAll(fresh.favoriteAssignments);library.favoriteKinds.clear();library.favoriteKinds.putAll(fresh.favoriteKinds);library.favoriteOrder.clear();library.favoriteOrder.addAll(fresh.favoriteOrder);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&localMode)localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
+ @Override protected void onStart() {super.onStart();if(getIntent().getBooleanExtra("favoritesHome",false)){getIntent().removeExtra("favoritesHome");showFavoritesHome();}if(imageFavoriteVersion!=ImageSession.favoriteVersion){try{Library fresh=store.load();library.imageFavorites.clear();library.imageFavorites.addAll(fresh.imageFavorites);library.favoriteAssignments.clear();library.favoriteAssignments.putAll(fresh.favoriteAssignments);library.favoriteKinds.clear();library.favoriteKinds.putAll(fresh.favoriteKinds);library.favoriteOrder.clear();library.favoriteOrder.addAll(fresh.favoriteOrder);imageFavoriteVersion=ImageSession.favoriteVersion;if(favoritesPage&&localMode)localPanel.reload();else if(localPanel!=null)localPanel.playbackChanged();if(pcloudPanel!=null)pcloudPanel.playbackChanged();if(favoritesPage)filter();}catch(Exception ignored){}}activityStarted=true;syncLocalPlayback();}
  @Override protected void onResume() {super.onResume();if(LocalAudioService.current()!=null) syncLocalPlayback();backgroundPlayback=false;updateVideoNotification();if(resumeLocalPlayback && player==null && selected!=null && connectedCast()==null) {resumeLocalPlayback=false;play(selected);}if(playbackPanel!=null) playbackPanel.refresh();hideFullscreenSystemBars();if(list!=null) {list.removeCallbacks(epgTick);list.postDelayed(epgTick,60000);loadAssignedGuides(false);}}
  @Override public boolean onKeyUp(int keyCode,android.view.KeyEvent event) {
   boolean handled=super.onKeyUp(keyCode,event);

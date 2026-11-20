@@ -1,3 +1,7 @@
+## 1.41.7
+
+Cast af lydfiler sender egne programlogoer og indlejret cover til modtageren, når de findes. Tilbage-navigation går via Favoritter-forsiden før appen forlades.
+
 ## 1.41.6
 
 Billedlister viser miniaturer i lokale filer, pCloud og favoritter. Billedvisningen beholder telefonens billede ved Cast-dialoger og holder skærmen tændt under billedcasting.
