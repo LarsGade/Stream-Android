@@ -10,6 +10,7 @@ import java.io.*;
 /** Read-only public access to packaged artwork, never arbitrary app files or source URLs. */
 @androidx.media3.common.util.UnstableApi
 public final class CarArtworkProvider extends ContentProvider {
+ static Uri audio(String id){return new Uri.Builder().scheme("content").authority(BuildConfig.APPLICATION_ID+".carart").appendPath("audio").appendPath(id).build();}
  static Uri page(String id){return new Uri.Builder().scheme("content").authority(BuildConfig.APPLICATION_ID+".carart").appendPath("page").appendPath(id).build();}
  static Uri station(Context context,String id){return new Uri.Builder().scheme("content").authority(context.getPackageName()+".carart").appendPath("station").appendPath(id).build();}
  public static Uri uri(Context context,String name) {return new Uri.Builder().scheme("content").authority(context.getPackageName()+".carart").appendPath("logo").appendPath(name).build();}
@@ -18,6 +19,7 @@ public final class CarArtworkProvider extends ContentProvider {
  @Override public ParcelFileDescriptor openFile(Uri uri,String mode) throws FileNotFoundException {
   if(!"r".equals(mode)||uri.getPathSegments().size()!=2)throw new FileNotFoundException("Read-only artwork");
   String type=uri.getPathSegments().get(0);if("page".equals(type)){String id=uri.getLastPathSegment();if(!AndroidAutoPages.folder(id)&&!"radio-placeholder".equals(id))throw new FileNotFoundException("Unknown page");return cached("page-v1-"+id+".png",CarPageArtwork.png(id));}
+  if("audio".equals(type)){try{LocalMedia file=CarAudioCatalog.resolve(getContext(),uri.getLastPathSegment());LocalMedia logoFile=file.folder?new LocalMedia(file.uri,file.name+" / episode.mp3","audio/mpeg",false):file;byte[] data=LocalFileArtwork.bytes(getContext(),logoFile);return cached("audio-v1-"+java.util.UUID.nameUUIDFromBytes((file.uri+file.name).getBytes(java.nio.charset.StandardCharsets.UTF_8))+".png",data!=null?data:CarPageArtwork.png(AndroidAutoPages.PODCAST));}catch(Exception error){throw new FileNotFoundException("Audio artwork unavailable");}}
   if("station".equals(type))return stationFile(uri.getLastPathSegment());
   if(!"logo".equals(type))throw new FileNotFoundException("Unknown artwork");
   String name=uri.getLastPathSegment();String asset=LocalChannelLogos.load(getContext()).find(name);

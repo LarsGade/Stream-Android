@@ -30,8 +30,9 @@ public final class PlaybackNotification {
   Player player=session.getPlayer();androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();boolean playing=player.getPlayWhenReady();
   builder.setColor(0xFF3686FF).setSmallIcon(R.drawable.ic_play).setContentTitle(metadata.title==null?context.getString(R.string.app_name):metadata.title)
    .setContentText(PlaybackText.SOURCE).setContentIntent(session.getSessionActivity()).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false);
-  boolean radio="stream_radio".equals(channel),local="stream_local".equals(channel);PendingIntent previous=null,next=null;
+  boolean radio="stream_radio".equals(channel),local="stream_local".equals(channel),car="stream_car_audio".equals(channel);PendingIntent previous=null,next=null;
   if(local){if(player.hasPreviousMediaItem())previous=PendingIntent.getService(context,34,LocalAudioService.command(context,LocalAudioService.PREVIOUS),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);if(player.hasNextMediaItem())next=PendingIntent.getService(context,35,LocalAudioService.command(context,LocalAudioService.NEXT),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
+  if(car){if(player.hasPreviousMediaItem())previous=PendingIntent.getService(context,2034,RadioPlaybackService.internalIntent(context,RadioPlaybackService.PREVIOUS),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);if(player.hasNextMediaItem())next=PendingIntent.getService(context,2035,RadioPlaybackService.internalIntent(context,RadioPlaybackService.NEXT),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
   java.util.List<Integer> compact=new java.util.ArrayList<>();int index=0;
   if(previous!=null){builder.addAction(R.drawable.ic_previous,"Forrige",previous);compact.add(index++);}
   builder.addAction(playing&&!radio?(liveRadio?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play,context.getString(playing&&!radio?(liveRadio?R.string.stop_action:R.string.pause_action):R.string.play_action),toggle);compact.add(index++);

@@ -17,6 +17,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
  public static final String LIVE="dk.stream.android.RADIO_LIVE",PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
  private static RadioPlaybackService active;
  static void refreshCarStartPage(){RadioPlaybackService service=active;if(service!=null&&service.carCallback!=null)service.carCallback.startPageChanged(service.session);}
+ static LocalMedia selectedFile(){return active==null||active.player==null?null:CarAudioCatalog.file(active.player.getCurrentMediaItem());}
+ static boolean playingFile(String uri){LocalMedia file=selectedFile();return file!=null&&file.uri.equals(uri)&&active.player.getPlayWhenReady()&&active.player.getPlaybackState()!=Player.STATE_ENDED;}
  public static RadioStation selectedStation() {return active!=null && active.player!=null && (active.player.getPlaybackState()!=Player.STATE_IDLE||active.recovery.wanted())?active.current:null;}
  private ExoPlayer player;
  private RadioSessionPlayer sessionPlayer;
@@ -37,7 +39,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
  private int artworkGeneration;
  public static boolean playing(String id) {return active!=null && active.current!=null && active.current.id.equals(id) && active.player!=null && active.player.getPlayWhenReady();}
  public static String audibleStationId() {return active!=null && active.current!=null && active.player!=null && active.player.isPlaying()?active.current.id:"";}
- public static String nowPlaying() {return active==null||active.current==null?"":active.current.displayName();}
+ public static String nowPlaying() {LocalMedia file=selectedFile();return file!=null?file.displayName():active==null||active.current==null?"":active.current.displayName();}
  public static String error() {return active==null?"":active.error;}
  @android.annotation.SuppressLint("ApplySharedPref") // Widget PendingIntents must retain a valid token after process death.
  private static synchronized String commandToken(Context context) {
@@ -63,14 +65,14 @@ public final class RadioPlaybackService extends MediaLibraryService {
  }
  private void createPlayer(){
   androidx.media3.datasource.DefaultHttpDataSource.Factory http=new androidx.media3.datasource.DefaultHttpDataSource.Factory().setUserAgent("Stream-Android").setConnectTimeoutMs(15000).setReadTimeoutMs(15000).setAllowCrossProtocolRedirects(true);
-  player=new ExoPlayer.Builder(this,new androidx.media3.exoplayer.DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(new androidx.media3.datasource.DefaultDataSource.Factory(this,http))).build();
-  BluetoothOutputButton.register(this,player,()->sessionPlayer.play());player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
-  sessionPlayer=new RadioSessionPlayer(player,this::foreground,()->!BluetoothPlayback.resumeOther(player),this::resumeRadio);player.addListener(radioEvents);
+  player=new ExoPlayer.Builder(this,new androidx.media3.exoplayer.DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory((()->new PcloudDataSource(this,new androidx.media3.datasource.DefaultDataSource.Factory(this,http))))).build();
+  PlaybackTracker.attach(this,player);BluetoothOutputButton.register(this,player,()->sessionPlayer.play());player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_NETWORK);
+  sessionPlayer=new RadioSessionPlayer(player,this::foreground,()->CarAudioCatalog.file(player.getCurrentMediaItem())!=null||!BluetoothPlayback.resumeOther(player),this::resumeRadio);player.addListener(radioEvents);
  }
- private void resumeRadio(){if(player.getCurrentMediaItem()==null)return;recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(null,true);}
+ private void resumeRadio(){if(player.getCurrentMediaItem()==null)return;if(CarAudioCatalog.file(player.getCurrentMediaItem())!=null){foreground();if(player.getPlaybackState()==Player.STATE_ENDED)player.seekTo(0);if(player.getPlaybackState()==Player.STATE_IDLE)player.prepare();player.play();return;}recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(null,true);}
  private void restartPlayer(MediaItem replacement,boolean live){
   MediaItem item=replacement!=null?replacement:player.getCurrentMediaItem();if(item==null)return;long position=!live&&replacement==null&&player.isCurrentMediaItemSeekable()?player.getCurrentPosition():C.TIME_UNSET;boolean wasBehind=behindLive;
-  ExoPlayer previous=player;previous.removeListener(radioEvents);BluetoothOutputButton.unregister(previous);previous.pause();previous.stop();
+  ExoPlayer previous=player;previous.removeListener(radioEvents);PlaybackTracker.detach(previous);BluetoothOutputButton.unregister(previous);previous.pause();previous.stop();
   createPlayer();session.setPlayer(sessionPlayer);previous.release();player.setMediaItem(item,position);foreground();player.prepare();player.play();behindLive=!live&&position!=C.TIME_UNSET&&wasBehind;recovery.resetProgress(android.os.SystemClock.elapsedRealtime());RadioWidgetProvider.refresh(this);
  }
  private void handleRadioFailure(){error=getString(R.string.radio_error);android.util.Log.w("StreamRadio","Radio playback interrupted; rebuilding on retry");recovery.failure(android.os.SystemClock.elapsedRealtime());if(recovery.exhausted())player.pause();RadioWidgetProvider.refresh(this);}
@@ -78,10 +80,11 @@ public final class RadioPlaybackService extends MediaLibraryService {
    @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(!ready&&(reason==Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE)) recovery.pause();if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;if(!ready)refreshPausedNotification();}
    @Override public void onPlaybackStateChanged(int state) {if(state==Player.STATE_IDLE) behindLive=false;if(state==Player.STATE_ENDED&&recovery.wanted())recovery.failure(android.os.SystemClock.elapsedRealtime());}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
+    if(CarAudioCatalog.file(item)!=null){current=null;recovery.pause();behindLive=false;error="";artworkGeneration++;stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));RadioWidgetProvider.refresh(RadioPlaybackService.this);}
     if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
    }
    @Override public void onEvents(Player source,Player.Events events) {RadioWidgetProvider.refresh(RadioPlaybackService.this);}
-   @Override public void onPlayerError(PlaybackException failure) {handleRadioFailure();}
+   @Override public void onPlayerError(PlaybackException failure) {if(selectedFile()!=null){error="Lydfilen kan ikke afspilles. Kontrollér format og adgang til filen.";player.pause();android.widget.Toast.makeText(RadioPlaybackService.this,error,android.widget.Toast.LENGTH_LONG).show();}else handleRadioFailure();}
  };
  private void refreshPausedNotification(){PausedNotificationRefresh.update(this,session,2001,()->notification(session));}
  @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}
@@ -90,6 +93,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   PendingIntent toggle=PendingIntent.getService(this,2,internalIntent(this,LIVE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   PendingIntent stop=PendingIntent.getService(this,1,internalIntent(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   PendingIntent live=PendingIntent.getService(this,3,internalIntent(this,LIVE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+  if(CarAudioCatalog.file(mediaSession.getPlayer().getCurrentMediaItem())!=null)return PlaybackNotification.create(this,"stream_car_audio",mediaSession,toggle,stop);
   return PlaybackNotification.radio(this,mediaSession,toggle,stop,live,mediaSession.getPlayer().isPlaying()&&!needsLive());
  }
  private void foreground() {startForeground(2001,notification(session));}
@@ -109,12 +113,12 @@ public final class RadioPlaybackService extends MediaLibraryService {
   if(intent==null) return START_NOT_STICKY;
   String action=intent.getAction();
   if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE,WIDE_WIDGET_TOGGLE,LIVE,PREVIOUS,NEXT).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
-  if(PREVIOUS.equals(action)||NEXT.equals(action)){try{RadioStation station=RadioFavoriteNavigation.adjacent(new LibraryStore(this).load(),current==null?"":current.id,PREVIOUS.equals(action)?-1:1);if(station==null)return START_NOT_STICKY;intent=playIntent(this,station);action=PLAY;}catch(Exception unavailable){return START_NOT_STICKY;}}
+  if(PREVIOUS.equals(action)||NEXT.equals(action)){if(selectedFile()!=null){if(PREVIOUS.equals(action)&&player.hasPreviousMediaItem())player.seekToPreviousMediaItem();if(NEXT.equals(action)&&player.hasNextMediaItem())player.seekToNextMediaItem();return START_NOT_STICKY;}try{RadioStation station=RadioFavoriteNavigation.adjacent(new LibraryStore(this).load(),current==null?"":current.id,PREVIOUS.equals(action)?-1:1);if(station==null)return START_NOT_STICKY;intent=playIntent(this,station);action=PLAY;}catch(Exception unavailable){return START_NOT_STICKY;}}
   if(android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH.equals(action)) {
    String query=intent.getStringExtra(android.app.SearchManager.QUERY);if(query==null||query.trim().isEmpty()) return START_NOT_STICKY;
    foreground();MediaItem request=new MediaItem.Builder().setRequestMetadata(new MediaItem.RequestMetadata.Builder().setSearchQuery(query).build()).build();
    com.google.common.util.concurrent.Futures.addCallback(carCallback.onAddMediaItems(session,null,java.util.Collections.singletonList(request)),new com.google.common.util.concurrent.FutureCallback<java.util.List<MediaItem>>() {
-    public void onSuccess(java.util.List<MediaItem> items) {if(active!=RadioPlaybackService.this || items==null||items.isEmpty()) return;player.setMediaItem(items.get(0));sessionPlayer.play();}
+    public void onSuccess(java.util.List<MediaItem> items) {if(active!=RadioPlaybackService.this || items==null||items.isEmpty()) return;LocalMedia file=CarAudioCatalog.file(items.get(0));player.setMediaItem(items.get(0),file==null?0:PlaybackHistory.get(RadioPlaybackService.this,file.uri).resume());sessionPlayer.play();}
     public void onFailure(Throwable error) {if(active==RadioPlaybackService.this) {sessionPlayer.stop();androidx.core.app.ServiceCompat.stopForeground(RadioPlaybackService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}}
    },androidx.core.content.ContextCompat.getMainExecutor(this));return START_NOT_STICKY;
   }
@@ -127,7 +131,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(item,true);behindLive=false;
    RadioWidgetProvider.refresh(this);return START_NOT_STICKY;
   }
-  if(TRANSPORT_TOGGLE.equals(action)) {if(current==null) {stopSelf();return START_NOT_STICKY;}if(player.getPlayWhenReady()) sessionPlayer.pause();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
+  if(TRANSPORT_TOGGLE.equals(action)) {if(current==null&&selectedFile()==null) {stopSelf();return START_NOT_STICKY;}if(player.getPlayWhenReady()) sessionPlayer.pause();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
   if(WIDE_WIDGET_TOGGLE.equals(action)&&current!=null&&current.id.equals(intent.getStringExtra("favoriteId"))){foreground();if(player.getPlayWhenReady())stopRadioPlayback();else sessionPlayer.play();RadioWidgetProvider.refresh(this);return START_NOT_STICKY;}
   if(!PLAY.equals(action) && !TOGGLE.equals(action) && !WIDGET_TOGGLE.equals(action)&&!WIDE_WIDGET_TOGGLE.equals(action)) return START_NOT_STICKY;
   // A foreground-service PendingIntent must promptly show a notification even if the favorite was removed.
@@ -145,7 +149,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    else {
     stopService(new Intent(this,LocalAudioService.class));
     current=station;
-    MediaMetadata metadata=PlaybackText.metadata(station.displayName()).setDisplayTitle(station.displayName()).setArtworkUri(CarArtworkProvider.station(this,station.id)).setArtworkData(CarRadioCatalog.artworkData(this,station),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
+    MediaMetadata metadata=PlaybackText.metadata(station.displayName()).setExtras(CarRadioCatalog.liveExtras()).setDisplayTitle(station.displayName()).setArtworkUri(CarArtworkProvider.station(this,station.id)).setArtworkData(CarRadioCatalog.artworkData(this,station),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
     recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build(),true);behindLive=false;loadArtwork(station);
    }
    RadioWidgetProvider.refresh(this);
@@ -157,5 +161,5 @@ public final class RadioPlaybackService extends MediaLibraryService {
   androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2001);RadioWidgetProvider.refresh(this);stopSelf();
  }
  @Override public void onTaskRemoved(Intent rootIntent) {artworkGeneration++;current=null;error="";behindLive=false;PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
- @Override public void onDestroy() {recovery.pause();recoveryHandler.removeCallbacks(recoveryTick);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);artworkGeneration++;artworkWorker.shutdownNow();if(carCallback!=null) carCallback.close();if(active==this) active=null;if(session!=null) session.release();if(player!=null){BluetoothOutputButton.unregister(player);player.release();}RadioWidgetProvider.refresh(this);super.onDestroy();}
+ @Override public void onDestroy() {recovery.pause();recoveryHandler.removeCallbacks(recoveryTick);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);artworkGeneration++;artworkWorker.shutdownNow();if(carCallback!=null) carCallback.close();if(active==this) active=null;if(session!=null) session.release();if(player!=null){PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();}RadioWidgetProvider.refresh(this);super.onDestroy();}
 }

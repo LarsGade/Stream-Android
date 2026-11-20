@@ -19,7 +19,7 @@ public final class LocalMedia {
  public String displayName() {if(folder) return name;return name.replaceFirst("(?i)\\.(mp3|m4a|m4b|aac|flac|wav|ogg|opus|wma|aiff|alac|mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts|jpg|jpeg|png|gif|webp|bmp|heic|heif|avif|svg|tif|tiff|ico)$","");}
  public String displayFileName(){String label=displayName();int slash=label.lastIndexOf(" / ");return slash<0?label:label.substring(slash+3);}
  public boolean image() {return !folder&&(mime.startsWith("image/")||name.toLowerCase(Locale.ROOT).matches(".*\\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|avif|svg|tif|tiff|ico)$"));}
- public boolean audio() {return !image()&&(mime.startsWith("audio/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp3|m4a|aac|flac|wav|ogg|opus|wma|aiff|alac)$"));}
+ public boolean audio() {return !image()&&(mime.startsWith("audio/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp3|m4a|m4b|aac|flac|wav|ogg|opus|wma|aiff|alac|amr|aif|oga|mka|ac3|eac3|dts)$"));}
  public boolean supported() {return folder || image() || audio() || mime.startsWith("video/") || name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|mkv|webm|avi|mov|m4v|mpeg|mpg|3gp|ts)$");}
  public JSONObject json() throws JSONException {return new JSONObject().put("uri",uri).put("name",name).put("mime",mime).put("folder",folder);}
  public static LocalMedia from(JSONObject value) throws JSONException {return new LocalMedia(value.getString("uri"),value.getString("name"),value.optString("mime",""),value.optBoolean("folder"));}

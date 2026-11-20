@@ -10,6 +10,7 @@ public final class RadioSessionPlayer extends ForwardingPlayer {
  public RadioSessionPlayer(Player player,Runnable beforePlay) {this(player,beforePlay,()->true);}
  public RadioSessionPlayer(Player player,Runnable beforePlay,PlayGate allowPlay){this(player,beforePlay,allowPlay,null);}
  public RadioSessionPlayer(Player player,Runnable beforePlay,PlayGate allowPlay,Runnable playAction){super(player);this.beforePlay=beforePlay;this.allowPlay=allowPlay;this.playAction=playAction;}
+ @Override public Player.Commands getAvailableCommands(){Player.Commands commands=super.getAvailableCommands();if(CarAudioCatalog.file(getCurrentMediaItem())!=null)return commands;return commands.buildUpon().remove(Player.COMMAND_SEEK_TO_NEXT).remove(Player.COMMAND_SEEK_TO_PREVIOUS).remove(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM).remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM).remove(Player.COMMAND_SEEK_BACK).remove(Player.COMMAND_SEEK_FORWARD).build();}
  @Override public void play() {
   if(!allowPlay.allowed())return;beforePlay.run();
   if(playAction!=null){playAction.run();return;}

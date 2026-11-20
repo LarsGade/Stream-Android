@@ -1,3 +1,13 @@
+## 1.49.0
+
+Android Auto har nu de tre startsidevalg Forside, Radio og Podcast. Tidligere valg af et land flyttes til Radio. Forsiden viser Radio og Podcast som favoritindgange; landenes radiolister er fortsat tilgængelige under Radio → Alle radiostationer. Podcast viser podcastfavoritter og undermapper samt en Musik-mappe, hvis der er musikfavoritter. Audiofiler, der er placeret på Radio-favoritlisten, vises også dér. Billeder og video undtages.
+
+Bilens mediebibliotek kan nu afspille dokumenter fra lokale favoritter og pCloud med den samme datakilde som telefonens filafspiller. Mapper kan åbnes i flere niveauer; indhold læses uden for hovedtråden. Lydafsnit i samme mappe danner en kø med næste/forrige, pause/play og spoling. Gemte positioner genbruges, og lyttet/set-status følger telefonens afspilningshistorik. Bilens søgning omfatter også lydfavoritter og allerede gennemsete afsnit. De almindelige codecbegrænsninger på Android-enheden gælder stadig.
+
+Programlogoer arves fra mappenavnet, inklusive Anders og Anders, Den Korte Radioavis, Bæltestedet og r8dio. Ukendte programmer får et Podcast-ikon, og indlejret artwork kan leveres af afspilleren. Telefonens afspilningsbar, fuldskærmslyd og afspilningsmarkeringer understøtter også lydfiler startet fra bilen. Radio bevarer sin særskilte live-/genoprettelsesadfærd.
+
+Valideret med debug-build, lint og 24 JVM-tests af filtyper, stabile medie-ID'er, mappearv, startsidevalg og opsætningsbackup. Android Auto er ikke afprøvet på en fysisk enhed i dette miljø.
+
 ## 1.48.0
 
 Indstillinger har nu menupunktet Android Auto under Forsideknapper. Her vælges standardsiden: Forside, Radiofavoritter (anbefalet og standard), Danmark, England eller USA. Tomme radiofavoritter giver automatisk forsiden. Fra en direkte startside kan Alle sider altid åbnes. Valget gælder kun bilvisningen, gemmes med biblioteket og følger med import/eksport. En tilsluttet bil får besked om opdateret startindhold; en vært, der beholder sin aktuelle underside, bruger valget ved næste åbning af startsiden.
