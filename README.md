@@ -1,3 +1,7 @@
+## 1.41.9
+
+Cast og Bluetooth vises øverst til højre på listesider, men ikke på Favoritter-forsiden. Logoet centreres uafhængigt af knapperne. Eksisterende afspillerknapper bevares.
+
 ## 1.41.8
 
 Stop cast overfører afspilningen til telefonen. Filer fortsætter fra cast-positionen med samme kø; radio og live-TV starter live. Lukning af appen stopper fortsat afspilningen.
