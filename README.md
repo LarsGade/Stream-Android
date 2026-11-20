@@ -1,3 +1,7 @@
+## 1.43.9
+
+Streamingtjeneste, Radio, Lokale filer og Pcloud i burgermenuen har mørkeblå baggrund (#182C45) og hvid tekst.
+
 ## 1.43.8
 
 Streaming er omdøbt til Streamingtjeneste i appens synlige tekster. Underteksten (TV, Film, Serier) er fjernet fra menuknappen.
