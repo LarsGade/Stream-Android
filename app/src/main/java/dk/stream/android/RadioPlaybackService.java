@@ -80,7 +80,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(!ready&&(reason==Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE)) recovery.pause();if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;if(!ready)refreshPausedNotification();}
    @Override public void onPlaybackStateChanged(int state) {if(state==Player.STATE_IDLE) behindLive=false;if(state==Player.STATE_ENDED&&recovery.wanted())recovery.failure(android.os.SystemClock.elapsedRealtime());}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
-    if(CarAudioCatalog.file(item)!=null){current=null;recovery.pause();behindLive=false;error="";artworkGeneration++;stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));RadioWidgetProvider.refresh(RadioPlaybackService.this);}
+    if(CarAudioCatalog.file(item)!=null){current=null;recovery.pause();behindLive=false;error="";artworkGeneration++;loadFileArtwork(item);stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));RadioWidgetProvider.refresh(RadioPlaybackService.this);}
     if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
    }
    @Override public void onEvents(Player source,Player.Events events) {RadioWidgetProvider.refresh(RadioPlaybackService.this);}
@@ -97,6 +97,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   return PlaybackNotification.radio(this,mediaSession,toggle,stop,live,mediaSession.getPlayer().isPlaying()&&!needsLive());
  }
  private void foreground() {startForeground(2001,notification(session));}
+ private void loadFileArtwork(MediaItem selected){LocalMedia file=CarAudioCatalog.file(selected);if(file==null||selected.mediaMetadata.artworkData!=null)return;int generation=artworkGeneration;artworkWorker.execute(()->{byte[] data=LocalFileArtwork.bytes(this,file);if(data==null)return;new android.os.Handler(getMainLooper()).post(()->{if(active!=this||generation!=artworkGeneration||player==null)return;MediaItem item=player.getCurrentMediaItem();if(item!=null&&item.mediaId.equals(selected.mediaId))player.replaceMediaItem(player.getCurrentMediaItemIndex(),item.buildUpon().setMediaMetadata(item.mediaMetadata.buildUpon().setArtworkData(data,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build());});});}
  private void loadArtwork(RadioStation station) {
   int generation=++artworkGeneration;
   if(PlaybackArtwork.bundled(this,PlaybackArtwork.logoName(this,station)) || station.logo.isEmpty()) return;
