@@ -1,3 +1,7 @@
+## 1.41.8
+
+Stop cast overfører afspilningen til telefonen. Filer fortsætter fra cast-positionen med samme kø; radio og live-TV starter live. Lukning af appen stopper fortsat afspilningen.
+
 ## 1.41.7
 
 Cast af lydfiler sender egne programlogoer og indlejret cover til modtageren, når de findes. Tilbage-navigation går via Favoritter-forsiden før appen forlades.
