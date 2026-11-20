@@ -34,6 +34,7 @@ public final class MainActivity extends AppCompatActivity {
  private EpgRepository epgRepository;
  private final Map<String,EpgData> epgData=new HashMap<>();
  private final Set<String> epgPending=new HashSet<>();
+ private final GuideRecovery guideRecovery=new GuideRecovery();
  private final Map<String,Long> epgAttempted=new HashMap<>();
  private boolean updatingAll,radioMode,favoritesPage,choosingFavoriteTab;
  private ImageButton headerMenu;private LinearLayout headerOutputs;private FrameLayout headerBrandSlot;private MediaRouteButton headerCast;
@@ -694,16 +695,20 @@ public final class MainActivity extends AppCompatActivity {
  private String programmeTitle(Library.Entry entry,long now) {
   Library.Source source=library.findSource(entry.sourceId);
   if(entry.channel.kind!=Playlist.Kind.TV || source==null || library.findGuide(source.epgId)==null) return "";
-  EpgData guide=epgData.get(source.epgId);
-  if(guide==null) return getString(epgPending.contains(source.epgId)?R.string.epg_loading:R.string.epg_no_programme);
-  EpgData.Programme programme=guide.current(entry.channel,now);return programme==null?getString(R.string.epg_no_programme):programme.title;
+  EpgData guide=epgData.get(source.epgId);EpgData.Programme programme=guide==null?null:guide.current(entry.channel,now);
+  if(programme==null||programme.title.trim().isEmpty()){
+   if(!updatingAll&&favoriteHubMode&&favoriteHub!=null&&favoriteHub.tvListIndex()>=0&&library.isFavorite(entry)&&guideRecovery.request(source.epgId,android.os.SystemClock.elapsedRealtime(),epgPending.contains(source.epgId))){String id=source.epgId;list.post(()->{if(isDestroyed()||isFinishing()||updatingAll)return;Library.Guide assigned=library.findGuide(id);if(assigned!=null)refreshGuide(assigned,true,true);});}
+   return getString(epgPending.contains(source.epgId)?R.string.epg_loading:R.string.epg_no_programme);
+  }
+  return programme.title;
  }
  private void loadAssignedGuides(boolean force) {
   if(epgRepository==null || updatingAll) return;
   Set<String> ids=new LinkedHashSet<>();for(Library.Source source:library.sources) if(!source.epgId.isEmpty()) ids.add(source.epgId);
   for(String id:ids) {Library.Guide guide=library.findGuide(id);if(guide!=null) refreshGuide(guide,force);}
  }
- private void refreshGuide(Library.Guide guide,boolean force) {
+ private void refreshGuide(Library.Guide guide,boolean force){refreshGuide(guide,force,false);}
+ private void refreshGuide(Library.Guide guide,boolean force,boolean quiet) {
   long now=System.currentTimeMillis();Long attempted=epgAttempted.get(guide.id);
   if(epgPending.contains(guide.id)||(!force && attempted!=null && now-attempted<5*60*1000L)) return;
   epgPending.add(guide.id);epgAttempted.put(guide.id,now);
@@ -711,8 +716,8 @@ public final class MainActivity extends AppCompatActivity {
    EpgData cached=epgRepository.cached(guide);
    if(cached!=null) runOnUiThread(()->acceptGuide(guide,cached));
    try {if(force) {EpgData fetched=epgRepository.fetch(guide,System.currentTimeMillis());runOnUiThread(()->acceptGuide(guide,fetched));}}
-   catch(Exception ignored) {if(force) runOnUiThread(()->{if(!isDestroyed()) Toast.makeText(this,getString(R.string.epg_fetch_failed,guide.name),Toast.LENGTH_LONG).show();});}
-   finally {runOnUiThread(()->{if(!isDestroyed()) {epgPending.remove(guide.id);adapter.notifyDataSetChanged();Library.Guide current=library.findGuide(guide.id);if(current!=null && !current.url.equals(guide.url)) {epgAttempted.remove(guide.id);refreshGuide(current,true);}}});}
+   catch(Exception ignored) {if(force&&!quiet) runOnUiThread(()->{if(!isDestroyed()) Toast.makeText(this,getString(R.string.epg_fetch_failed,guide.name),Toast.LENGTH_LONG).show();});}
+   finally {runOnUiThread(()->{if(!isDestroyed()) {epgPending.remove(guide.id);adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();Library.Guide current=library.findGuide(guide.id);if(current!=null && !current.url.equals(guide.url)) {epgAttempted.remove(guide.id);refreshGuide(current,true);}}});}
   });
  }
  private void acceptGuide(Library.Guide guide,EpgData data) {

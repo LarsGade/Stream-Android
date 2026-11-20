@@ -1,3 +1,7 @@
+## 1.43.3
+
+Manglende programoplysninger på TV-favoritlister udløser en stille opdatering af den tilknyttede TV-guide i baggrunden. Samtidige forespørgsler samles, og nye forsøg begrænses til hvert femte minut pr. guide.
+
 ## 1.43.2
 
 TV-backup-knappen (cirkelpilen) er placeret mellem fuldskærm og indstillinger. Gruppelisten forbliver åben, når en gruppe holdes nede for at tilføje den til favoritter.
