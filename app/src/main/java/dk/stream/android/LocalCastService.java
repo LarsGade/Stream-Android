@@ -17,6 +17,7 @@ public final class LocalCastService extends Service {
  private static RadioStation pendingRadio;
  private static LocalQueue pending;private static long pendingPosition;
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
+ private final ExecutorService coverWorker=Executors.newSingleThreadExecutor(task->{Thread thread=new Thread(task,"cast-file-covers");thread.setDaemon(true);return thread;});
  private volatile LocalCastHttpServer server;
  private volatile int generation;
  private PowerManager.WakeLock wake;
@@ -51,11 +52,11 @@ public final class LocalCastService extends Service {
     try(Cursor cursor=getContentResolver().query(uri,new String[]{OpenableColumns.SIZE},null,null,null)){if(cursor!=null&&cursor.moveToFirst()&&!cursor.isNull(0))size=cursor.getLong(0);}
     urls.add(next.add(()->{InputStream input=getContentResolver().openInputStream(uri);if(input==null)throw new FileNotFoundException();return input;},size,CastPlayback.mime(file)));
    }
-   List<String> logos=new ArrayList<>();Map<String,String> namedLogos=new HashMap<>();for(int index=0;index<queue.entries.size();index++){if(generation!=request)return;LocalMedia file=queue.entries.get(index);String asset=LocalFileArtwork.asset(file);String logo;if(asset!=null&&namedLogos.containsKey(asset))logo=namedLogos.get(asset);else{logo=CastFileArtwork.publish(next,CastFileArtwork.read(this,file,urls.get(index)));if(asset!=null)namedLogos.put(asset,logo);}logos.add(logo);}
-   new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId())){LocalMedia currentFile=queue.entries.get(queue.start);if(currentFile.image())CastPlayback.loadImage(this,currentFile,urls.get(queue.start),imageTypes.get(queue.start));else CastPlayback.loadLocal(this,queue,urls,logos,position);}else stopSelf();});
+   List<String> logos=new ArrayList<>();Map<String,String> namedLogos=new HashMap<>();for(int index=0;index<queue.entries.size();index++){if(generation!=request)return;LocalMedia file=queue.entries.get(index);String asset=LocalFileArtwork.asset(file);String logo;if(asset!=null&&namedLogos.containsKey(asset))logo=namedLogos.get(asset);else{logo=CastFileArtwork.publish(next,CastFileArtwork.available(this,file));if(asset!=null)namedLogos.put(asset,logo);}logos.add(logo);}
+   new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId())){LocalMedia currentFile=queue.entries.get(queue.start);if(currentFile.image())CastPlayback.loadImage(this,currentFile,urls.get(queue.start),imageTypes.get(queue.start));else CastPlayback.loadLocal(this,queue,urls,logos,position,()->coverWorker.execute(()->{for(int offset=0;offset<queue.entries.size();offset++){if(generation!=request)return;int index=(queue.start+offset)%queue.entries.size();LocalMedia file=queue.entries.get(index);if(!file.audio()||logos.get(index)!=null)continue;String logo=CastFileArtwork.publish(next,CastFileArtwork.read(this,file,urls.get(index)));if(logo==null)continue;new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession active=CastPlayback.session(this);if(generation==request&&active!=null&&Objects.equals(sessionId,active.getSessionId()))CastPlayback.updateFileArtwork(this,urls.get(index),logo);});}}));}else stopSelf();});
   }catch(Exception error){android.util.Log.e("StreamCast","Could not serve local queue",error);new Handler(Looper.getMainLooper()).post(()->{if(generation==request){CastPlayback.failed(this);stopSelf();}});}});
   return START_NOT_STICKY;
  }
  @Override public void onTaskRemoved(Intent root){PlaybackShutdown.stop(this);stopSelf();}
- @Override public void onDestroy(){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);generation++;if(server!=null)server.close();worker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
+ @Override public void onDestroy(){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);generation++;if(server!=null)server.close();worker.shutdownNow();coverWorker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
 }

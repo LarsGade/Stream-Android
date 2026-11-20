@@ -10,10 +10,10 @@ import java.io.*;
 /** Publish actual file artwork as a URL the receiver can fetch, without a generic fallback. */
 @androidx.media3.common.util.UnstableApi
 final class CastFileArtwork {
+ static byte[] available(Context context,LocalMedia file){if(!file.audio())return null;byte[] bundled=LocalFileArtwork.bytes(context,file);return bundled!=null?bundled:CastPlayback.cachedArtwork(file);}
  static byte[] read(Context context,LocalMedia file,String mediaUrl){
   if(!file.audio())return null;
-  byte[] data=LocalFileArtwork.bytes(context,file);if(data!=null)return data;
-  data=CastPlayback.cachedArtwork(file);if(data!=null&&data.length>0)return data;
+  byte[] data=available(context,file);if(data!=null&&data.length>0)return data;
   MediaMetadataRetriever retriever=new MediaMetadataRetriever();
   try{if(PcloudDocument.is(file.uri))retriever.setDataSource(mediaUrl,new java.util.HashMap<>());else retriever.setDataSource(context,Uri.parse(file.uri));return retriever.getEmbeddedPicture();}
   catch(Exception unavailable){return null;}finally{try{retriever.release();}catch(Exception ignored){}}

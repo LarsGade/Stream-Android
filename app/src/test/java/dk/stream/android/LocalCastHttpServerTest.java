@@ -17,6 +17,14 @@ public class LocalCastHttpServerTest {
  @Test public void suffixAndOpenEndedRangesWork() throws Exception {assertTrue(request("GET",url.getPath(),"Range: bytes=-3\r\n").endsWith("789"));assertTrue(request("GET",url.getPath(),"Range: bytes=8-\r\n").endsWith("89"));}
  @Test public void rejectsInvalidAndMultipleRanges() throws Exception {for(String range:new String[]{"bytes=10-","bytes=5-2","bytes=0-1,4-5","bytes=-0","garbage"})assertTrue(request("GET",url.getPath(),"Range: "+range+"\r\n").startsWith("HTTP/1.1 416"));assertEquals(0,opens);}
  @Test public void headAndCorsPreflightDoNotSendFileContents() throws Exception {String head=request("HEAD",url.getPath(),"");assertTrue(head.contains("Content-Length: 10"));assertTrue(head.endsWith("\r\n\r\n"));assertTrue(request("OPTIONS",url.getPath(),"").startsWith("HTTP/1.1 204"));}
+ @Test public void slowCoverRequestsDoNotBlockAudioOrSeeking() throws Exception {
+  java.util.concurrent.CountDownLatch entered=new java.util.concurrent.CountDownLatch(2),release=new java.util.concurrent.CountDownLatch(1);
+  URL cover=new URL(server.add(()->{entered.countDown();try{if(!release.await(5,java.util.concurrent.TimeUnit.SECONDS))throw new IOException("timeout");}catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IOException(interrupted);}return new ByteArrayInputStream(new byte[]{1});},1,"image/png"));
+  try(Socket first=new Socket(url.getHost(),url.getPort());Socket second=new Socket(url.getHost(),url.getPort())){
+   for(Socket socket:new Socket[]{first,second})socket.getOutputStream().write(("GET "+cover.getPath()+" HTTP/1.1\r\nHost: localhost\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+   assertTrue(entered.await(2,java.util.concurrent.TimeUnit.SECONDS));String audio=request("GET",url.getPath(),"Range: bytes=3-6\r\n");assertTrue(audio.startsWith("HTTP/1.1 206"));assertTrue(audio.endsWith("3456"));
+  }finally{release.countDown();}
+ }
  @Test public void receiverCanFetchBinaryChannelArtwork() throws Exception {
   byte[] png={(byte)137,80,78,71,13,10,26,10,0,(byte)255};url=new URL(server.add(()->new ByteArrayInputStream(png),png.length,"image/png"));
   HttpURLConnection connection=(HttpURLConnection)url.openConnection();connection.setConnectTimeout(3000);connection.setReadTimeout(3000);

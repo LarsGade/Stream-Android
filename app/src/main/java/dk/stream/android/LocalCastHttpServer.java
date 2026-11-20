@@ -16,7 +16,7 @@ public final class LocalCastHttpServer implements AutoCloseable {
  private final ServerSocket server;
  private final String origin;
  private volatile boolean closed;
- private final ExecutorService worker=new ThreadPoolExecutor(2,4,30,TimeUnit.SECONDS,new ArrayBlockingQueue<>(16),task->{Thread thread=new Thread(task,"local-cast-file");thread.setDaemon(true);return thread;});
+ private final ExecutorService worker=new ThreadPoolExecutor(2,4,30,TimeUnit.SECONDS,new SynchronousQueue<>(),task->{Thread thread=new Thread(task,"local-cast-file");thread.setDaemon(true);return thread;});
  public LocalCastHttpServer(InetAddress address) throws IOException {
   if(address.isAnyLocalAddress()) throw new IOException("Specific network address required");
   server=new ServerSocket(0,16,address);String host=address.getHostAddress();origin="http://"+(host.contains(":")?"["+host+"]":host)+":"+server.getLocalPort();

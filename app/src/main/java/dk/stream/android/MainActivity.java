@@ -288,7 +288,6 @@ public final class MainActivity extends AppCompatActivity {
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));favoritesButton.setTextColor(Color.WHITE);favoritesButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,favoritesButton.getTextSize()*1.25f);favoritesButton.setTypeface(favoritesButton.getTypeface(),android.graphics.Typeface.BOLD);
   Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
-  for(Button primary:new Button[]{streamingButton,radioButton,localButton,pcloudButton}) {primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));primary.setTextColor(Color.WHITE);}
   settingsToggle=button(R.string.settings,navigation,()->{});
   settingsContent=column();settingsContent.setPadding(dp(8),0,dp(8),0);settingsContent.setVisibility(View.GONE);navigation.addView(settingsContent,new LinearLayout.LayoutParams(-1,-2));
   settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");

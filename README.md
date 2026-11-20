@@ -1,3 +1,9 @@
+## 1.42.0
+
+Kun Favoritter er blå i burgermenuen. Øvrige hovedknapper bruger samme grå standardstil som Indstillinger.
+
+Casting af lydfiler starter uden at vente på cover-søgning i resten af køen. Ukendte covers læses i baggrunden og opdateres på modtageren uden at genstarte afspilningen.
+
 ## 1.41.9
 
 Cast og Bluetooth vises øverst til højre på listesider, men ikke på Favoritter-forsiden. Logoet centreres uafhængigt af knapperne. Eksisterende afspillerknapper bevares.
