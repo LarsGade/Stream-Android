@@ -1,3 +1,7 @@
+## 1.41.6
+
+Billedlister viser miniaturer i lokale filer, pCloud og favoritter. Billedvisningen beholder telefonens billede ved Cast-dialoger og holder skærmen tændt under billedcasting.
+
 ## 1.41.5
 
 Underteksten Afspilles via Stream er gendannet ved casting af radio og øvrig lyd.

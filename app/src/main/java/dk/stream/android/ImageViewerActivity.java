@@ -20,7 +20,7 @@ import java.util.*;
 public final class ImageViewerActivity extends AppCompatActivity {
  @Override public boolean dispatchKeyEvent(android.view.KeyEvent event){return CastPlayback.volumeKey(this,event)||super.dispatchKeyEvent(event);}
  private ImageView picture;private TextView title,count,error;private ImageButton previous,next,slideshow,stop;private androidx.mediarouter.app.MediaRouteButton castButton;private boolean initial;
- private boolean slideshowActive;
+ private boolean slideshowActive;private String displayedUri;
  private final Runnable advanceSlide=()->{if(!slideshowActive)return;if(ImageSession.move(1)){render(true);scheduleSlide();}else setSlideshow(false);};
  private float downX,downY;private final Object owner=new Object();private final Handler handler=new Handler(Looper.getMainLooper());
  private final Runnable tick=new Runnable(){public void run(){updateControls();handler.postDelayed(this,500);}};
@@ -49,16 +49,17 @@ public final class ImageViewerActivity extends AppCompatActivity {
  private void setSlideshow(boolean active){slideshowActive=active&&ImageSession.size()>1;picture.setKeepScreenOn(slideshowActive);scheduleSlide();updateControls();}
  private void render(boolean cast){
   LocalMedia current=ImageSession.current();if(current==null){finish();return;}title.setText(current.displayName());picture.setContentDescription(current.displayName());error.setVisibility(View.GONE);count.setText((ImageSession.index()+1)+" / "+ImageSession.size());
-  Glide.with(this).load(Uri.parse(current.uri)).fitCenter().diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new RequestListener<Drawable>(){
-   public boolean onLoadFailed(GlideException failure,Object model,Target<Drawable> target,boolean first){if(ImageSession.current()!=null&&current.uri.equals(ImageSession.current().uri)){error.setText("Billedet kan ikke vises. Kontrollér filformat og adgang.");error.setVisibility(View.VISIBLE);}return false;}
+  if(!current.uri.equals(displayedUri)){displayedUri=current.uri;Glide.with(this).load(Uri.parse(current.uri)).fitCenter().diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new RequestListener<Drawable>(){
+   public boolean onLoadFailed(GlideException failure,Object model,Target<Drawable> target,boolean first){if(ImageSession.current()!=null&&current.uri.equals(ImageSession.current().uri)){displayedUri=null;error.setText("Billedet kan ikke vises. Kontrollér filformat og adgang.");error.setVisibility(View.VISIBLE);}return false;}
    public boolean onResourceReady(Drawable image,Object model,Target<Drawable> target,DataSource source,boolean first){return false;}
-  }).into(picture);updateControls();if(cast&&CastPlayback.connected(this))castCurrent();
+  }).into(picture);}updateControls();if(cast&&CastPlayback.connected(this))castCurrent();
  }
- private void updateControls(){if(previous==null||ImageSession.current()==null)return;slideshow.setEnabled(ImageSession.size()>1);slideshow.setAlpha(slideshow.isEnabled()?1f:0.35f);slideshow.setSelected(slideshowActive);slideshow.setImageTintList(android.content.res.ColorStateList.valueOf(slideshowActive?0xFF3686FF:Color.WHITE));slideshow.setContentDescription(slideshowActive?"Stop slideshow":"Start slideshow");previous.setEnabled(ImageSession.index()>0);next.setEnabled(ImageSession.index()+1<ImageSession.size());previous.setAlpha(previous.isEnabled()?1f:0.35f);next.setAlpha(next.isEnabled()?1f:0.35f);stop.setVisibility(CastPlayback.image(this)?View.VISIBLE:View.GONE);}
+ private void updateControls(){if(previous==null||ImageSession.current()==null)return;picture.setKeepScreenOn(slideshowActive||CastPlayback.image(this));slideshow.setEnabled(ImageSession.size()>1);slideshow.setAlpha(slideshow.isEnabled()?1f:0.35f);slideshow.setSelected(slideshowActive);slideshow.setImageTintList(android.content.res.ColorStateList.valueOf(slideshowActive?0xFF3686FF:Color.WHITE));slideshow.setContentDescription(slideshowActive?"Stop slideshow":"Start slideshow");previous.setEnabled(ImageSession.index()>0);next.setEnabled(ImageSession.index()+1<ImageSession.size());previous.setAlpha(previous.isEnabled()?1f:0.35f);next.setAlpha(next.isEnabled()?1f:0.35f);stop.setVisibility(CastPlayback.image(this)?View.VISIBLE:View.GONE);}
  private boolean networkAllowed(){return android.os.Build.VERSION.SDK_INT<37||checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")==android.content.pm.PackageManager.PERMISSION_GRANTED;}
  private void castCurrent(){if(!networkAllowed()){requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7402);return;}LocalMedia current=ImageSession.current();if(current!=null)CastPlayback.playLocal(this,current,ImageSession.entries(),0);}
  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(results.length==0||results[0]!=android.content.pm.PackageManager.PERMISSION_GRANTED)return;if(request==7401)castButton.performClick();else if(request==7402)castCurrent();}
  @Override protected void onSaveInstanceState(Bundle state){LocalMedia current=ImageSession.current();if(current!=null){state.putString("uri",current.uri);state.putString("name",current.name);state.putString("mime",current.mime);state.putString("gallery",ImageSession.token());state.putBoolean("slideshow",slideshowActive);}super.onSaveInstanceState(state);}
  @Override protected void onStart(){super.onStart();if(picture==null)return;ImageSession.visible(owner);render(initial);initial=false;setSlideshow(slideshowActive);handler.post(tick);}
- @Override protected void onStop(){handler.removeCallbacks(tick);handler.removeCallbacks(advanceSlide);ImageSession.hidden(owner);if(picture!=null)Glide.with(this).clear(picture);super.onStop();}
+ @Override protected void onStop(){handler.removeCallbacks(tick);handler.removeCallbacks(advanceSlide);ImageSession.hidden(owner);super.onStop();}
+ @Override protected void onDestroy(){if(picture!=null)Glide.with(this).clear(picture);super.onDestroy();}
 }
