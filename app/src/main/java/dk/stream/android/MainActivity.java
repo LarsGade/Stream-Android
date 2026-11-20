@@ -26,6 +26,7 @@ import java.util.concurrent.*;
 
 @androidx.media3.common.util.UnstableApi
 public final class MainActivity extends AppCompatActivity {
+ @Override public boolean dispatchKeyEvent(android.view.KeyEvent event){return CastPlayback.volumeKey(this,event)||super.dispatchKeyEvent(event);}
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private final ExecutorService catalogReader=Executors.newSingleThreadExecutor();
  private java.util.concurrent.Future<?> catalogRestoreTask;private int catalogRestoreGeneration;

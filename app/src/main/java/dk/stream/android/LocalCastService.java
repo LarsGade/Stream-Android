@@ -14,6 +14,7 @@ import java.util.concurrent.*;
 /** Keeps only the selected Cast queue available while the receiver fetches media. */
 @androidx.media3.common.util.UnstableApi
 public final class LocalCastService extends Service {
+ private static RadioStation pendingRadio;
  private static LocalQueue pending;private static long pendingPosition;
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private volatile LocalCastHttpServer server;
@@ -21,7 +22,8 @@ public final class LocalCastService extends Service {
  private PowerManager.WakeLock wake;
  private android.net.wifi.WifiManager.WifiLock wifi;
  @Override public void onCreate(){super.onCreate();wake=((PowerManager)getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"Stream:local-cast");wake.acquire();android.net.wifi.WifiManager manager=(android.net.wifi.WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);if(manager!=null){wifi=manager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF,"Stream:local-cast");wifi.acquire();}}
- public static void cast(Context context,LocalQueue queue,long position){LocalMedia selected=queue.entries.get(queue.start);pending=selected.image()?new LocalQueue(Collections.singletonList(selected),selected):queue;pendingPosition=position;try{androidx.core.content.ContextCompat.startForegroundService(context,new Intent(context,LocalCastService.class));}catch(RuntimeException denied){pending=null;android.util.Log.e("StreamCast","Could not start Cast service",denied);CastPlayback.failed(context);}}
+ public static void cast(Context context,LocalQueue queue,long position){pendingRadio=null;LocalMedia selected=queue.entries.get(queue.start);pending=selected.image()?new LocalQueue(Collections.singletonList(selected),selected):queue;pendingPosition=position;try{androidx.core.content.ContextCompat.startForegroundService(context,new Intent(context,LocalCastService.class));}catch(RuntimeException denied){pending=null;android.util.Log.e("StreamCast","Could not start Cast service",denied);CastPlayback.failed(context);}}
+ public static void castRadio(Context context,RadioStation station){pending=null;pendingRadio=station;try{androidx.core.content.ContextCompat.startForegroundService(context,new Intent(context,LocalCastService.class));}catch(RuntimeException denied){pendingRadio=null;CastPlayback.failed(context);}}
  @Override public IBinder onBind(Intent intent){return null;}
  @Override public int onStartCommand(Intent intent,int flags,int id){
   if(intent!=null&&"stop".equals(intent.getAction())){CastPlayback.stop(this);stopSelf();return START_NOT_STICKY;}
@@ -29,13 +31,19 @@ public final class LocalCastService extends Service {
   PendingIntent open=PendingIntent.getActivity(this,91,(pending!=null&&pending.entries.get(pending.start).image()?ImageViewerActivity.reopenIntent(this):new Intent(this,AudioPlayerActivity.class).putExtra("cast",true)),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   PendingIntent stop=PendingIntent.getService(this,92,new Intent(this,LocalCastService.class).setAction("stop"),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   Notification.Builder notification=Build.VERSION.SDK_INT>=26?new Notification.Builder(this,"local_cast"):new Notification.Builder(this);
-  startForeground(2004,notification.setSmallIcon(R.drawable.ic_play).setContentTitle("Caster lokale filer").setContentText("Stream").setContentIntent(open).setOngoing(true).addAction(R.drawable.ic_stop,"Stop",stop).build());
-  LocalQueue queue=pending;long position=pendingPosition;pending=null;if(queue==null){stopSelf();return START_NOT_STICKY;}
+  startForeground(2004,notification.setSmallIcon(R.drawable.ic_play).setContentTitle(pendingRadio!=null?"Caster radio":"Caster lokale filer").setContentText("Stream").setContentIntent(open).setOngoing(true).addAction(R.drawable.ic_stop,"Stop",stop).build());
+  LocalQueue queue=pending;RadioStation radio=pendingRadio;long position=pendingPosition;pending=null;pendingRadio=null;if(queue==null&&radio==null){stopSelf();return START_NOT_STICKY;}
   com.google.android.gms.cast.framework.CastSession session=CastPlayback.session(this);if(session==null||session.getCastDevice()==null){stopSelf();return START_NOT_STICKY;}
   InetAddress receiver=session.getCastDevice().getInetAddress();String sessionId=session.getSessionId();int request=++generation;
   worker.execute(()->{try {
    InetAddress address;try(DatagramSocket route=new DatagramSocket()){route.connect(receiver,9);address=route.getLocalAddress();}
    LocalCastHttpServer next=new LocalCastHttpServer(address);if(server!=null)server.close();server=next;
+   if(radio!=null){
+    boolean bundled=PlaybackArtwork.bundled(this,radio.name)||PlaybackArtwork.bundled(this,radio.displayName());
+    byte[] artwork=bundled?PlaybackArtwork.local(this,PlaybackArtwork.logoName(this,radio)):PlaybackArtwork.remote(this,radio.logo);
+    String logo=artwork==null?(okhttp3.HttpUrl.parse(radio.logo)!=null?radio.logo:null):next.add(()->new ByteArrayInputStream(artwork),artwork.length,"image/png");
+    new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId()))CastPlayback.loadRadio(this,radio,logo);else stopSelf();});return;
+   }
    List<String> urls=new ArrayList<>(),imageTypes=new ArrayList<>();for(LocalMedia file:queue.entries){if(generation!=request){next.close();return;}if(file.image()){
     com.bumptech.glide.request.FutureTarget<android.graphics.Bitmap> target=com.bumptech.glide.Glide.with(getApplicationContext()).asBitmap().load(Uri.parse(file.uri)).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).submit(1920,1080);
     try{android.graphics.Bitmap bitmap=target.get();boolean alpha=bitmap.hasAlpha();ByteArrayOutputStream bytes=new ByteArrayOutputStream();if(!bitmap.compress(alpha?android.graphics.Bitmap.CompressFormat.PNG:android.graphics.Bitmap.CompressFormat.JPEG,90,bytes))throw new IOException("Could not prepare image");byte[] data=bytes.toByteArray();String type=alpha?"image/png":"image/jpeg";urls.add(next.add(()->new ByteArrayInputStream(data),data.length,type));imageTypes.add(type);}finally{com.bumptech.glide.Glide.with(getApplicationContext()).clear(target);}continue;

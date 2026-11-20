@@ -18,6 +18,7 @@ import java.util.*;
 /** Full picture viewer with a stable, manually navigated gallery on phone and Cast. */
 @androidx.media3.common.util.UnstableApi
 public final class ImageViewerActivity extends AppCompatActivity {
+ @Override public boolean dispatchKeyEvent(android.view.KeyEvent event){return CastPlayback.volumeKey(this,event)||super.dispatchKeyEvent(event);}
  private ImageView picture;private TextView title,count,error;private ImageButton previous,next,star,stop;private androidx.mediarouter.app.MediaRouteButton castButton;private boolean initial;
  private Library favoriteLibrary;
  private float downX,downY;private final Object owner=new Object();private final Handler handler=new Handler(Looper.getMainLooper());

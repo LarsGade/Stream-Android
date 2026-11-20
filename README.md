@@ -1,3 +1,7 @@
+## 1.41.2
+
+Telefonens lydstyrkeknapper styrer Cast-enhedens lydstyrke, mens appen er åben. Cast af radio viser stationens logo, også når logoet ligger i appen. Cast-metadata viser ikke længere afspillernavn som undertitel. En særskilt Stream-modtager er klargjort i cast-receiver; aktivering kræver et registreret Google Cast-app-id. Indtil da hedder Googles modtager fortsat Default Media Receiver.
+
 ## 1.41.1
 
 Radioafspilleren har én knap, som skifter mellem Play og Stop. Afspilleren forbliver åben efter stop, så samme station kan startes live igen.

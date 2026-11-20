@@ -11,6 +11,7 @@ import com.google.android.gms.cast.framework.media.RemoteMediaClient;
 /** Full controls for local audio, radio and the current Cast receiver. */
 @androidx.media3.common.util.UnstableApi
 public final class AudioPlayerActivity extends AppCompatActivity {
+ @Override public boolean dispatchKeyEvent(android.view.KeyEvent event){return CastPlayback.volumeKey(this,event)||super.dispatchKeyEvent(event);}
  private TextView title,time;
  private ImageView artwork;private Object artworkModel;
  private SeekBar progress;

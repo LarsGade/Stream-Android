@@ -17,6 +17,11 @@ public class LocalCastHttpServerTest {
  @Test public void suffixAndOpenEndedRangesWork() throws Exception {assertTrue(request("GET",url.getPath(),"Range: bytes=-3\r\n").endsWith("789"));assertTrue(request("GET",url.getPath(),"Range: bytes=8-\r\n").endsWith("89"));}
  @Test public void rejectsInvalidAndMultipleRanges() throws Exception {for(String range:new String[]{"bytes=10-","bytes=5-2","bytes=0-1,4-5","bytes=-0","garbage"})assertTrue(request("GET",url.getPath(),"Range: "+range+"\r\n").startsWith("HTTP/1.1 416"));assertEquals(0,opens);}
  @Test public void headAndCorsPreflightDoNotSendFileContents() throws Exception {String head=request("HEAD",url.getPath(),"");assertTrue(head.contains("Content-Length: 10"));assertTrue(head.endsWith("\r\n\r\n"));assertTrue(request("OPTIONS",url.getPath(),"").startsWith("HTTP/1.1 204"));}
+ @Test public void receiverCanFetchBinaryChannelArtwork() throws Exception {
+  byte[] png={(byte)137,80,78,71,13,10,26,10,0,(byte)255};url=new URL(server.add(()->new ByteArrayInputStream(png),png.length,"image/png"));
+  HttpURLConnection connection=(HttpURLConnection)url.openConnection();connection.setConnectTimeout(3000);connection.setReadTimeout(3000);
+  try{assertEquals(200,connection.getResponseCode());assertEquals("image/png",connection.getContentType());assertEquals(png.length,connection.getContentLength());try(InputStream input=connection.getInputStream()){assertArrayEquals(png,input.readAllBytes());}}finally{connection.disconnect();}
+ }
  @Test public void stopsServingWhenClosed() throws Exception {server.close();try{String response=request("GET",url.getPath(),"");assertFalse(response.startsWith("HTTP/1.1 200"));assertFalse(response.contains("0123456789"));}catch(IOException expected){}}
  @Test public void cloudSeekingIsForwardedToTheRemoteOpener() throws Exception {
   long[] offset={-1};url=new URL(server.addRange(position->{offset[0]=position;return new ByteArrayInputStream("0123456789".substring((int)position).getBytes(StandardCharsets.US_ASCII));},10,"video/mp4"));String result=request("GET",url.getPath(),"Range: bytes=6-8\r\n");assertEquals(6,offset[0]);assertTrue(result.endsWith("678"));assertTrue(result.contains("Content-Range: bytes 6-8/10"));
