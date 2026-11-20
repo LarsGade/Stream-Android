@@ -80,8 +80,8 @@ public final class RadioPlaybackService extends MediaLibraryService {
    @Override public void onPlayWhenReadyChanged(boolean ready,int reason) {if(!ready&&(reason==Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY||reason==Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE)) recovery.pause();if(ready) error="";else if(current!=null && player.getPlaybackState()!=Player.STATE_IDLE) behindLive=true;if(!ready)refreshPausedNotification();}
    @Override public void onPlaybackStateChanged(int state) {if(state==Player.STATE_IDLE) behindLive=false;if(state==Player.STATE_ENDED&&recovery.wanted())recovery.failure(android.os.SystemClock.elapsedRealtime());}
    @Override public void onMediaItemTransition(MediaItem item,int reason) {
-    if(CarAudioCatalog.file(item)!=null){current=null;recovery.pause();behindLive=false;error="";artworkGeneration++;loadFileArtwork(item);stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));RadioWidgetProvider.refresh(RadioPlaybackService.this);}
-    if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
+    if(CarAudioCatalog.file(item)!=null){LastAudio.file(RadioPlaybackService.this,CarAudioCatalog.file(item));current=null;recovery.pause();behindLive=false;error="";artworkGeneration++;loadFileArtwork(item);stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));RadioWidgetProvider.refresh(RadioPlaybackService.this);}
+    if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {LastAudio.radio(RadioPlaybackService.this,station);stopService(new Intent(RadioPlaybackService.this,LocalAudioService.class));if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
    }
    @Override public void onEvents(Player source,Player.Events events) {RadioWidgetProvider.refresh(RadioPlaybackService.this);}
    @Override public void onPlayerError(PlaybackException failure) {if(selectedFile()!=null){error="Lydfilen kan ikke afspilles. Kontrollér format og adgang til filen.";player.pause();android.widget.Toast.makeText(RadioPlaybackService.this,error,android.widget.Toast.LENGTH_LONG).show();}else handleRadioFailure();}
@@ -149,7 +149,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    else if(TOGGLE.equals(action) && current!=null && current.id.equals(station.id) && player.getPlayWhenReady()) sessionPlayer.pause();
    else {
     stopService(new Intent(this,LocalAudioService.class));
-    current=station;
+    current=station;LastAudio.radio(this,station);
     MediaMetadata metadata=PlaybackText.metadata(station.displayName()).setExtras(CarRadioCatalog.liveExtras()).setDisplayTitle(station.displayName()).setArtworkUri(CarArtworkProvider.station(this,station.id)).setArtworkData(CarRadioCatalog.artworkData(this,station),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
     recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build(),true);behindLive=false;loadArtwork(station);
    }

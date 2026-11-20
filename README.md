@@ -1,3 +1,11 @@
+## 1.49.2
+
+Stream registrerer nu én senest valgt lydkilde på tværs af radio, lokale lydfiler, pCloud og eksplicitte Cast-valg. Når Android Auto anmoder om genoptagelse via Media3 onPlaybackResumption, gendannes netop denne kilde. Lydfiler bruger afspilningshistorikkens gemte position; radio genindlæses live. En ældre radiosession ryddes ved tilslutning eller Play fra en bilcontroller, hvis en anden lydkilde siden er valgt, så radio ikke får forrang over en nyere podcast.
+
+Der startes ikke lyd alene, fordi en mediebrowser forbinder. Automatisk afspilning ved tilslutning styres fortsat af bilens/Android Autos indstilling for musikstart; Stream leverer den korrekte kilde, når Play/genoptagelse efterspørges. Vælg en lydkilde én gang efter opdateringen for at oprette den nye hukommelse. Huskefunktionen medtages i eksport/import; ældre opsætningsfiler uden feltet kan stadig importeres.
+
+Valideret med debug-build, lint og 24 JVM-tests for kildevalg, backup og startsideindstillinger. Ikke afprøvet på en fysisk Android Auto-enhed i dette miljø.
+
 ## 1.49.1
 
 Android Auto-indstillingerne viser nu kun Forside, Radio og Podcast uden en anbefalet-markering. Det gemte startsidevalg bevares.

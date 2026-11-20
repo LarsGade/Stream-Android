@@ -31,6 +31,7 @@ public final class CarRadioCatalog {
  private List<RadioStation> danish() throws Exception {return remember(readCache(context));}
  private List<RadioStation> remember(List<RadioStation> stations) {for(RadioStation station:stations) known.put(PREFIX+station.id,station);return stations;}
  Context context(){return context;}
+ MediaItem resumeRadio(RadioStation station){remember(Collections.singletonList(station));return item(station,true);}
  List<MediaItem> audioQueue(String id){return audio.queue(id);}
  public List<RadioStation> favorites() throws Exception {List<RadioStation> radios=new ArrayList<>();for(FavoriteLists.Item item:FavoriteLists.items(store.load(),"Radio"))if(item.radio!=null)radios.add(item.radio);return remember(radios);}
  public RadioStation known(String id) {return known.get(id);}
