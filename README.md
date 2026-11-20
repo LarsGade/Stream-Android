@@ -1,3 +1,13 @@
+## 1.47.0
+
+Under afspilning vises “Åbn i anden app” umiddelbart til venstre for Bluetooth ved video, fuldskærmslyd, billedvisning med samtidig lyd og i listeoverskriften. Før en afspilning er startet, vises kun Cast blandt udgangsknapperne; favoritter-forsiden bevarer sin skjulte udgangsrække. Bluetooth og ekstern afspiller markeres blå, når de er valgt. Stream-logoet bevarer sin centrering, og pladsen i listeoverskriften tilpasses de ekstra knapper.
+
+En Android-appvælger åbner det aktuelle indhold i en kompatibel afspiller. Stream sættes på pause og genoptager den samme kilde ved tilbagevenden. Radio og TV starter live igen. For filer bruges overdragelsespositionen, eller den returnerede position, hvis den eksterne app understøtter dette. Android melder ikke generelt, at en tredjepartsapp er lukket i baggrunden; genoptagelse sker, når Stream får fokus igen. Der gemmes ikke en ekstern standardafspiller for fremtidige filer.
+
+Lokale dokumenter deles med midlertidig læseadgang. pCloud-filer deles via en privat URI med læseadgang til netop den valgte fil og søgbar proxy på Android 8+, uden at udlevere kontokodeordet. Android 6–7 bruger en læsepipe. Under TV-optagelse kan afspilningen ikke overdrages til en anden app.
+
+Valideret med debug-build, lint og ni JVM-tests af tilbagevendingslogik og filtyper. Fysisk test med eksterne afspilningsapps er ikke udført i dette miljø.
+
 ## 1.46.0
 
 Live-TV har en rød optageknap på kontrollinjen i både mini- og fuldskærmsvisning. Før start vises en bekræftelse med kanalnavn, Annuller og Start optagelse. Under optagelse skifter ikonet til stop optagelse; samme handling findes i notifikationen “Optagelse i gang”. Den afsluttede fil gemmes automatisk i Download. Appens tilbage-navigation, lister og afspilningsskift spærres, mens optagelsen kører. Androids Home-knap og tvangslukning kan ikke spærres; den separate foreground-service fortsætter ved normal baggrundslægning.
