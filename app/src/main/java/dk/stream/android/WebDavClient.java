@@ -41,11 +41,13 @@ public final class WebDavClient {
   throw new IOException("For mange WebDAV-omdirigeringer.");
  }
  static IOException failure(int code){return new IOException(code==401||code==403?"Pcloud afviste login. Kontrollér region, e-mail og adgangskode. Ved 2FA kan forbindelsen kræve godkendelse i en mail fra pCloud.":code==404?"Pcloud-mappen eller filen findes ikke.":"Pcloud svarede med fejl "+code+".");}
- public InputStream open(HttpUrl url,long offset) throws IOException {
-  PcloudDocument.checkOrigin(base,url);Request.Builder request=new Request.Builder().url(url);if(offset>0)request.header("Range","bytes="+offset+"-");Response response=client.newCall(request.build()).execute();
+ public interface CallStarted {void started(Call call);}
+ public InputStream open(HttpUrl url,long offset)throws IOException{return open(url,offset,null);}
+ public InputStream open(HttpUrl url,long offset,CallStarted started) throws IOException {
+  PcloudDocument.checkOrigin(base,url);Request.Builder request=new Request.Builder().url(url);if(offset>0)request.header("Range","bytes="+offset+"-");Call call=client.newCall(request.build());if(started!=null)started.started(call);Response response=call.execute();
   if(!response.isSuccessful()||response.body()==null){int code=response.code();response.close();throw failure(code);}
   InputStream input=response.body().byteStream();
-  try{if(offset>0&&response.code()==200){long remaining=offset;while(remaining>0){long skipped=input.skip(remaining);if(skipped>0)remaining-=skipped;else if(input.read()<0)throw new EOFException();else remaining--;}}}
+  try{if(response.code()==206)DownloadRange.validate(response.header("Content-Range"),offset);if(offset>0&&response.code()==200){long remaining=offset;while(remaining>0){long skipped=input.skip(remaining);if(skipped>0)remaining-=skipped;else if(input.read()<0)throw new EOFException();else remaining--;}}}
   catch(IOException failure){response.close();throw failure;}
   return new FilterInputStream(input){@Override public void close() throws IOException {try{super.close();}finally{response.close();}}};
  }

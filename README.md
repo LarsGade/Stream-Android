@@ -1,3 +1,7 @@
+## 1.45.1
+
+Download vises som en notifikation med progressbar og Pause/Fortsæt samt Annuller. Hentningen fortsætter, når appen lukkes normalt. Pausede netværksfiler genoptages fra bytepositionen, også inde i ZIP-pakning.
+
 ## 1.45.0
 
 Download findes i tryk-og-holde-menuer for lokale filer, pCloud, billeder, film og serieafsnit samt mapper og hele serier. Flere filer pakkes som ZIP, og gemmested vælges i Androids filvælger. Download kører i baggrunden. Live-TV og radio undtages.
