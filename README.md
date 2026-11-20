@@ -1,3 +1,7 @@
+## 1.49.1
+
+Android Auto-indstillingerne viser nu kun Forside, Radio og Podcast uden en anbefalet-markering. Det gemte startsidevalg bevares.
+
 ## 1.49.0
 
 Android Auto har nu de tre startsidevalg Forside, Radio og Podcast. Tidligere valg af et land flyttes til Radio. Forsiden viser Radio og Podcast som favoritindgange; landenes radiolister er fortsat tilgængelige under Radio → Alle radiostationer. Podcast viser podcastfavoritter og undermapper samt en Musik-mappe, hvis der er musikfavoritter. Audiofiler, der er placeret på Radio-favoritlisten, vises også dér. Billeder og video undtages.
