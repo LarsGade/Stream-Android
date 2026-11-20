@@ -1,3 +1,7 @@
+## 1.41.5
+
+Underteksten Afspilles via Stream er gendannet ved casting af radio og øvrig lyd.
+
 ## 1.41.4
 
 TV-casting frigiver telefonens stream før overdragelsen, vælger MIME-type fra strømmen og forsøger HLS for Xtream TS-links. Live-casting starter uden en tvungen position på 0.

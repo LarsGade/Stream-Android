@@ -876,7 +876,7 @@ public final class MainActivity extends AppCompatActivity {
    CastHistory.beforeLoad();String sessionId=session.getSessionId();
    Runnable resolveCast=()->{CastStream stream=CastStream.resolve(channel.url,channel.kind==Playlist.Kind.TV);runOnUiThread(()->{
     CastSession current=connectedCast();if(isDestroyed()||castRequest!=castLoadGeneration||current==null||!java.util.Objects.equals(sessionId,current.getSessionId())||current.getRemoteMediaClient()==null)return;
-    MediaMetadata metadata=new MediaMetadata(stream.type.startsWith("audio/")?MediaMetadata.MEDIA_TYPE_MUSIC_TRACK:MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);
+    MediaMetadata metadata=new MediaMetadata(stream.type.startsWith("audio/")?MediaMetadata.MEDIA_TYPE_MUSIC_TRACK:MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);if(stream.type.startsWith("audio/")){metadata.putString(MediaMetadata.KEY_ARTIST,PlaybackText.SOURCE);metadata.putString(MediaMetadata.KEY_SUBTITLE,PlaybackText.SOURCE);}
     if(okhttp3.HttpUrl.parse(channel.logoUrl)!=null)metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
     MediaInfo media=new MediaInfo.Builder(stream.url).setContentType(stream.type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
     MediaLoadRequestData.Builder request=new MediaLoadRequestData.Builder().setMediaInfo(media).setAutoplay(true);if(channel.kind!=Playlist.Kind.TV)request.setCurrentTime(savedPosition);
