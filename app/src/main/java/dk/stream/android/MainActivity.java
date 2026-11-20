@@ -603,7 +603,7 @@ public final class MainActivity extends AppCompatActivity {
   if(favoritesMode) {for(Library.Entry entry:library.favorites) if(entry.channel.kind==currentKind && !entry.channel.group.isEmpty()) names.add(entry.channel.group);}
   else names.addAll(catalog.groups(currentKind));
   List<String> labels=new ArrayList<>();labels.add(getString(R.string.all_groups));labels.addAll(names);
-  ArrayAdapter<String> choices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);choices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);groups.setAdapter(choices);filter();
+  ArrayAdapter<String> choices=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){@Override public View getView(int position,View recycled,ViewGroup parent){return parent instanceof ListView?super.getDropDownView(position,recycled,parent):super.getView(position,recycled,parent);}};choices.setDropDownViewResource(R.layout.group_dropdown_item);groups.setAdapter(choices);filter();
  }
  private void filter() {
   updateHeaderOutputs();

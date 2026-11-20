@@ -1,3 +1,7 @@
+## 1.43.4
+
+Gruppelisten har mindst 64 dp høje rækker med ekstra luft, så de er lettere at ramme. Lange gruppenavne kan fylde op til tre linjer.
+
 ## 1.43.3
 
 Manglende programoplysninger på TV-favoritlister udløser en stille opdatering af den tilknyttede TV-guide i baggrunden. Samtidige forespørgsler samles, og nye forsøg begrænses til hvert femte minut pr. guide.
