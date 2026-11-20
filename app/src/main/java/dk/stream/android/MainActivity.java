@@ -88,6 +88,7 @@ public final class MainActivity extends AppCompatActivity {
  private androidx.media3.session.MediaSession videoSession;
  private boolean backgroundPlayback;
  private int videoArtworkGeneration;
+ private final ExecutorService castStreamWorker=Executors.newSingleThreadExecutor();private int castLoadGeneration;
  private final ExecutorService videoArtworkWorker=Executors.newSingleThreadExecutor();
  private static final String VIDEO_TOGGLE="dk.stream.android.VIDEO_TOGGLE",VIDEO_STOP="dk.stream.android.VIDEO_STOP";
  private final androidx.activity.result.ActivityResultLauncher<String> notificationPermission=registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),granted->{});
@@ -860,6 +861,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private static final class Row {ImageView logo;TextView name,group;View indicator;}
  private void play(Playlist.Channel channel) {
+  final int castRequest=++castLoadGeneration;
   videoMinimized=false;
   acceptLocalPlayback=false;detachLocalPlayback();
   requestNotificationPermission();
@@ -870,14 +872,17 @@ public final class MainActivity extends AppCompatActivity {
   if(channel.url.startsWith("content:")){playLocal(new LocalMedia(channel.url,channel.name,"video/*",false));return;}
   selected=channel;PlaybackMark previous=PlaybackHistory.get(this,channel.url);long legacyPosition=library.lastPlayed!=null&&library.lastPlayed.url.equals(channel.url)?library.lastPlayedPosition:resumePosition;long savedPosition=channel.kind==Playlist.Kind.TV?0:previous.duration>0?previous.resume():legacyPosition;changeLibrary(()->{library.lastPlayed=channel;library.lastPlayedPosition=savedPosition;});CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
-   exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null) player.pause();video.setPlayer(null);watchRemote();playbackPanel.refresh();
-   MediaMetadata metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);if(metadata.getMediaType()==MediaMetadata.MEDIA_TYPE_MUSIC_TRACK){metadata.putString(MediaMetadata.KEY_ALBUM_TITLE,PlaybackText.shortTitle(channel.name));metadata.putString(MediaMetadata.KEY_ALBUM_ARTIST,PlaybackText.shortTitle(channel.name));}metadata.putString(MediaMetadata.KEY_SUBTITLE,PlaybackText.SOURCE);metadata.putString(MediaMetadata.KEY_ARTIST,PlaybackText.SOURCE);
-   if(!channel.logoUrl.isEmpty()) metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
-   String path=Playlist.httpUrl(channel.url).encodedPath().toLowerCase(Locale.ROOT);
-   String type=path.endsWith(".m3u8")?"application/x-mpegURL":path.endsWith(".mpd")?"application/dash+xml":path.endsWith(".mp4")?"video/mp4":path.endsWith(".mkv")?"video/x-matroska":path.endsWith(".avi")?"video/x-msvideo":path.endsWith(".mp3")?"audio/mpeg":path.endsWith(".aac")?"audio/aac":path.endsWith(".m4a")?"audio/mp4":path.endsWith(".flac")?"audio/flac":path.endsWith(".wav")?"audio/wav":path.endsWith(".ogg")?"audio/ogg":"video/mp2t";
-   if(type.startsWith("audio/")){metadata=new MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);if(metadata.getMediaType()==MediaMetadata.MEDIA_TYPE_MUSIC_TRACK){metadata.putString(MediaMetadata.KEY_ALBUM_TITLE,PlaybackText.shortTitle(channel.name));metadata.putString(MediaMetadata.KEY_ALBUM_ARTIST,PlaybackText.shortTitle(channel.name));}metadata.putString(MediaMetadata.KEY_SUBTITLE,PlaybackText.SOURCE);metadata.putString(MediaMetadata.KEY_ARTIST,PlaybackText.SOURCE);}
-   MediaInfo media=new MediaInfo.Builder(channel.url).setContentType(type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
-   CastHistory.beforeLoad();session.getRemoteMediaClient().load(new MediaLoadRequestData.Builder().setMediaInfo(media).setCurrentTime(savedPosition).setAutoplay(true).build()).setResultCallback(result->{if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);if(!isDestroyed()&&!result.getStatus().isSuccess()){status.setVisibility(View.VISIBLE);status.setText(R.string.cast_stream_failed);}});
+   exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null){player.stop();player.clearMediaItems();}video.setPlayer(null);watchRemote();playbackPanel.refresh();
+   CastHistory.beforeLoad();String sessionId=session.getSessionId();
+   Runnable resolveCast=()->{CastStream stream=CastStream.resolve(channel.url,channel.kind==Playlist.Kind.TV);runOnUiThread(()->{
+    CastSession current=connectedCast();if(isDestroyed()||castRequest!=castLoadGeneration||current==null||!java.util.Objects.equals(sessionId,current.getSessionId())||current.getRemoteMediaClient()==null)return;
+    MediaMetadata metadata=new MediaMetadata(stream.type.startsWith("audio/")?MediaMetadata.MEDIA_TYPE_MUSIC_TRACK:MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);
+    if(okhttp3.HttpUrl.parse(channel.logoUrl)!=null)metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
+    MediaInfo media=new MediaInfo.Builder(stream.url).setContentType(stream.type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
+    MediaLoadRequestData.Builder request=new MediaLoadRequestData.Builder().setMediaInfo(media).setAutoplay(true);if(channel.kind!=Playlist.Kind.TV)request.setCurrentTime(savedPosition);
+    current.getRemoteMediaClient().load(request.build()).setResultCallback(result->{if(castRequest!=castLoadGeneration||isDestroyed())return;if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);else{status.setVisibility(View.VISIBLE);status.setText(R.string.cast_stream_failed);}});
+   });};
+   if(session.getRemoteMediaClient().getMediaInfo()!=null)session.getRemoteMediaClient().stop().setResultCallback(result->{if(!isDestroyed()&&castRequest==castLoadGeneration)castStreamWorker.execute(resolveCast);});else castStreamWorker.execute(resolveCast);
   } else {
    video.setVisibility(View.VISIBLE);
    if(player==null) {
@@ -924,6 +929,7 @@ public final class MainActivity extends AppCompatActivity {
   playbackPanel.refresh();updateMiniBack();
  }
  private void stopPlaybackState() {
+  castLoadGeneration++;
   rememberPlayback();videoArtworkGeneration++;resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
   if(localPlayerAttached) {acceptLocalPlayback=false;startService(LocalAudioService.command(this,LocalAudioService.STOP));detachLocalPlayback();}else if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
@@ -976,5 +982,5 @@ public final class MainActivity extends AppCompatActivity {
  }
  @Override protected void onPause() {rememberPlayback();backgroundPlayback=true;updateVideoNotification();super.onPause();}
  @Override protected void onStop() {rememberPlayback();if(list!=null) list.removeCallbacks(epgTick);super.onStop();activityStarted=false;if(localPlayerAttached) {detachLocalPlayback();resumeLocalPlayback=false;}else if(player!=null){resumeLocalPlayback=player.getPlayWhenReady();resumePosition=player.getCurrentPosition();if(videoSession!=null){videoSession.release();videoSession=null;}PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();player=null;video.setPlayer(null);video.setKeepScreenOn(false);}if(playbackPanel!=null) playbackPanel.refresh();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();updateVideoNotification();}
- @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(favoriteHub!=null)favoriteHub.close();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
+ @Override protected void onDestroy() {if(isFinishing()&&!isChangingConfigurations())PlaybackShutdown.stop(this);if(watchedRemote!=null) watchedRemote.unregisterCallback(remoteUpdates);if(cast!=null) cast.getSessionManager().removeSessionManagerListener(sessions,CastSession.class);castLoadGeneration++;castStreamWorker.shutdownNow();videoArtworkGeneration++;videoArtworkWorker.shutdownNow();settingsWorker.shutdownNow();unregisterReceiver(videoTransport);if(videoSession!=null){videoSession.release();videoSession=null;}((android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2002);worker.shutdownNow();catalogReader.shutdownNow();streamingWorker.shutdownNow();localWorker.shutdownNow();if(favoriteHub!=null)favoriteHub.close();if(localPanel!=null) localPanel.close();if(pcloudPanel!=null)pcloudPanel.close();if(pcloudLoginClient!=null)pcloudLoginClient.cancel();epgWorker.shutdownNow();if(radioPanel!=null) radioPanel.close();super.onDestroy();}
 }

@@ -1,3 +1,7 @@
+## 1.41.4
+
+TV-casting frigiver telefonens stream før overdragelsen, vælger MIME-type fra strømmen og forsøger HLS for Xtream TS-links. Live-casting starter uden en tvungen position på 0.
+
 ## 1.41.3
 
 Billedvisning har en slideshow-knap i stedet for stjernen. Slideshow skifter billede hvert 10. sekund og stopper efter sidste billede. Manuel navigation virker fortsat og starter intervallet forfra.
