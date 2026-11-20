@@ -16,6 +16,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
  public static final String WIDE_WIDGET_TOGGLE="dk.stream.android.RADIO_WIDE_WIDGET_TOGGLE";
  public static final String LIVE="dk.stream.android.RADIO_LIVE",PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
  private static RadioPlaybackService active;
+ static void refreshCarStartPage(){RadioPlaybackService service=active;if(service!=null&&service.carCallback!=null)service.carCallback.startPageChanged(service.session);}
  public static RadioStation selectedStation() {return active!=null && active.player!=null && (active.player.getPlaybackState()!=Player.STATE_IDLE||active.recovery.wanted())?active.current:null;}
  private ExoPlayer player;
  private RadioSessionPlayer sessionPlayer;
@@ -144,7 +145,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    else {
     stopService(new Intent(this,LocalAudioService.class));
     current=station;
-    MediaMetadata metadata=PlaybackText.metadata(station.displayName()).setDisplayTitle(station.displayName()).setArtworkData(PlaybackArtwork.local(this,PlaybackArtwork.logoName(this,station)),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
+    MediaMetadata metadata=PlaybackText.metadata(station.displayName()).setDisplayTitle(station.displayName()).setArtworkUri(CarArtworkProvider.station(this,station.id)).setArtworkData(CarRadioCatalog.artworkData(this,station),MediaMetadata.PICTURE_TYPE_FRONT_COVER).build();
     recovery.request(android.os.SystemClock.elapsedRealtime());restartPlayer(new MediaItem.Builder().setUri(station.url).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null).setMediaId(station.id).setMediaMetadata(metadata).build(),true);behindLive=false;loadArtwork(station);
    }
    RadioWidgetProvider.refresh(this);

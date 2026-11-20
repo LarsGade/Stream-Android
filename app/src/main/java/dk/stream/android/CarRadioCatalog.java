@@ -41,7 +41,8 @@ public final class CarRadioCatalog {
  }
  public List<MediaItem> children(String parent,int page,int pageSize) throws Exception {
   List<MediaItem> items=new ArrayList<>();
-  if(ROOT.equals(parent)) {items.add(folder(FAVORITES,context.getString(R.string.favorites)));items.add(folder(DANISH,"Danmark"));items.add(folder(ENGLAND,"England"));items.add(folder(USA,"USA"));}
+  if(AndroidAutoPages.START.equals(parent)){Library library=store.load();String chosen=AndroidAutoPages.effective(library.androidAutoStartPage,!library.radioFavorites.isEmpty());items=AndroidAutoPages.startItems(chosen,children(chosen,0,Integer.MAX_VALUE),folder(ROOT,"Alle sider"));}
+  else if(ROOT.equals(parent)) {items.add(folder(FAVORITES,context.getString(R.string.favorites)));items.add(folder(DANISH,"Danmark"));items.add(folder(ENGLAND,"England"));items.add(folder(USA,"USA"));}
   else if(FAVORITES.equals(parent)||DANISH.equals(parent)||ENGLAND.equals(parent)||USA.equals(parent)) for(RadioStation station:FAVORITES.equals(parent)?favorites():danish()) {String country=ENGLAND.equals(parent)?"GB":USA.equals(parent)?"US":"DK";if(FAVORITES.equals(parent)||country.equals(station.country))items.add(item(station,false));}
   else throw new IllegalArgumentException("Unknown radio folder");
   if(page<0||pageSize<1) throw new IllegalArgumentException("Invalid page");long start=(long)page*pageSize;
@@ -54,12 +55,13 @@ public final class CarRadioCatalog {
   try {for(RadioStation station:danish()) if(!matches.containsKey(station.id) && LocalChannelLogos.key(station.displayName()).contains(key)) matches.put(station.id,station);} catch(Exception e) {if(matches.isEmpty()) throw e;}
   List<MediaItem> result=new ArrayList<>();for(RadioStation station:matches.values()) result.add(item(station,false));return result;
  }
- public static MediaItem folder(String id,String title) {return new MediaItem.Builder().setMediaId(id).setMediaMetadata(PlaybackText.metadata(title).setIsBrowsable(true).setIsPlayable(false).build()).build();}
+ public static MediaItem folder(String id,String title) {return new MediaItem.Builder().setMediaId(id).setMediaMetadata(PlaybackText.metadata(title).setArtworkUri(CarArtworkProvider.page(id)).setIsBrowsable(true).setIsPlayable(false).build()).build();}
+ static byte[] artworkData(Context context,RadioStation station){String name=PlaybackArtwork.logoName(context,station);return PlaybackArtwork.bundled(context,name)?PlaybackArtwork.local(context,name):CarPageArtwork.png("radio-placeholder");}
  public MediaItem item(RadioStation station,boolean playable) {
-  Uri artwork=PlaybackArtwork.bundled(context,PlaybackArtwork.logoName(context,station))?CarArtworkProvider.uri(context,PlaybackArtwork.logoName(context,station)):Uri.parse(station.logo.isEmpty()?CarArtworkProvider.uri(context,"Stream").toString():station.logo);
+  Uri artwork=CarArtworkProvider.station(context,station.id);
   MediaMetadata.Builder metadata=PlaybackText.metadata(station.displayName()).setDisplayTitle(station.displayName()).setIsBrowsable(false).setIsPlayable(true).setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION).setArtworkUri(artwork);
   MediaItem.Builder item=new MediaItem.Builder().setMediaId(PREFIX+station.id);
-  if(playable) {item.setUri(Playlist.httpUrl(station.url).toString()).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null);metadata.setArtworkData(PlaybackArtwork.local(context,PlaybackArtwork.logoName(context,station)),MediaMetadata.PICTURE_TYPE_FRONT_COVER);}
+  if(playable) {item.setUri(Playlist.httpUrl(station.url).toString()).setMimeType(station.hls?MimeTypes.APPLICATION_M3U8:null);metadata.setArtworkData(artworkData(context,station),MediaMetadata.PICTURE_TYPE_FRONT_COVER);}
   return item.setMediaMetadata(metadata.build()).build();
  }
 }

@@ -1,3 +1,11 @@
+## 1.48.0
+
+Indstillinger har nu menupunktet Android Auto under Forsideknapper. Her vælges standardsiden: Forside, Radiofavoritter (anbefalet og standard), Danmark, England eller USA. Tomme radiofavoritter giver automatisk forsiden. Fra en direkte startside kan Alle sider altid åbnes. Valget gælder kun bilvisningen, gemmes med biblioteket og følger med import/eksport. En tilsluttet bil får besked om opdateret startindhold; en vært, der beholder sin aktuelle underside, bruger valget ved næste åbning af startsiden.
+
+Bilvisningens mapper har tydelige 512-pixel-ikoner: hus, favoritstjerne og landeflag. Kanaler får lokale eller hentede stationslogoer via appens skrivebeskyttede artwork-provider. Hentede billeder caches til brug uden netværk; manglende logoer får et blåt Radio-ikon og kan hentes igen senere. Kanallogoernes oprindelige form bevares. Danmark, England og USA genkendes nu også ved abonnementer og mappeopslag fra bilens mediebrowser.
+
+Valideret med debug-build, lint samt 17 JVM-tests af startsidevalg, fallback, navigation og opsætningsbackup. Fysisk test med en Android Auto-enhed er ikke udført i dette miljø.
+
 ## 1.47.0
 
 Under afspilning vises “Åbn i anden app” umiddelbart til venstre for Bluetooth ved video, fuldskærmslyd, billedvisning med samtidig lyd og i listeoverskriften. Før en afspilning er startet, vises kun Cast blandt udgangsknapperne; favoritter-forsiden bevarer sin skjulte udgangsrække. Bluetooth og ekstern afspiller markeres blå, når de er valgt. Stream-logoet bevarer sin centrering, og pladsen i listeoverskriften tilpasses de ekstra knapper.

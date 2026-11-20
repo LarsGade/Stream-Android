@@ -19,6 +19,8 @@ public final class CarRadioCallback implements MediaLibrarySession.Callback {
  public static java.util.List<CommandButton> liveButtons(){return java.util.Collections.emptyList();}
  public static java.util.List<CommandButton> transportButtons(){return java.util.Collections.emptyList();}
  public void close() {worker.shutdownNow();}
+ public void startPageChanged(MediaLibrarySession session){if(session==null||worker.isShutdown())return;worker.submit(()->{try{int count=catalog.children(AndroidAutoPages.START,0,Integer.MAX_VALUE).size();new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{try{session.notifyChildrenChanged(AndroidAutoPages.START,count,null);}catch(IllegalStateException ignored){}});}catch(Exception ignored){}});}
+
  @Override public MediaSession.ConnectionResult onConnect(MediaSession session,MediaSession.ControllerInfo controller) {
   if(liveAction==null)return MediaSession.ConnectionResult.accept(MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS);
   SessionCommands commands=MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().build();
@@ -33,16 +35,16 @@ public final class CarRadioCallback implements MediaLibrarySession.Callback {
  }
  @Override public ListenableFuture<LibraryResult<MediaItem>> onGetLibraryRoot(MediaLibrarySession session,MediaSession.ControllerInfo controller,LibraryParams params) {
   Bundle extras=new Bundle();extras.putBoolean("android.media.browse.SEARCH_SUPPORTED",true);extras.putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED",true);extras.putInt("android.media.browse.CONTENT_STYLE_BROWSABLE_HINT",1);extras.putInt("android.media.browse.CONTENT_STYLE_PLAYABLE_HINT",1);
-  return Futures.immediateFuture(LibraryResult.ofItem(CarRadioCatalog.folder(CarRadioCatalog.ROOT,"Stream"),new LibraryParams.Builder().setExtras(extras).build()));
+  return Futures.immediateFuture(LibraryResult.ofItem(CarRadioCatalog.folder(AndroidAutoPages.START,"Stream"),new LibraryParams.Builder().setExtras(extras).build()));
  }
  @Override public ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> onGetChildren(MediaLibrarySession session,MediaSession.ControllerInfo controller,String parent,int page,int pageSize,LibraryParams params) {
   return worker.submit(()->{try {return LibraryResult.ofItemList(catalog.children(parent,page,pageSize),params);} catch(IllegalArgumentException e) {return LibraryResult.ofError(SessionError.ERROR_BAD_VALUE);} catch(Exception e) {return LibraryResult.ofError(SessionError.ERROR_IO);}});
  }
  @Override public ListenableFuture<LibraryResult<MediaItem>> onGetItem(MediaLibrarySession session,MediaSession.ControllerInfo controller,String id) {
-  return worker.submit(()->{try {if(CarRadioCatalog.ROOT.equals(id)) return LibraryResult.ofItem(CarRadioCatalog.folder(id,"Stream"),null);if(CarRadioCatalog.FAVORITES.equals(id)) return LibraryResult.ofItem(CarRadioCatalog.folder(id,"Favoritter"),null);if(CarRadioCatalog.DANISH.equals(id)) return LibraryResult.ofItem(CarRadioCatalog.folder(id,"Danske radiostationer"),null);return LibraryResult.ofItem(catalog.item(catalog.resolve(id),false),null);} catch(Exception e) {return LibraryResult.ofError(SessionError.ERROR_BAD_VALUE);}});
+  return worker.submit(()->{try {if(AndroidAutoPages.folder(id))return LibraryResult.ofItem(CarRadioCatalog.folder(id,CarRadioCatalog.ROOT.equals(id)?"Alle sider":AndroidAutoPages.label(id)),null);return LibraryResult.ofItem(catalog.item(catalog.resolve(id),false),null);} catch(Exception e) {return LibraryResult.ofError(SessionError.ERROR_BAD_VALUE);}});
  }
  @Override public ListenableFuture<LibraryResult<Void>> onSubscribe(MediaLibrarySession session,MediaSession.ControllerInfo controller,String parent,LibraryParams params) {
-  if(!Arrays.asList(CarRadioCatalog.ROOT,CarRadioCatalog.FAVORITES,CarRadioCatalog.DANISH).contains(parent)) return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_BAD_VALUE));
+  if(!AndroidAutoPages.folder(parent)) return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_BAD_VALUE));
   return Futures.immediateFuture(LibraryResult.ofVoid(params));
  }
  @Override public ListenableFuture<LibraryResult<Void>> onSearch(MediaLibrarySession session,MediaSession.ControllerInfo controller,String query,LibraryParams params) {
