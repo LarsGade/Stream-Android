@@ -1,3 +1,7 @@
+## 1.43.2
+
+TV-backup-knappen (cirkelpilen) er placeret mellem fuldskærm og indstillinger. Gruppelisten forbliver åben, når en gruppe holdes nede for at tilføje den til favoritter.
+
 ## 1.43.1
 
 Tryk-og-holde-menuer har en fast placering, som ikke følger med linjer, der genopbygges under listeopdateringer.

@@ -47,9 +47,9 @@ public final class PlaybackPanel extends FrameLayout {
   buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
-  backup=button(buttons,R.drawable.ic_tv_backup,R.string.tv_backup_next,actions::switchBackup);backup.setVisibility(GONE);
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
+  backup=button(buttons,R.drawable.ic_tv_backup,R.string.tv_backup_next,actions::switchBackup);backup.setVisibility(GONE);
   progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
   time=new TextView(context);time.setTextColor(Color.LTGRAY);time.setTextSize(11);progress.addView(time);
   timeline=new SeekBar(context);timeline.setMax(1000);timeline.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));timeline.setContentDescription(context.getString(R.string.seek_position));progress.addView(timeline,new LinearLayout.LayoutParams(0,-1,1));
