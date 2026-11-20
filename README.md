@@ -1,3 +1,7 @@
+## 1.45.2
+
+Downloads gemmes automatisk i telefonens Download-mappe uden filvælger. Download-notifikationen viser procent hentet sammen med progressbar og Pause/Fortsæt samt Annuller.
+
 ## 1.45.1
 
 Download vises som en notifikation med progressbar og Pause/Fortsæt samt Annuller. Hentningen fortsætter, når appen lukkes normalt. Pausede netværksfiler genoptages fra bytepositionen, også inde i ZIP-pakning.

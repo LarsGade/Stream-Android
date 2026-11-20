@@ -2,6 +2,7 @@
  <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
  <uses-permission android:name="android.permission.INTERNET"/>
+ <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
  <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK"/>
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
@@ -25,6 +26,7 @@
  <receiver android:name=".RadioWidgetProvider" android:exported="false" android:label="@string/radio_widget"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/radio_widget_info"/></receiver>
  <receiver android:name=".RadioWideWidgetProvider" android:exported="false" android:label="@string/radio_widget_wide"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/radio_widget_wide_info"/></receiver>
  <activity android:name=".RadioWidgetConfigureActivity" android:exported="true"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/></intent-filter></activity>
+ <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.downloads" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/download_paths"/></provider>
  <provider tools:ignore="ExportedContentProvider" android:name=".CarArtworkProvider" android:authorities="${applicationId}.carart" android:exported="true" android:grantUriPermissions="true"/>
  </application>
 </manifest>
