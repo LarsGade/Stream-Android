@@ -1,3 +1,7 @@
+## 1.43.7
+
+Stop lukker videoafspilleren helt, også for live-TV. Stream og videobuffer tømmes, afspilleren skjules, og videoens meddelelsesafspiller fjernes.
+
 ## 1.43.6
 
 Cast og Bluetooth har også transparent baggrund i videoafspilleren uden fuldskærm.
