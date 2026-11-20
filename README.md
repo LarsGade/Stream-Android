@@ -1,3 +1,7 @@
+## 1.42.2
+
+Store mapper castes i små køportioner, så Cast-beskeder ikke bliver for store. Det valgte afsnit bevares, resten tilføjes løbende, og manuel navigation kan nå hele mappen. pCloud-forbindelsen genbruges ved klargøring af køen.
+
 ## 1.42.1
 
 Filvalg i en eksisterende cast-kø skifter direkte til filen. Nye køer beskytter filserveren og afviser gamle indlæsningssvar. Bundbaren bruger filens eget logo eller et lokalt cachet cover.
