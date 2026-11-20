@@ -1,3 +1,7 @@
+## 1.44.0
+
+Billedvisning har Cast og Bluetooth øverst til højre. Kontrollinjen har en fuldskærmsknap. Vandret telefon giver automatisk fuldskærm, når automatisk rotation er slået til. Billedvisning og billedcasting afbryder ikke igangværende lyd på telefonen.
+
 ## 1.43.9
 
 Streamingtjeneste, Radio, Lokale filer og Pcloud i burgermenuen har mørkeblå baggrund (#182C45) og hvid tekst.

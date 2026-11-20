@@ -554,7 +554,7 @@ public final class MainActivity extends AppCompatActivity {
  private void playLocal(LocalMedia entry,long position) {playLocal(entry,position,localPanel.playbackEntries());}
  private void playLocal(LocalMedia entry,long position,List<LocalMedia> queue) {
   if(position<=0)position=PlaybackHistory.get(this,entry.uri).resume();
-  if(entry.image()){if(player!=null)player.pause();startActivity(ImageViewerActivity.intent(this,entry,queue));return;}
+  if(entry.image()){if(player!=null&&(LocalAudioService.current()==null||!LocalAudioService.current().audio()))player.pause();startActivity(ImageViewerActivity.intent(this,entry,queue));return;}
   if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
   LocalMedia current=LocalAudioService.current();
   if(current!=null&&current.uri.equals(entry.uri)) {return;}
