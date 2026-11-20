@@ -26,14 +26,16 @@ public final class WebDavClient {
  }
  public OkHttpClient streamClient(){return client;}
  public void cancel(){client.dispatcher().cancelAll();}
- public List<Entry> list(HttpUrl folder) throws IOException {
+ public List<Entry> list(HttpUrl folder)throws IOException{return list(folder,false);}
+ public List<Entry> listAll(HttpUrl folder)throws IOException{return list(folder,true);}
+ private List<Entry> list(HttpUrl folder,boolean includeOther) throws IOException {
   PcloudDocument.checkOrigin(base,folder);if(!folder.encodedPath().endsWith("/"))folder=folder.newBuilder().addPathSegment("").build();
   RequestBody body=RequestBody.create("<?xml version=\"1.0\" encoding=\"utf-8\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:displayname/><d:resourcetype/><d:getcontenttype/><d:getcontentlength/></d:prop></d:propfind>",MediaType.get("application/xml; charset=utf-8"));
   OkHttpClient listing=client.newBuilder().followRedirects(false).callTimeout(60,TimeUnit.SECONDS).build();HttpUrl target=folder;
   for(int redirects=0;redirects<5;redirects++){
    try(Response response=listing.newCall(new Request.Builder().url(target).header("Depth","1").method("PROPFIND",body).build()).execute()){
     if(Arrays.asList(301,302,307,308).contains(response.code())){String location=response.header("Location");HttpUrl next=location==null?null:target.resolve(location);if(next==null)throw new IOException("Ugyldig WebDAV-omdirigering.");try{PcloudDocument.checkOrigin(base,next);}catch(IllegalArgumentException denied){throw new IOException("WebDAV-omdirigering til en anden server er afvist.");}target=next;continue;}
-    if(response.code()!=207&&response.code()!=200)throw failure(response.code());if(response.body()==null)throw new IOException("Tomt WebDAV-svar.");return parse(target,response.body().byteStream());
+    if(response.code()!=207&&response.code()!=200)throw failure(response.code());if(response.body()==null)throw new IOException("Tomt WebDAV-svar.");return parse(target,response.body().byteStream(),includeOther);
    }
   }
   throw new IOException("For mange WebDAV-omdirigeringer.");
@@ -47,7 +49,8 @@ public final class WebDavClient {
   catch(IOException failure){response.close();throw failure;}
   return new FilterInputStream(input){@Override public void close() throws IOException {try{super.close();}finally{response.close();}}};
  }
- static List<Entry> parse(HttpUrl folder,InputStream input) throws IOException {
+ static List<Entry> parse(HttpUrl folder,InputStream input)throws IOException{return parse(folder,input,false);}
+ static List<Entry> parse(HttpUrl folder,InputStream input,boolean includeOther) throws IOException {
   try{
    XmlPullParserFactory factory=XmlPullParserFactory.newInstance();factory.setNamespaceAware(true);XmlPullParser xml=factory.newPullParser();try{xml.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL,false);}catch(XmlPullParserException unsupported){if(xml.getFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL))throw new IOException("XML-parseren kan ikke blokere DTD.");}xml.setInput(input,null);
    List<Entry> entries=new ArrayList<>();Set<String> seen=new HashSet<>();String href=null,name="",mime="",status="";boolean directory=false,inResponse=false,inPropstat=false,propsDirectory=false,successful=false,anySuccess=false;String propsName="",propsMime="";long size=-1,propsSize=-1;String field=null;StringBuilder text=new StringBuilder();int depth=0;
@@ -63,7 +66,7 @@ public final class WebDavClient {
     else if(event==XmlPullParser.END_TAG){String tag=xml.getName();if("DAV:".equals(xml.getNamespace())){
      if(tag.equals(field)){String value=text.toString();if(tag.equals("href"))href=value.trim();else if(tag.equals("status"))status=value;else if(inPropstat&&tag.equals("displayname"))propsName=value;else if(inPropstat&&tag.equals("getcontenttype"))propsMime=value.trim();else if(inPropstat&&tag.equals("getcontentlength"))try{propsSize=Long.parseLong(value.trim());}catch(NumberFormatException ignored){}field=null;}
      if(tag.equals("propstat")){if(status.trim().matches(".*\\s2[0-9][0-9](?:\\s.*)?")){successful=true;anySuccess=true;if(!propsName.isEmpty())name=propsName;if(!propsMime.isEmpty())mime=propsMime;if(propsSize>=0)size=propsSize;directory|=propsDirectory;}inPropstat=false;}
-     else if(tag.equals("response")){inResponse=false;if(successful&&href!=null){HttpUrl url=folder.resolve(href);if(url!=null&&PcloudDocument.sameOrigin(folder,url)&&url.username().isEmpty()&&url.password().isEmpty()&&url.query()==null&&url.fragment()==null){String parent=folder.encodedPath();if(!parent.endsWith("/"))parent+="/";String path=url.encodedPath();String trimmed=path.endsWith("/")?path.substring(0,path.length()-1):path;if(path.startsWith(parent)&&!trimmed.equals(parent.substring(0,parent.length()-1))){String rest=trimmed.substring(parent.length());if(!rest.isEmpty()&&!rest.contains("/")&&seen.add(url.toString())){if(name.isEmpty()){List<String> parts=url.pathSegments();name=parts.get(parts.size()-(directory&&path.endsWith("/")?2:1));}LocalMedia classification=new LocalMedia("content://classification/file",name,mime,directory);if(classification.supported())entries.add(new Entry(url,name,mime,directory,size));}}}}}
+     else if(tag.equals("response")){inResponse=false;if(successful&&href!=null){HttpUrl url=folder.resolve(href);if(url!=null&&PcloudDocument.sameOrigin(folder,url)&&url.username().isEmpty()&&url.password().isEmpty()&&url.query()==null&&url.fragment()==null){String parent=folder.encodedPath();if(!parent.endsWith("/"))parent+="/";String path=url.encodedPath();String trimmed=path.endsWith("/")?path.substring(0,path.length()-1):path;if(path.startsWith(parent)&&!trimmed.equals(parent.substring(0,parent.length()-1))){String rest=trimmed.substring(parent.length());if(!rest.isEmpty()&&!rest.contains("/")&&seen.add(url.toString())){if(name.isEmpty()){List<String> parts=url.pathSegments();name=parts.get(parts.size()-(directory&&path.endsWith("/")?2:1));}LocalMedia classification=new LocalMedia("content://classification/file",name,mime,directory);if(includeOther||classification.supported())entries.add(new Entry(url,name,mime,directory,size));}}}}}
     }depth--;}
    }
    if(!anySuccess)throw new IOException("Pcloud gav ikke adgang til mappen.");

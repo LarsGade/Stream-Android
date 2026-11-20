@@ -9,7 +9,7 @@ import android.widget.*;
 @androidx.media3.common.util.UnstableApi
 public final class RadioBar extends LinearLayout {
  private long progressPosition,progressDuration;
- public interface VideoActions {default long position(){return 0;}default long duration(){return 0;}default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
+ public interface VideoActions {default FavoriteLists.Item downloadItem(){return null;}default long position(){return 0;}default long duration(){return 0;}default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
  private final TextView name;
  private final ImageView artwork;private Object artworkModel;
  private final ImageButton toggle;
@@ -24,7 +24,7 @@ public final class RadioBar extends LinearLayout {
   artwork=new ImageView(context);artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);int artSize=Math.round(size*1.25f);artwork.setPadding(artSize/12,artSize/12,artSize/12,artSize/12);artwork.setVisibility(GONE);LayoutParams artParams=new LayoutParams(artSize,artSize);artParams.setMarginEnd(MediaListStyle.iconGap(artwork));addView(artwork,artParams);
   name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);addView(name,new LayoutParams(0,-2,1));
   addView(toggle,new LayoutParams(size,size));
-  setOnClickListener(view->open());refresh();
+  setOnClickListener(view->open());setOnLongClickListener(view->{FavoriteLists.Item item=MediaDownloads.current(getContext());if(item==null&&video!=null)item=video.downloadItem();if(!MediaDownloads.eligible(item))return false;MediaDownloads.show(this,getContext(),item);return true;});refresh();
  }
  private void sizeButtonIcon(ImageButton button,float iconDp){
   int padding=Math.round((48-iconDp)/2*getResources().getDisplayMetrics().density);

@@ -17,7 +17,7 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();default boolean backupAvailable(){return false;}default void switchBackup(){}default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
+  boolean playing();boolean fullscreen();CastSession castSession();default FavoriteLists.Item downloadItem(){return null;}default boolean backupAvailable(){return false;}default void switchBackup(){}default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
  }
  public final PlayerView video;
  private final Actions actions;
@@ -43,7 +43,7 @@ public final class PlaybackPanel extends FrameLayout {
   video.setOnClickListener(view->{if(controlsVisible()) hideControls();else showControls();});
   video.setOnTouchListener((view,event)->{if(event.getActionMasked()==MotionEvent.ACTION_UP) view.performClick();return true;});
   controls=new LinearLayout(context);controls.setOrientation(LinearLayout.VERTICAL);controls.setBackgroundColor(0xDD101010);
-  title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
+  title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setOnLongClickListener(view->{FavoriteLists.Item item=actions.downloadItem();if(!MediaDownloads.eligible(item))return false;MediaDownloads.show(title,getContext(),item);return true;});title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
   buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
   stop=button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);

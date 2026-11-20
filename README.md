@@ -1,3 +1,7 @@
+## 1.45.0
+
+Download findes i tryk-og-holde-menuer for lokale filer, pCloud, billeder, film og serieafsnit samt mapper og hele serier. Flere filer pakkes som ZIP, og gemmested vælges i Androids filvælger. Download kører i baggrunden. Live-TV og radio undtages.
+
 ## 1.44.0
 
 Billedvisning har Cast og Bluetooth øverst til højre. Kontrollinjen har en fuldskærmsknap. Vandret telefon giver automatisk fuldskærm, når automatisk rotation er slået til. Billedvisning og billedcasting afbryder ikke igangværende lyd på telefonen.

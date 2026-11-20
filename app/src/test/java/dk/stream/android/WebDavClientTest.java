@@ -30,4 +30,6 @@ public class WebDavClientTest {
  @Test public void htmlLoginPageIsNotMistakenForAnEmptySuccessfulAccount() throws Exception {server.enqueue(new MockResponse().setBody("<html><body>Login</body></html>"));try{client.list(server.url("/"));fail();}catch(IOException expected){}}
  @Test public void entirelyDeniedMultistatusIsNotSuccessfulLogin() throws Exception {listing(entry("/","Root","",true,0,"403 Forbidden"));try{client.list(server.url("/"));fail();}catch(IOException expected){}}
  @Test public void duplicateResponsesDoNotDuplicateFiles() throws Exception {String item=entry("/song.mp3","Song.mp3","audio/mpeg",false,1,"200 OK");listing(item+item);assertEquals(1,client.list(server.url("/")).size());}
+ @Test public void folderDownloadIncludesFilesHiddenFromMediaLists()throws Exception{String xml="<d:multistatus xmlns:d=\"DAV:\">"+entry("/folder/notes.txt","notes.txt","text/plain",false,8,"200 OK")+"</d:multistatus>";assertTrue(WebDavClient.parse(server.url("/folder/"),new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))).isEmpty());List<WebDavClient.Entry> all=WebDavClient.parse(server.url("/folder/"),new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),true);assertEquals(1,all.size());assertEquals("notes.txt",all.get(0).name);}
+
 }
