@@ -1,3 +1,9 @@
+## 1.43.1
+
+Tryk-og-holde-menuer har en fast placering, som ikke følger med linjer, der genopbygges under listeopdateringer.
+
+Stjernen ved gruppevælgeren er fjernet. Hold på en gruppe i dropdown-listen eller på den valgte gruppe for at tilføje hele gruppen til en favoritliste.
+
 ## 1.43.0
 
 TV-favoritter har fire lister. Forsiden viser TV 1; TV 2–4 åbnes under Indstillinger → TV backup-lister. En cirkelpil skifter til samme kanalnavn i næste liste uden at ændre TV 1-visningen. Genstart bruger TV 1. Hele streaminggrupper kan tilføjes via stjernen ved gruppevælgeren, i gruppens rækkefølge. TV-lister er med i eksport/import.

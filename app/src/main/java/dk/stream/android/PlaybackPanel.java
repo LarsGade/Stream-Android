@@ -102,7 +102,7 @@ public final class PlaybackPanel extends FrameLayout {
  private void showSettings(View anchor) {
   Player player=video.getPlayer();if(player==null || actions.castSession()!=null) return;
   removeCallbacks(hideControls);
-  PopupMenu menu=new PopupMenu(getContext(),anchor);
+  PopupMenu menu=new StablePopupMenu(getContext(),anchor);
   menu.getMenu().add(0,1,0,R.string.playback_speed);menu.getMenu().add(0,2,1,R.string.subtitles);menu.getMenu().add(0,3,2,R.string.audio_track);
   menu.setOnMenuItemClickListener(item->{
    if(item.getItemId()==1) {

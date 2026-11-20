@@ -38,7 +38,7 @@ public final class LocalFilesPanel extends LinearLayout {
   message=new TextView(context);message.setTextColor(Color.LTGRAY);message.setVisibility(GONE);addView(message);
   list=new ListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {search.setText("");parents.addLast(entry);loadFolder();}else actions.play(entry);});
-  list.setOnItemLongClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);PopupMenu menu=new PopupMenu(context,v);
+  list.setOnItemLongClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);PopupMenu menu=new StablePopupMenu(context,v);
    menu.getMenu().add(actions.library().isLocalFavorite(entry.uri)?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(actions.library().isLocalFavorite(entry.uri)){actions.save(()->FavoriteLists.remove(actions.library(),FavoriteLists.of(entry)));reload();}else FavoritePicker.show(getContext(),actions.library(),actions::save,FavoriteLists.of(entry),this::reload);return true;});
    menu.show();return true;});
  }

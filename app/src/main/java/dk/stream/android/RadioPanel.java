@@ -56,7 +56,7 @@ public final class RadioPanel extends LinearLayout {
    public boolean enabled() {return !folderList();}
    public boolean canReorder(){return favorites&&search.getText().toString().trim().isEmpty();}
    public void showActions(int position,View anchor) {
-    if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new PopupMenu(context,anchor);
+    if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new StablePopupMenu(context,anchor);
     boolean favorite=library.get().findRadio(station.id)!=null;
     if(favorite)menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
     menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){save.apply(()->FavoriteLists.remove(library.get(),FavoriteLists.of(station)));filter();}else FavoritePicker.show(getContext(),library.get(),save::apply,FavoriteLists.of(station),RadioPanel.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
