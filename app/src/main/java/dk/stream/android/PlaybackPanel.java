@@ -22,7 +22,7 @@ public final class PlaybackPanel extends FrameLayout {
  public final PlayerView video;
  private final Actions actions;
  private final AudioManager audio;
- private final ImageButton play,mute,fullscreen,settings,back;
+ private final ImageButton play,stop,mute,fullscreen,settings,back;
  private final SeekBar timeline;
  private final TextView title,time;
  private boolean liveWasPaused;private long liveBaseline=androidx.media3.common.C.TIME_UNSET;
@@ -46,7 +46,7 @@ public final class PlaybackPanel extends FrameLayout {
   title=new TextView(context);title.setTextColor(Color.WHITE);title.setTextSize(13);title.setSingleLine();title.setPadding(dp(12),dp(4),dp(12),0);controls.addView(title);
   buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
-  button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
+  stop=button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
   backup=button(buttons,R.drawable.ic_tv_backup,R.string.tv_backup_next,actions::switchBackup);backup.setVisibility(GONE);
@@ -60,7 +60,7 @@ public final class PlaybackPanel extends FrameLayout {
   });
   settings=new ImageButton(context);settings.setImageResource(R.drawable.ic_settings);settings.setImageTintList(android.content.res.ColorStateList.valueOf(Color.LTGRAY));settings.setBackground(controlBackground());settings.setContentDescription(context.getString(R.string.player_settings));settings.setPadding(dp(8),dp(8),dp(8),dp(8));buttons.addView(settings,new LinearLayout.LayoutParams(0,-1,1));settings.setOnClickListener(this::showSettings);
   addView(controls,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
-  back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setImageTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));back.setBackgroundColor(0x66000000);back.setPadding(dp(12),dp(12),dp(12),dp(12));FrameLayout.LayoutParams backPosition=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.START);backPosition.setMargins(dp(8),dp(8),dp(8),dp(8));addView(back,backPosition);back.setVisibility(GONE);back.setOnClickListener(view->{if(actions.fullscreen())actions.toggleFullscreen();});
+  back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription("Tilbage");back.setImageTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));back.setBackgroundColor(Color.TRANSPARENT);back.setPadding(dp(12),dp(12),dp(12),dp(12));FrameLayout.LayoutParams backPosition=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.START);backPosition.setMargins(dp(8),dp(8),dp(8),dp(8));addView(back,backPosition);back.setVisibility(GONE);back.setOnClickListener(view->{if(actions.fullscreen())actions.toggleFullscreen();});
   outputs=new LinearLayout(context);outputs.setGravity(Gravity.CENTER_VERTICAL);outputs.setBackgroundColor(0x66000000);outputs.addView(new BluetoothOutputButton(context),new LinearLayout.LayoutParams(dp(48),dp(48)));
   castOutput=new CastOutputButton(context){@Override public boolean performClick(){if(android.os.Build.VERSION.SDK_INT>=37&&context instanceof android.app.Activity&&context.checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){((android.app.Activity)context).requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7301);return true;}return super.performClick();}};outputs.addView(castOutput,new LinearLayout.LayoutParams(dp(48),dp(48)));FrameLayout.LayoutParams outputPosition=new FrameLayout.LayoutParams(-2,dp(48),Gravity.TOP|Gravity.END);outputPosition.setMargins(0,0,0,0);addView(outputs,outputPosition);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this,(view,insets)->{
@@ -87,7 +87,7 @@ public final class PlaybackPanel extends FrameLayout {
  public void showControls() {controls.setVisibility(VISIBLE);outputs.setVisibility(VISIBLE);refresh();removeCallbacks(progressTick);post(progressTick);scheduleHide();}
  public void hideControls() {removeCallbacks(hideControls);removeCallbacks(progressTick);controls.setVisibility(GONE);outputs.setVisibility(GONE);back.setVisibility(GONE);video.hideController();}
  public void fullscreenLayout(boolean enabled) {
-  fullscreenMode=enabled;controls.setPadding(0,0,0,0);positionOutputs();
+  fullscreenMode=enabled;outputs.setBackgroundColor(enabled?Color.TRANSPARENT:0x66000000);castOutput.setBackgroundColor(Color.TRANSPARENT);controls.setPadding(0,0,0,0);positionOutputs();
   video.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT);
   hideControls();requestLayout();refresh();
  }
@@ -136,7 +136,7 @@ public final class PlaybackPanel extends FrameLayout {
   else if(video.getPlayer()!=null) video.getPlayer().seekTo(target);
  }
  private String clock(long ms) {long seconds=Math.max(0,ms/1000);return String.format(java.util.Locale.ROOT,"%d:%02d",seconds/60,seconds%60);}
- public boolean liveChannel(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isLiveStream();Player player=video.getPlayer();return actions.liveChannel()||player!=null&&player.isCurrentMediaItemLive();}
+ public boolean liveChannel(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().getMediaInfo()==null?actions.liveChannel():session.getRemoteMediaClient().isLiveStream();Player player=video.getPlayer();return actions.liveChannel()||player!=null&&player.isCurrentMediaItemLive();}
  public boolean liveNow(){CastSession session=actions.castSession();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isLiveStream()&&session.getRemoteMediaClient().isPlaying()&&!needsLive();Player player=video.getPlayer();return liveChannel()&&player!=null&&player.isPlaying()&&!needsLive();}
  public void resetLive(){liveWasPaused=false;liveBaseline=androidx.media3.common.C.TIME_UNSET;}
  public boolean needsLive(){
@@ -157,7 +157,7 @@ public final class PlaybackPanel extends FrameLayout {
  public void refresh() {
   backup.setVisibility(actions.backupAvailable()?VISIBLE:GONE);
   back.setVisibility(controlsVisible()&&fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
-  boolean playing=actions.playing();play.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?R.string.pause_action:R.string.play_action));
+  boolean playing=actions.playing(),live=liveChannel();stop.setVisibility(live?GONE:VISIBLE);play.setImageResource(playing?(live?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?(live?R.string.stop_action:R.string.pause_action):R.string.play_action));
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));
   try {
    CastSession session=actions.castSession();int level;

@@ -38,8 +38,7 @@ public final class RadioBar extends LinearLayout {
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();liveChannel=true;liveNow=RadioPlaybackService.audioPlayer()!=null&&RadioPlaybackService.audioPlayer().isPlaying()&&!isLive;image=PlaybackArtwork.radioModel(getContext(),station);}}
   String localCover=LocalFileArtwork.asset(LocalAudioService.current());if(localCover!=null&&!CastPlayback.hasMedia(getContext()))image=localCover;
   updateArtwork(title.isEmpty()?null:image,title);
-  boolean radioContent=liveChannel&&LocalAudioService.current()==null&&(video==null||video.title().isEmpty());
-  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(radioContent?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?(radioContent?"Stop":"Pause"):"Afspil");toggle.setEnabled(!title.isEmpty());invalidate();
+  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(liveChannel?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?(liveChannel?"Stop":"Pause"):"Afspil");toggle.setEnabled(!title.isEmpty());invalidate();
  }
  @Override protected void onMeasure(int widthSpec,int heightSpec){super.onMeasure(widthSpec,View.MeasureSpec.makeMeasureSpec(MediaRowHeight.pixels(name),View.MeasureSpec.EXACTLY));}
  @Override protected void onDraw(android.graphics.Canvas canvas){super.onDraw(canvas);android.graphics.Paint paint=new android.graphics.Paint();paint.setColor(Color.WHITE);canvas.drawRect(0,0,getWidth(),getPaddingTop(),paint);if(progressDuration>0){int height=Math.max(1,Math.round(2*getResources().getDisplayMetrics().density));paint.setColor(0xFF343434);canvas.drawRect(0,getHeight()-height,getWidth(),getHeight(),paint);paint.setColor(0xFF3686FF);canvas.drawRect(0,getHeight()-height,(float)(getWidth()*Math.max(0,Math.min(1,progressPosition/(double)progressDuration))),getHeight(),paint);}}
@@ -53,6 +52,7 @@ public final class RadioBar extends LinearLayout {
  }
  private void transport(){
   if(CastPlayback.image(getContext())){open();return;}
+  if(CastPlayback.hasMedia(getContext())&&video!=null&&!video.title().isEmpty()&&video.liveChannel()){video.toggle();return;}
   if(CastPlayback.hasMedia(getContext())){com.google.android.gms.cast.framework.media.RemoteMediaClient remote=CastPlayback.remote(getContext());if(remote.isLiveStream()&&remote.getMediaInfo()!=null&&remote.getMediaInfo().getMetadata()!=null&&remote.getMediaInfo().getMetadata().getMediaType()==com.google.android.gms.cast.MediaMetadata.MEDIA_TYPE_MUSIC_TRACK&&(remote.isPlaying()||remote.isBuffering()))CastPlayback.stop(getContext());else CastPlayback.toggle(getContext());return;}
   if(LocalAudioService.current()!=null){getContext().startService(LocalAudioService.command(getContext(),LocalAudioService.TOGGLE));return;}
   if(video!=null&&!video.title().isEmpty()){video.toggle();return;}

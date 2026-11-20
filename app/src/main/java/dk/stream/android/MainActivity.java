@@ -180,7 +180,7 @@ public final class MainActivity extends AppCompatActivity {
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
    public boolean pictureInPicture(){return android.os.Build.VERSION.SDK_INT>=26&&isInPictureInPictureMode();}
    public void volumeFailed() {Toast.makeText(MainActivity.this,R.string.volume_failed,Toast.LENGTH_SHORT).show();}
-   public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.getPlayWhenReady() && player.getPlaybackState()!=Player.STATE_ENDED && player.getPlayerError()==null;}
+   public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?(session.getRemoteMediaClient().isPlaying()||session.getRemoteMediaClient().isBuffering()):player!=null && player.getPlayWhenReady() && player.getPlaybackState()!=Player.STATE_IDLE && player.getPlaybackState()!=Player.STATE_ENDED && player.getPlayerError()==null;}
    public boolean fullscreen() {return fullscreen;}
    public CastSession castSession() {return connectedCast();}
   });
@@ -227,7 +227,7 @@ public final class MainActivity extends AppCompatActivity {
    }
    public long position(){return player==null?0:player.getCurrentPosition();}public long duration(){return player==null?0:player.getDuration();}
    public String title(){return selected==null?"":selected.name;}
-   public boolean playing(){return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_ENDED;}
+   public boolean playing(){CastSession session=connectedCast();if(session!=null&&session.getRemoteMediaClient()!=null)return session.getRemoteMediaClient().isPlaying()||session.getRemoteMediaClient().isBuffering();return player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_IDLE&&player.getPlaybackState()!=Player.STATE_ENDED;}
    public boolean liveChannel(){return playbackPanel.liveChannel();}
    public boolean liveNow(){return playbackPanel.liveNow();}
    public boolean needsLive(){return playbackPanel.needsLive();}
@@ -398,7 +398,7 @@ public final class MainActivity extends AppCompatActivity {
  private void updateVideoNotification() {
   android.app.NotificationManager manager=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
   if(!backgroundPlayback || videoSession==null || selected==null || player==null || connectedCast()!=null || player.getPlaybackState()==Player.STATE_IDLE) {manager.cancel(2002);return;}
-  manager.notify(2002,PlaybackNotification.create(this,"stream_video",videoSession,videoAction(VIDEO_TOGGLE,10),videoAction(VIDEO_STOP,11)));
+  manager.notify(2002,PlaybackNotification.create(this,"stream_video",videoSession,videoAction(VIDEO_TOGGLE,10),videoAction(VIDEO_STOP,11),selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:")));
  }
  private void loadVideoArtwork(Playlist.Channel channel,androidx.media3.common.MediaItem item) {
   int generation=++videoArtworkGeneration;
@@ -878,7 +878,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private boolean isChannelPlaying(Playlist.Channel channel) {
   if(selected==null || !(tvAnchor!=null?tvAnchor.channel.url:selected.url).equals(channel.url)) return false;
-  CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.isPlaying();
+  CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?(session.getRemoteMediaClient().isPlaying()||session.getRemoteMediaClient().isBuffering()):player!=null && player.isPlaying();
  }
  private static final class Row {ImageView logo;TextView name,group;View indicator;}
  private void play(Playlist.Channel channel) {
@@ -942,6 +942,13 @@ public final class MainActivity extends AppCompatActivity {
   else if(player!=null&&player.isCurrentMediaItemLive()){player.seekToDefaultPosition();player.play();}
  }
  private void togglePlaybackState() {
+  CastSession output=connectedCast();boolean liveTv=selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");if(output!=null&&output.getRemoteMediaClient()!=null&&output.getRemoteMediaClient().getMediaInfo()!=null)liveTv=liveTv&&output.getRemoteMediaClient().isLiveStream();
+  if(liveTv){
+   CastSession castSession=connectedCast();if(castSession!=null&&castSession.getRemoteMediaClient()!=null){var remote=castSession.getRemoteMediaClient();if(remote.isPlaying()||remote.isBuffering()){castLoadGeneration++;remote.stop();}else play(selected);}
+   else if(player!=null&&player.getPlayWhenReady()&&player.getPlaybackState()!=Player.STATE_IDLE&&player.getPlaybackState()!=Player.STATE_ENDED){castLoadGeneration++;player.pause();player.stop();resumeLocalPlayback=false;video.setKeepScreenOn(false);}
+   else play(selected);
+   playbackPanel.refresh();updateMiniBack();if(adapter!=null)adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();return;
+  }
   if(localPlayerAttached) {startService(LocalAudioService.command(this,LocalAudioService.TOGGLE));return;}
   CastSession session=connectedCast();
   if(session!=null && session.getRemoteMediaClient()!=null) {

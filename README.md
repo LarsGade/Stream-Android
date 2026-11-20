@@ -1,3 +1,7 @@
+## 1.43.5
+
+Live-TV har én Play/Stop-knap i videoafspiller og bundbar, uden pause. Kanalen bevares efter stop, og næste start indlæser den live igen. Film og serier beholder pause. Baggrunden bag Cast, Bluetooth og tilbageknappen er fjernet i videoens fuldskærmsvisning.
+
 ## 1.43.4
 
 Gruppelisten har mindst 64 dp høje rækker med ekstra luft, så de er lettere at ramme. Lange gruppenavne kan fylde op til tre linjer.
