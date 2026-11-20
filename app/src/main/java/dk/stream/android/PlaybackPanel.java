@@ -17,7 +17,7 @@ import com.google.android.gms.cast.framework.CastSession;
 public final class PlaybackPanel extends FrameLayout {
  public interface Actions {
   void togglePlayback();void stopPlayback();void toggleFullscreen();void volumeFailed();
-  boolean playing();boolean fullscreen();CastSession castSession();default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
+  boolean playing();boolean fullscreen();CastSession castSession();default boolean backupAvailable(){return false;}default void switchBackup(){}default boolean liveChannel(){return false;}default void goLive(){}default void chooseCast(){}default boolean pictureInPicture(){return false;}
  }
  public final PlayerView video;
  private final Actions actions;
@@ -35,6 +35,7 @@ public final class PlaybackPanel extends FrameLayout {
  private final Runnable progressTick=new Runnable() {
   @Override public void run() {if(controls.getVisibility()==VISIBLE) {refreshProgress();postDelayed(this,500);}}
  };
+ private ImageButton backup;
  public PlaybackPanel(Context context,Actions actions) {
   super(context);this.actions=actions;audio=(AudioManager)context.getSystemService(Context.AUDIO_SERVICE);setBackgroundColor(Color.BLACK);
   video=new PlayerView(context);video.setUseController(false);video.setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER);
@@ -46,6 +47,7 @@ public final class PlaybackPanel extends FrameLayout {
   buttons=new LinearLayout(context);buttons.setGravity(Gravity.CENTER_VERTICAL);controls.addView(buttons,new LinearLayout.LayoutParams(-1,dp(44)));
   play=button(buttons,R.drawable.ic_play,R.string.play_action,actions::togglePlayback);
   button(buttons,R.drawable.ic_stop,R.string.stop_action,actions::stopPlayback);
+  backup=button(buttons,R.drawable.ic_tv_backup,R.string.tv_backup_next,actions::switchBackup);backup.setVisibility(GONE);
   mute=button(buttons,R.drawable.ic_volume,R.string.mute_action,this::toggleMute);
   fullscreen=button(buttons,R.drawable.ic_fullscreen,R.string.fullscreen_action,actions::toggleFullscreen);
   progress=new LinearLayout(context);progress.setGravity(Gravity.CENTER_VERTICAL);progress.setPadding(dp(8),0,dp(8),0);controls.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
@@ -153,6 +155,7 @@ public final class PlaybackPanel extends FrameLayout {
   time.setText(enabled?getContext().getString(R.string.playback_time,clock(position()),clock(duration())):getContext().getString(R.string.live));
  }
  public void refresh() {
+  backup.setVisibility(actions.backupAvailable()?VISIBLE:GONE);
   back.setVisibility(controlsVisible()&&fullscreenMode&&actions.fullscreen()&&!actions.pictureInPicture()?VISIBLE:GONE);
   boolean playing=actions.playing();play.setImageResource(playing?R.drawable.ic_pause:R.drawable.ic_play);play.setContentDescription(getContext().getString(playing?R.string.pause_action:R.string.play_action));
   fullscreen.setEnabled(actions.castSession()==null);fullscreen.setImageResource(actions.fullscreen()?R.drawable.ic_fullscreen_exit:R.drawable.ic_fullscreen);fullscreen.setContentDescription(getContext().getString(actions.fullscreen()?R.string.exit_fullscreen:R.string.fullscreen_action));

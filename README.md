@@ -1,3 +1,7 @@
+## 1.43.0
+
+TV-favoritter har fire lister. Forsiden viser TV 1; TV 2–4 åbnes under Indstillinger → TV backup-lister. En cirkelpil skifter til samme kanalnavn i næste liste uden at ændre TV 1-visningen. Genstart bruger TV 1. Hele streaminggrupper kan tilføjes via stjernen ved gruppevælgeren, i gruppens rækkefølge. TV-lister er med i eksport/import.
+
 ## 1.42.2
 
 Store mapper castes i små køportioner, så Cast-beskeder ikke bliver for store. Det valgte afsnit bevares, resten tilføjes løbende, og manuel navigation kan nå hele mappen. pCloud-forbindelsen genbruges ved klargøring af køen.

@@ -106,7 +106,8 @@ public final class MainActivity extends AppCompatActivity {
   @Override public void onMetadataUpdated() {if(playbackPanel!=null) playbackPanel.refresh();}
  };
  private CastContext cast;
- private Playlist.Channel selected;
+ private Playlist.Channel selected;private Library.Entry tvAnchor;private int tvBackupIndex;private String tvActiveUrl;
+ private LinearLayout groupControls;private ImageButton addGroupFavorite;
  private final SessionManagerListener<CastSession> sessions=new SessionManagerListener<CastSession>() {
   public void onSessionStarted(CastSession s,String id) { if(!ImageSession.viewing()&&selected!=null&&!selected.url.startsWith("content:")) play(selected); }
   public void onSessionResumed(CastSession s,boolean suspended) { if(!ImageSession.viewing()&&selected!=null&&!selected.url.startsWith("content:")) play(selected); }
@@ -168,6 +169,8 @@ public final class MainActivity extends AppCompatActivity {
   pageTitle=text("",20,Color.WHITE);pageTitle.setTypeface(null,android.graphics.Typeface.BOLD);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
   status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
+   public boolean backupAvailable(){return tvAnchor!=null&&selected!=null&&selected.kind==Playlist.Kind.TV;}
+   public void switchBackup(){switchTvBackup();}
    public boolean liveChannel(){return selected!=null&&selected.kind==Playlist.Kind.TV&&!selected.url.startsWith("content:");}
    public void goLive(){goToLive();}
    public void chooseCast(){castRouteButton.performClick();}
@@ -189,7 +192,7 @@ public final class MainActivity extends AppCompatActivity {
   }
   kindButtons[0].setChecked(true);
   favoriteCategories=dropdown();favoriteCategories.setContentDescription("Vælg favoritkategori");root.addView(favoriteCategories,new LinearLayout.LayoutParams(-1,dp(48)));
-  groups=dropdown();groups.setContentDescription(getString(R.string.select_group));root.addView(groups,new LinearLayout.LayoutParams(-1,dp(48)));
+  groups=dropdown();groups.setContentDescription(getString(R.string.select_group));groupControls=new LinearLayout(this);groupControls.setGravity(Gravity.CENTER_VERTICAL);root.addView(groupControls,new LinearLayout.LayoutParams(-1,dp(48)));groupControls.addView(groups,new LinearLayout.LayoutParams(0,-1,1));addGroupFavorite=iconButton(R.drawable.ic_favorite_outline,"Tilføj hele gruppen til favoritliste");groupControls.addView(addGroupFavorite,new LinearLayout.LayoutParams(dp(48),dp(48)));addGroupFavorite.setOnClickListener(view->addGroupToFavorites());
   search=new EditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
   list=new FavoriteListView(this);MediaListStyle.apply(list);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
   radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
@@ -211,7 +214,7 @@ public final class MainActivity extends AppCompatActivity {
    public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(back?View.VISIBLE:View.INVISIBLE);updateHeaderOutputs();}}
    public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
    public String programme(Library.Entry entry){return programmeTitle(entry,System.currentTimeMillis());}
-   public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(item.stream!=null)open(item.stream);else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
+   public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(item.stream!=null){if(item.stream.channel.kind==Playlist.Kind.TV&&favoriteHub.tvListIndex()==0){tvAnchor=item.stream;tvBackupIndex=0;tvActiveUrl=item.stream.channel.url;MainActivity.this.play(item.stream.channel);}else open(item.stream);}else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
    public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
   });favoriteHub.setVisibility(View.GONE);root.addView(favoriteHub,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
@@ -239,7 +242,7 @@ public final class MainActivity extends AppCompatActivity {
     if(position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new PopupMenu(MainActivity.this,anchor);
     boolean favorite=library.isFavorite(entry);
-    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){if(changeLibrary(()->FavoriteLists.remove(library,FavoriteLists.of(entry))))filter();}else FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
+    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){if(changeLibrary(()->FavoriteLists.remove(library,FavoriteLists.of(entry))))filter();}else FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});if(favorite&&entry.channel.kind==Playlist.Kind.TV)menu.getMenu().add("Vælg TV-favoritlister").setOnMenuItemClickListener(choice->{FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {if(from>=0&&from<visible.size()&&to>=0&&to<visible.size()) {Library.Entry entry=visible.remove(from);visible.add(to,entry);adapter.notifyDataSetChanged();}}
    public void commit() {List<Library.Entry> ordered=new ArrayList<>(visible);changeLibrary(()->library.reorderVisibleFavorites(ordered));filter();}
@@ -309,6 +312,7 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.refresh_radio,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioPanel.refreshStations();});
   button(R.string.pcloud_account,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
   button(R.string.home_buttons,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showHomeButtons();});
+  button(R.string.tv_backup_lists,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showTvBackupLists();});
   button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   button(R.string.reset_history,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);PlaybackHistory.clear(this);PlaybackTracker.resetPlayers();CastPlayback.resetProgress(this);resumePosition=0;changeLibrary(()->library.lastPlayedPosition=0);localPanel.playbackChanged();pcloudPanel.playbackChanged();favoriteHub.refresh();adapter.notifyDataSetChanged();Toast.makeText(this,"Lyttede/sete er nulstillet.",Toast.LENGTH_SHORT).show();});
   button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
@@ -335,14 +339,14 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void restoreLastPlayback() {
   if(LocalAudioService.current()!=null || !RadioPlaybackService.nowPlaying().isEmpty() || !storageReadable || !library.autoPlayLast || library.lastPlayed==null || library.lastPlayed.url.isEmpty()) return;
-  selected=library.lastPlayed;PlaybackMark mark=PlaybackHistory.get(this,selected.url);resumePosition=mark.duration>0?mark.resume():library.lastPlayedPosition;if(selected.url.startsWith("content:")) playLocal(new LocalMedia(selected.url,selected.name,"video/*",false),resumePosition);else play(selected);
+  selected=library.lastPlayed;tvAnchor=TvFavorites.primary(library,selected);if(tvAnchor!=null)selected=tvAnchor.channel;tvBackupIndex=0;tvActiveUrl=selected.url;PlaybackMark mark=PlaybackHistory.get(this,selected.url);resumePosition=mark.duration>0?mark.resume():library.lastPlayedPosition;if(selected.url.startsWith("content:")) playLocal(new LocalMedia(selected.url,selected.name,"video/*",false),resumePosition);else play(selected);
  }
  private void rememberPlayback() {
   if(selected==null) return;
   long position=player!=null?Math.max(0,player.getCurrentPosition()):resumePosition;
   CastSession session=connectedCast();
   if(session!=null && session.getRemoteMediaClient()!=null) position=Math.max(0,session.getRemoteMediaClient().getApproximateStreamPosition());
-  long saved=selected.kind==Playlist.Kind.TV?0:position;Playlist.Channel channel=selected;
+  long saved=selected.kind==Playlist.Kind.TV?0:position;Playlist.Channel channel=tvAnchor!=null?tvAnchor.channel:selected;
   changeLibrary(()->{library.lastPlayed=channel;library.lastPlayedPosition=saved;});
  }
  private boolean miniPlaybackReady() {return library.miniPlayer && supportsMiniPlayer() && selected!=null && player!=null && player.getPlayWhenReady() && connectedCast()==null;}
@@ -423,7 +427,7 @@ public final class MainActivity extends AppCompatActivity {
  private boolean atFavoritesHome(){return favoriteHubMode&&favoriteHub!=null&&favoriteHub.isHome();}
  private void showFavoritesHome(){
   minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;
-  radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
+  radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groupControls.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
  }
  private void showFavoriteTab(int tab){showFavoritesHome();if(tab==6)return;favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":tab==3?"Musik":"Streaming");if(tab==0)favoriteHub.selectStreamingKind(library.favoritesStartKind);}
  private void openLocal(boolean favorites) {
@@ -466,6 +470,9 @@ public final class MainActivity extends AppCompatActivity {
    localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openPcloud();}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText("Bekræft login på din mail\n\n"+(failure instanceof java.io.IOException?failure.getMessage():"Pcloud-login mislykkedes."));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
   }));dialog.show();
  }
+ private void showTvBackupLists(){new AlertDialog.Builder(this).setTitle("TV backup-lister").setItems(new String[]{"TV 2","TV 3","TV 4"},(dialog,index)->{showFavoritesHome();favoriteHub.showTvList(index+1);}).setNegativeButton("Luk",null).show();}
+ private void switchTvBackup(){if(tvAnchor==null)return;TvFavorites.Match match=TvFavorites.next(library,tvAnchor,tvBackupIndex,selected==null?tvActiveUrl:selected.url);if(match==null){Toast.makeText(this,"Ingen anden TV-liste har en kanal med samme navn.",Toast.LENGTH_SHORT).show();return;}tvBackupIndex=match.index;tvActiveUrl=match.entry.channel.url;play(match.entry.channel);playbackPanel.showControls();if(adapter!=null)adapter.notifyDataSetChanged();favoriteHub.programmeChanged();}
+ private void addGroupToFavorites(){if(groups.getSelectedItemPosition()<=0)return;String group=String.valueOf(groups.getSelectedItem());List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));if(entries.isEmpty())return;String[] choices=currentKind==Playlist.Kind.TV?new String[]{"TV 1","TV 2","TV 3","TV 4"}:new String[]{currentKind==Playlist.Kind.FILM?"Film":"Serier"};new AlertDialog.Builder(this).setTitle("Tilføj gruppen til favoritliste").setItems(choices,(dialog,index)->{if(changeLibrary(()->{if(entries.get(0).channel.kind==Playlist.Kind.TV)TvFavorites.addGroup(library,entries,index);else{for(Library.Entry entry:entries)FavoriteLists.assignStreaming(library,FavoriteLists.of(entry),entry.channel.kind.ordinal());List<String> order=new ArrayList<>();for(FavoriteLists.Item item:FavoriteLists.items(library,"Streaming"))order.add(item.key());for(Library.Entry entry:entries)order.remove(FavoriteLists.of(entry).key());for(Library.Entry entry:entries)order.add(FavoriteLists.of(entry).key());library.favoriteOrder.removeAll(order);library.favoriteOrder.addAll(order);}})){Toast.makeText(this,entries.size()+" kanaler tilføjet til "+choices[index],Toast.LENGTH_SHORT).show();filter();}}).setNegativeButton("Annuller",null).show();}
  private void showHomeButtons(){
   String[] names=FavoriteHomeOrder.NAMES.clone();boolean[] checked=new boolean[names.length];for(int i=0;i<names.length;i++)checked[i]=!library.hiddenHomeButtons.contains(names[i]);
   new AlertDialog.Builder(this).setTitle(R.string.home_buttons).setMultiChoiceItems(names,checked,(dialog,which,selected)->checked[which]=selected).setNegativeButton("Annuller",null).setPositiveButton("Gem",(dialog,which)->{if(changeLibrary(()->{library.hiddenHomeButtons.clear();for(int i=0;i<names.length;i++)if(!checked[i])library.hiddenHomeButtons.add(names[i]);}))favoriteHub.rebuildHome();}).show();
@@ -596,18 +603,18 @@ public final class MainActivity extends AppCompatActivity {
   ArrayAdapter<String> choices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);choices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);groups.setAdapter(choices);filter();
  }
  private void filter() {
-  updateHeaderOutputs();
+  updateHeaderOutputs();if(addGroupFavorite!=null)addGroupFavorite.setVisibility(groups.getSelectedItemPosition()>0?View.VISIBLE:View.GONE);
   if(adapter==null) return;if(favoriteHubMode){favoriteHub.refresh();return;}
   int previousFavoriteTab=selectedFavoriteTab();updateFavoriteTabVisibility();
   if(favoritesPage){int available=Math.max(0,library.availableFavoriteTab(previousFavoriteTab));if(available!=previousFavoriteTab){showFavoriteTab(available);return;}}
 
   list.setVisibility(radioMode||localMode||pcloudMode?View.GONE:View.VISIBLE);
-  if(radioMode||localMode||pcloudMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groups.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
+  if(radioMode||localMode||pcloudMode) {pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groupControls.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);return;}
   pageTitle.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   pageTitle.setText(favoritesMode?"":getString(R.string.streaming_title));
   String group=groups.getSelectedItemPosition()>0?String.valueOf(groups.getSelectedItem()):null;
   sections.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
-  groups.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
+  groupControls.setVisibility(favoritesMode?View.GONE:View.VISIBLE);
   search.setVisibility(favoritesPage?View.GONE:View.VISIBLE);
   if(favoritesMode) {visible=new ArrayList<>();String query="";for(Library.Entry entry:library.favorites) if(entry.channel.kind==Library.favoriteKind(selectedFavoriteTab())&&entry.channel.name.toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);}
   else {
@@ -810,6 +817,7 @@ public final class MainActivity extends AppCompatActivity {
   status.setText(message);
  }
  private void open(Library.Entry entry) {
+  tvAnchor=null;tvBackupIndex=0;tvActiveUrl=null;
   if(entry.channel.seriesId!=null) {
    Library.Source source=library.findSource(entry.sourceId);
    if(source!=null && source.xtream) showEpisodes(entry.channel,source);
@@ -862,11 +870,12 @@ public final class MainActivity extends AppCompatActivity {
   }
  }
  private boolean isChannelPlaying(Playlist.Channel channel) {
-  if(selected==null || !selected.url.equals(channel.url)) return false;
+  if(selected==null || !(tvAnchor!=null?tvAnchor.channel.url:selected.url).equals(channel.url)) return false;
   CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?session.getRemoteMediaClient().isPlaying():player!=null && player.isPlaying();
  }
  private static final class Row {ImageView logo;TextView name,group;View indicator;}
  private void play(Playlist.Channel channel) {
+  if(tvAnchor!=null&&(channel.kind!=Playlist.Kind.TV||!channel.url.equals(tvActiveUrl))){tvAnchor=null;tvBackupIndex=0;tvActiveUrl=null;}
   final int castRequest=++castLoadGeneration;
   videoMinimized=false;
   acceptLocalPlayback=false;detachLocalPlayback();
@@ -876,7 +885,7 @@ public final class MainActivity extends AppCompatActivity {
   boolean same=selected!=null && selected.url.equals(channel.url);
   if(!same) resumePosition=0;else rememberPlayback();
   if(channel.url.startsWith("content:")){playLocal(new LocalMedia(channel.url,channel.name,"video/*",false));return;}
-  selected=channel;PlaybackMark previous=PlaybackHistory.get(this,channel.url);long legacyPosition=library.lastPlayed!=null&&library.lastPlayed.url.equals(channel.url)?library.lastPlayedPosition:resumePosition;long savedPosition=channel.kind==Playlist.Kind.TV?0:previous.duration>0?previous.resume():legacyPosition;changeLibrary(()->{library.lastPlayed=channel;library.lastPlayedPosition=savedPosition;});CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
+  selected=channel;PlaybackMark previous=PlaybackHistory.get(this,channel.url);long legacyPosition=library.lastPlayed!=null&&library.lastPlayed.url.equals(channel.url)?library.lastPlayedPosition:resumePosition;long savedPosition=channel.kind==Playlist.Kind.TV?0:previous.duration>0?previous.resume():legacyPosition;changeLibrary(()->{library.lastPlayed=tvAnchor!=null?tvAnchor.channel:channel;library.lastPlayedPosition=savedPosition;});CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
    exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null){player.stop();player.clearMediaItems();}video.setPlayer(null);watchRemote();playbackPanel.refresh();
    CastHistory.beforeLoad();String sessionId=session.getSessionId();
@@ -936,7 +945,7 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void stopPlaybackState() {
   castLoadGeneration++;
-  rememberPlayback();videoArtworkGeneration++;resumeLocalPlayback=false;
+  rememberPlayback();tvAnchor=null;tvActiveUrl=null;tvBackupIndex=0;videoArtworkGeneration++;resumeLocalPlayback=false;
   CastSession session=connectedCast();if(session!=null && session.getRemoteMediaClient()!=null) session.getRemoteMediaClient().stop();
   if(localPlayerAttached) {acceptLocalPlayback=false;startService(LocalAudioService.command(this,LocalAudioService.STOP));detachLocalPlayback();}else if(player!=null) player.stop();exitFullscreen();playbackPanel.setVisibility(View.GONE);video.setKeepScreenOn(false);resumePosition=0;selected=null;updateMiniBack();hideFullscreenSystemBars();
   status.setText("");status.setVisibility(View.GONE);

@@ -31,6 +31,7 @@ public final class SettingsBackup {
   if(root.has("pcloud")&&!root.isNull("pcloud")&&!(root.get("pcloud") instanceof JSONObject))throw new JSONException("Invalid account");
   for(String name:new String[]{"guides","localFiles","localFavorites","imageFavorites","radioFavorites","favoriteOrder","favoriteHomeOrder"})if(root.has(name)&&!(root.get(name) instanceof JSONArray))throw new JSONException("Invalid settings list");
   if(root.has("favoriteAssignments")&&!(root.get("favoriteAssignments") instanceof JSONObject))throw new JSONException("Invalid favorite lists");
+  if(root.has("tvFavoriteLists")&&!(root.get("tvFavoriteLists") instanceof JSONObject))throw new JSONException("Invalid TV favorite lists");
   if(root.has("favoriteKinds")&&!(root.get("favoriteKinds") instanceof JSONObject))throw new JSONException("Invalid streaming favorites");
   JSONArray sources=root.getJSONArray("sources"),favorites=root.getJSONArray("favorites");Set<String> ids=new HashSet<>();
   for(int i=0;i<sources.length();i++){String id=sources.getJSONObject(i).getString("id");if(id.isEmpty()||!ids.add(id))throw new JSONException("Duplicate source");}
