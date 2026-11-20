@@ -1,3 +1,7 @@
+## 1.43.6
+
+Cast og Bluetooth har også transparent baggrund i videoafspilleren uden fuldskærm.
+
 ## 1.43.5
 
 Live-TV har én Play/Stop-knap i videoafspiller og bundbar, uden pause. Kanalen bevares efter stop, og næste start indlæser den live igen. Film og serier beholder pause. Baggrunden bag Cast, Bluetooth og tilbageknappen er fjernet i videoens fuldskærmsvisning.
