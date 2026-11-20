@@ -1,3 +1,7 @@
+## 1.42.1
+
+Filvalg i en eksisterende cast-kø skifter direkte til filen. Nye køer beskytter filserveren og afviser gamle indlæsningssvar. Bundbaren bruger filens eget logo eller et lokalt cachet cover.
+
 ## 1.42.0
 
 Kun Favoritter er blå i burgermenuen. Øvrige hovedknapper bruger samme grå standardstil som Indstillinger.

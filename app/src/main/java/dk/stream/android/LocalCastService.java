@@ -18,7 +18,7 @@ public final class LocalCastService extends Service {
  private static LocalQueue pending;private static long pendingPosition;
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private final ExecutorService coverWorker=Executors.newSingleThreadExecutor(task->{Thread thread=new Thread(task,"cast-file-covers");thread.setDaemon(true);return thread;});
- private volatile LocalCastHttpServer server;
+ private final LocalCastServers servers=new LocalCastServers();
  private volatile int generation;
  private PowerManager.WakeLock wake;
  private android.net.wifi.WifiManager.WifiLock wifi;
@@ -36,14 +36,14 @@ public final class LocalCastService extends Service {
   LocalQueue queue=pending;RadioStation radio=pendingRadio;long position=pendingPosition;pending=null;pendingRadio=null;if(queue==null&&radio==null){stopSelf();return START_NOT_STICKY;}
   com.google.android.gms.cast.framework.CastSession session=CastPlayback.session(this);if(session==null||session.getCastDevice()==null){stopSelf();return START_NOT_STICKY;}
   InetAddress receiver=session.getCastDevice().getInetAddress();String sessionId=session.getSessionId();int request=++generation;
-  worker.execute(()->{try {
+  worker.execute(()->{try {if(generation!=request)return;
    InetAddress address;try(DatagramSocket route=new DatagramSocket()){route.connect(receiver,9);address=route.getLocalAddress();}
-   LocalCastHttpServer next=new LocalCastHttpServer(address);if(server!=null)server.close();server=next;
+   LocalCastHttpServer next=new LocalCastHttpServer(address);if(!servers.add(next))return;
    if(radio!=null){
     boolean bundled=PlaybackArtwork.bundled(this,radio.name)||PlaybackArtwork.bundled(this,radio.displayName());
     byte[] artwork=bundled?PlaybackArtwork.local(this,PlaybackArtwork.logoName(this,radio)):PlaybackArtwork.remote(this,radio.logo);
     String logo=artwork==null?(okhttp3.HttpUrl.parse(radio.logo)!=null?radio.logo:null):next.add(()->new ByteArrayInputStream(artwork),artwork.length,"image/png");
-    new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId()))CastPlayback.loadRadio(this,radio,logo);else stopSelf();});return;
+    new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId())){servers.activate(next);CastPlayback.loadRadio(this,radio,logo);}else stopSelf();});return;
    }
    List<String> urls=new ArrayList<>(),imageTypes=new ArrayList<>();for(LocalMedia file:queue.entries){if(generation!=request){next.close();return;}if(file.image()){
     com.bumptech.glide.request.FutureTarget<android.graphics.Bitmap> target=com.bumptech.glide.Glide.with(getApplicationContext()).asBitmap().load(Uri.parse(file.uri)).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).submit(1920,1080);
@@ -53,10 +53,10 @@ public final class LocalCastService extends Service {
     urls.add(next.add(()->{InputStream input=getContentResolver().openInputStream(uri);if(input==null)throw new FileNotFoundException();return input;},size,CastPlayback.mime(file)));
    }
    List<String> logos=new ArrayList<>();Map<String,String> namedLogos=new HashMap<>();for(int index=0;index<queue.entries.size();index++){if(generation!=request)return;LocalMedia file=queue.entries.get(index);String asset=LocalFileArtwork.asset(file);String logo;if(asset!=null&&namedLogos.containsKey(asset))logo=namedLogos.get(asset);else{logo=CastFileArtwork.publish(next,CastFileArtwork.available(this,file));if(asset!=null)namedLogos.put(asset,logo);}logos.add(logo);}
-   new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId())){LocalMedia currentFile=queue.entries.get(queue.start);if(currentFile.image())CastPlayback.loadImage(this,currentFile,urls.get(queue.start),imageTypes.get(queue.start));else CastPlayback.loadLocal(this,queue,urls,logos,position,()->coverWorker.execute(()->{for(int offset=0;offset<queue.entries.size();offset++){if(generation!=request)return;int index=(queue.start+offset)%queue.entries.size();LocalMedia file=queue.entries.get(index);if(!file.audio()||logos.get(index)!=null)continue;String logo=CastFileArtwork.publish(next,CastFileArtwork.read(this,file,urls.get(index)));if(logo==null)continue;new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession active=CastPlayback.session(this);if(generation==request&&active!=null&&Objects.equals(sessionId,active.getSessionId()))CastPlayback.updateFileArtwork(this,urls.get(index),logo);});}}));}else stopSelf();});
+   new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession current=CastPlayback.session(this);if(generation!=request)return;if(current!=null&&Objects.equals(sessionId,current.getSessionId())){LocalMedia currentFile=queue.entries.get(queue.start);if(currentFile.image()){servers.activate(next);CastPlayback.loadImage(this,currentFile,urls.get(queue.start),imageTypes.get(queue.start));}else CastPlayback.loadLocal(this,queue,urls,logos,position,()->generation==request&&!coverWorker.isShutdown(),()->{servers.activate(next);coverWorker.execute(()->{for(int offset=0;offset<queue.entries.size();offset++){if(generation!=request)return;int index=(queue.start+offset)%queue.entries.size();LocalMedia file=queue.entries.get(index);if(!file.audio()||logos.get(index)!=null)continue;byte[] data=CastFileArtwork.read(this,file,urls.get(index));if(generation!=request)return;String logo=CastFileArtwork.publish(next,data);if(logo==null)continue;new Handler(Looper.getMainLooper()).post(()->{com.google.android.gms.cast.framework.CastSession active=CastPlayback.session(this);if(generation==request&&active!=null&&Objects.equals(sessionId,active.getSessionId())){CastPlayback.fileArtwork(file,data);CastPlayback.updateFileArtwork(this,urls.get(index),logo);}});}});});}else stopSelf();});
   }catch(Exception error){android.util.Log.e("StreamCast","Could not serve local queue",error);new Handler(Looper.getMainLooper()).post(()->{if(generation==request){CastPlayback.failed(this);stopSelf();}});}});
   return START_NOT_STICKY;
  }
  @Override public void onTaskRemoved(Intent root){PlaybackShutdown.stop(this);stopSelf();}
- @Override public void onDestroy(){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);generation++;if(server!=null)server.close();worker.shutdownNow();coverWorker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
+ @Override public void onDestroy(){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);generation++;servers.close();worker.shutdownNow();coverWorker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
 }
