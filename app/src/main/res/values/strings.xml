@@ -119,4 +119,5 @@
  <string name="radio_widget_queue_choose">Vælg radiokanaler fra favoritter</string>
  <string name="radio_widget_previous">Forrige valgte radiokanal</string>
  <string name="radio_widget_next">Næste valgte radiokanal</string>
+ <string name="music_library">Musik</string>
 </resources>

@@ -16,7 +16,8 @@ public final class PcloudDataSource implements DataSource {
  @Override public void addTransferListener(TransferListener listener){listeners.add(listener);if(active!=null)active.addTransferListener(listener);}
  @Override public long open(DataSpec spec) throws IOException {
   original=spec.uri;
-  if(PcloudDocument.is(spec.uri.toString())){
+  if(SaavnMusic.is(spec.uri.toString())){SaavnSong song=SaavnMusic.resolve(context,SaavnMusic.id(spec.uri.toString()),false);active=new OkHttpDataSource.Factory(SaavnApi.STREAM).createDataSource();spec=spec.buildUpon().setUri(Uri.parse(song.stream)).build();}
+  else if(PcloudDocument.is(spec.uri.toString())){
    try{PcloudAccount account=new LibraryStore(context).load().pcloud;okhttp3.HttpUrl url=PcloudDocument.url(account,spec.uri.toString());active=new OkHttpDataSource.Factory(new WebDavClient(account).streamClient()).createDataSource();spec=spec.buildUpon().setUri(Uri.parse(url.toString())).build();}
    catch(Exception invalid){throw new IOException("Log på Pcloud-kontoen igen for at afspille filen.");}
   }else active=fallback.createDataSource();

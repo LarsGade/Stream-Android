@@ -8,7 +8,7 @@ import java.util.Locale;
 /** Named artwork for local and Pcloud programmes, independent of embedded cover art. */
 final class LocalFileArtwork {
  static String asset(LocalMedia file){
-  if(file==null||file.folder||file.image())return null;
+  if(file==null||file.folder||file.image()||SaavnMusic.is(file.uri))return null;
   String name=Normalizer.normalize(file.name,Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
   String logo=name.contains("anders og anders")?"anders.png":name.contains("bæltestedet")||name.contains("baeltestedet")?"balte.png":name.contains("r8dio")?"roder.png":name.contains("den korte radioavis")?"korte.png":null;
   return logo==null?null:"file:///android_asset/local_logos/"+logo;

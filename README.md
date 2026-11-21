@@ -1,3 +1,13 @@
+## 1.51.0
+
+Musik er tilføjet i burgermenuen lige over Pcloud med samme knapstil som de øvrige hovedpunkter. Den nye mørke musikvisning har søgning efter sange og kunstnere via en Saavn.dev-kompatibel API, paginerede søgeresultater, albumcovers, musikfavoritter og en afspilningskø. Afspilleren har pause/play, forrige/næste, spoling, blandet rækkefølge og gentagelse. Fuldskærmsafspilleren åbnes fra afspilningskortet. Afspilning fortsætter i Stream's eksisterende foreground-medietjeneste, når musikvisningen forlades. Tilsluttet Cast bruger den eksisterende fil-casting; telefonvisningen følger Cast-transporten.
+
+Saavn-sange har stabile private dokument-URI'er baseret på sang-ID. Afspilningsadresser kan genhentes, og referencerne virker i de eksisterende musikfavoritter, Android Auto, ekstern overdragelse og downloads. Albumcovers leveres via en privat læseprovider; direkte lydindlæsning sker med en HTTP-klient uden samlet stream-timeout, så lange sange ikke afbrydes efter 35 sekunder. Søgeforespørgsler er tids- og størrelsesbegrænsede. Kun API-leverede HTTP/HTTPS-medieadresser bruges; ingen krypterings-/DRM-omgåelse implementeres.
+
+Musikkildens standardadresse er https://saavn.dev/api/. Den kan ændres under tandhjulet i Musik og følger med eksport/import. API-kontrakten er kontrolleret mod https://github.com/sumitkolhe/jiosaavn-api (uofficiel Saavn.dev API). Metadata og cover-cache er afledte data; favoritternes sang-ID'er og kildeadressen er portable.
+
+Valideret med debug-build, lint og 22 JVM-tests inklusive MockWebServer-kontrakttests for søgning, detaljer, kvalitetsvalg, fejl og kildebackup. Saavn-domæner afvises af arbejdsmiljøets netværksproxy (HTTP CONNECT 403), også ved eskaleret læseforsøg. Live-søgning/CDN-afspilning og fysisk telefonvisning er derfor ikke verificeret her. Ingen demodata eller falske søgeresultater leveres i appen.
+
 ## 1.50.0
 
 Ny Stream radio 4 × 1-widget med samme næsten sorte baggrund (#0D0D0D), afrundinger og grå transportikoner som 2 × 1-widgetten. Kanallogoet står til venstre; højre side har forrige, play/stop og næste. Stop-ikonet er lysere end play. Forhåndsvisningen bruger en cirkel med teksten Radio.

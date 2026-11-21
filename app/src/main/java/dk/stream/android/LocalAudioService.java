@@ -16,7 +16,7 @@ public final class LocalAudioService extends MediaSessionService {
  private static LocalQueue pendingQueue;
  private static String pendingToken;
  private ExoPlayer player;
- private MediaSession session;
+ private MediaSession session;private final java.util.concurrent.ExecutorService musicArtwork=java.util.concurrent.Executors.newSingleThreadExecutor();private int musicArtworkGeneration;
  private LocalMedia current;
  private List<LocalMedia> queue=Collections.emptyList();
  public static List<LocalMedia> queue(){return active==null?Collections.emptyList():new ArrayList<>(active.queue);}
@@ -34,6 +34,7 @@ public final class LocalAudioService extends MediaSessionService {
  public static MediaItem item(LocalMedia entry) {
   android.os.Bundle extras=new android.os.Bundle();extras.putString("mime",entry.mime);extras.putString("name",entry.name);
   MediaMetadata metadata=PlaybackText.metadata(entry.displayName()).setMediaType(entry.audio()?MediaMetadata.MEDIA_TYPE_MUSIC:MediaMetadata.MEDIA_TYPE_VIDEO).setExtras(extras).build();
+  if(SaavnMusic.is(entry.uri))metadata=metadata.buildUpon().setArtworkUri(SaavnMusic.cover(entry.uri)).build();
   return new MediaItem.Builder().setMediaId(entry.uri).setUri(entry.uri).setMediaMetadata(metadata).build();
  }
  private void changed() {sendBroadcast(new Intent(CHANGED).setPackage(getPackageName()));}
@@ -55,7 +56,7 @@ public final class LocalAudioService extends MediaSessionService {
     if(item==null) {current=null;changed();return;}
     android.os.Bundle extras=item.mediaMetadata.extras;
     current=new LocalMedia(item.mediaId,extras==null?String.valueOf(item.mediaMetadata.title):extras.getString("name",String.valueOf(item.mediaMetadata.title)),extras==null?"":extras.getString("mime",""),false);
-    if(current.audio())LastAudio.file(LocalAudioService.this,current);
+    if(current.audio())LastAudio.file(LocalAudioService.this,current);musicArtworkGeneration++;if(SaavnMusic.is(current.uri))loadMusicArtwork(current);
     Intent screen=(current.audio()?new Intent(LocalAudioService.this,AudioPlayerActivity.class).putExtra("local",true):new Intent(LocalAudioService.this,MainActivity.class).putExtra("openFullPlayer",true)).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
     session.setSessionActivity(PendingIntent.getActivity(LocalAudioService.this,30,screen,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));changed();
    }
@@ -67,6 +68,7 @@ public final class LocalAudioService extends MediaSessionService {
    }
   });
  }
+ private void loadMusicArtwork(LocalMedia file){if(player.getCurrentMediaItem()==null||player.getCurrentMediaItem().mediaMetadata.artworkData!=null)return;int generation=musicArtworkGeneration;musicArtwork.execute(()->{byte[] data=SaavnMusic.artwork(this,file);if(data==null)return;new android.os.Handler(getMainLooper()).post(()->{if(active!=this||player==null||generation!=musicArtworkGeneration||current==null||!current.uri.equals(file.uri))return;MediaItem item=player.getCurrentMediaItem();if(item!=null)player.replaceMediaItem(player.getCurrentMediaItemIndex(),item.buildUpon().setMediaMetadata(item.mediaMetadata.buildUpon().setArtworkData(data,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build());});});}
  private void refreshPausedNotification(){PausedNotificationRefresh.update(this,session,2003,()->{PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);PendingIntent stop=PendingIntent.getService(this,32,command(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);return PlaybackNotification.create(this,"stream_local",session,toggle,stop);});}
  @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}
  @Override public MediaSession onGetSession(MediaSession.ControllerInfo controller) {return session;}
@@ -82,7 +84,7 @@ public final class LocalAudioService extends MediaSessionService {
     if(entry.image())throw new IllegalArgumentException("Use image viewer");
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
     this.queue=queue.entries;pendingQueue=null;pendingToken=null;RadioPlaybackService.stopForSourceSwitch(this);
-    List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);byte[] cover=LocalFileArtwork.bytes(this,file);if(cover!=null)media=media.buildUpon().setMediaMetadata(media.mediaMetadata.buildUpon().setArtworkData(cover,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build();items.add(media);network|=PcloudDocument.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
+    List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);byte[] cover=LocalFileArtwork.bytes(this,file);if(cover!=null)media=media.buildUpon().setMediaMetadata(media.mediaMetadata.buildUpon().setArtworkData(cover,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build();items.add(media);network|=PcloudDocument.is(file.uri)||SaavnMusic.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
     player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",PlaybackHistory.get(this,entry.uri).resume())));
     // Establish foreground immediately, before asynchronous file/decoder preparation.
     PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
@@ -98,5 +100,5 @@ public final class LocalAudioService extends MediaSessionService {
   return START_NOT_STICKY;
  }
  @Override public void onTaskRemoved(Intent root) {PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
- @Override public void onDestroy() {androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null){PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();}changed();super.onDestroy();}
+ @Override public void onDestroy() {musicArtworkGeneration++;musicArtwork.shutdownNow();androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null){PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();}changed();super.onDestroy();}
 }
