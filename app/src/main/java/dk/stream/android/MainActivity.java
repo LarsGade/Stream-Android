@@ -327,9 +327,9 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.home_buttons,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showHomeButtons();});
   button(R.string.android_auto,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showAndroidAutoSettings();});
   button(R.string.tv_backup_lists,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showTvBackupLists();});
-  button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   button(R.string.reset_history,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);PlaybackHistory.clear(this);PlaybackTracker.resetPlayers();CastPlayback.resetProgress(this);resumePosition=0;changeLibrary(()->library.lastPlayedPosition=0);localPanel.playbackChanged();pcloudPanel.playbackChanged();favoriteHub.refresh();adapter.notifyDataSetChanged();Toast.makeText(this,"Lyttede/sete er nulstillet.",Toast.LENGTH_SHORT).show();});
-  button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});
+  button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
+  Button updateButton=button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});updateButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF2E7D32));updateButton.setTextColor(Color.WHITE);
   Button resetButton=button(R.string.reset_app,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});resetButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFD32F2F));resetButton.setTextColor(Color.WHITE);
   navigation.addView(new Space(this),new LinearLayout.LayoutParams(-1,0,1));
   TextView credit=text(getString(R.string.developer_credit),11,Color.rgb(136,136,136));credit.setGravity(Gravity.CENTER);credit.setPadding(0,dp(16),0,0);navigation.addView(credit,new LinearLayout.LayoutParams(-1,-2));
