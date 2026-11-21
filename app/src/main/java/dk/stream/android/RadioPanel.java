@@ -85,7 +85,7 @@ public final class RadioPanel extends LinearLayout {
   showMessage(favorites||folderList()?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
- public void play(RadioStation station) {beforePlay.run();if(CastPlayback.connected(getContext())) {CastPlayback.playRadio(getContext(),station);return;}androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
+ public void play(RadioStation station) {PlaybackKeyboard.hide(getContext());beforePlay.run();if(CastPlayback.connected(getContext())) {CastPlayback.playRadio(getContext(),station);return;}androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
  private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String error=RadioPlaybackService.error();playbackError.setText(error);playbackError.setVisibility(error.isEmpty()?GONE:VISIBLE);}
 
  private void rename(RadioStation station) {

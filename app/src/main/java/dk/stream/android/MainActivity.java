@@ -588,7 +588,7 @@ public final class MainActivity extends AppCompatActivity {
  private void playLocal(LocalMedia entry) {playLocal(entry,PlaybackHistory.get(this,entry.uri).resume());}
  private void playLocal(LocalMedia entry,long position) {playLocal(entry,position,localPanel.playbackEntries());}
  private void playLocal(LocalMedia entry,long position,List<LocalMedia> queue) {
-  if(recordingBlocked())return;
+  if(recordingBlocked())return;PlaybackKeyboard.hide(this);
   if(position<=0)position=PlaybackHistory.get(this,entry.uri).resume();
   if(entry.image()){if(player!=null&&(LocalAudioService.current()==null||!LocalAudioService.current().audio()))player.pause();startActivity(ImageViewerActivity.intent(this,entry,queue));return;}
   if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
@@ -942,7 +942,7 @@ public final class MainActivity extends AppCompatActivity {
   }).show();
  }
  private void play(Playlist.Channel channel) {
-  if(recordingBlocked())return;
+  if(recordingBlocked())return;PlaybackKeyboard.hide(this);
   if(tvAnchor!=null&&(channel.kind!=Playlist.Kind.TV||!channel.url.equals(tvActiveUrl))){tvAnchor=null;tvBackupIndex=0;tvActiveUrl=null;}
   final int castRequest=++castLoadGeneration;
   videoMinimized=false;
