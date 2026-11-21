@@ -453,7 +453,7 @@ public final class MainActivity extends AppCompatActivity {
   else if(name.equals("Radio")){openRadio(false);radioPanel.open(saved);}
   else if(name.equals("Lokale filer")){openLocal(false);if(saved)localPanel.open(true,false);}
   else if(name.equals("Cloud")){if(saved){openLocal(false);localPanel.open(true,true);}else openPcloud();}else return;
-  destination=name;destinationTitle.setText(name);destinationFavorites.setText(saved?"Tilbage":"Favoritter");destinationHeader.setVisibility(View.VISIBLE);localPanel.setHeadingManaged(true);pcloudPanel.setHeadingManaged(true);radioPanel.setHeadingManaged(true);favoriteHub.setHeadingManaged(true);localBack.setEnabled(true);headerMenu.setVisibility(View.INVISIBLE);pageTitle.setVisibility(View.GONE);if(kind>=0)sections.setVisibility(View.GONE);filter();
+  destination=name;destinationTitle.setText(name);FavoriteHeading.show(destinationTitle,saved);destinationFavorites.setText(saved?"Tilbage":"Favoritter");destinationHeader.setVisibility(View.VISIBLE);localPanel.setHeadingManaged(true);pcloudPanel.setHeadingManaged(true);radioPanel.setHeadingManaged(true);favoriteHub.setHeadingManaged(true);localBack.setEnabled(true);headerMenu.setVisibility(View.INVISIBLE);pageTitle.setVisibility(View.GONE);if(kind>=0)sections.setVisibility(View.GONE);filter();
  }
  private void openMusic(){if(recordingBlocked())return;drawer.closeDrawer(androidx.core.view.GravityCompat.START);startActivity(new android.content.Intent(this,MusicActivity.class));}
  private void showFavoriteTab(int tab){if(tab==6){showFavoritesHome();return;}openDestination(tab==7?"Cloud":tab==1?"Radio":tab==2?"Lokale filer":tab==3?"Musik":tab==4?"Film":tab==5?"Serier":new String[]{"TV","Film","Serier"}[library.favoritesStartKind]);}
