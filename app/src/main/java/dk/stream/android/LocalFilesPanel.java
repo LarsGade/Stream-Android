@@ -29,7 +29,7 @@ public final class LocalFilesPanel extends LinearLayout {
  public LocalFilesPanel(Context context,Actions actions) {
   super(context);this.actions=actions;setOrientation(VERTICAL);
   title=new TextView(context);title.setText(R.string.local_files);title.setTextColor(Color.WHITE);title.setTextSize(20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
-  search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
+  search=new ClearableSearchEditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence value,int start,int count,int after) {}public void onTextChanged(CharSequence value,int start,int before,int count) {filter();}public void afterTextChanged(android.text.Editable value) {}});
 
   LinearLayout folderNavigation=new LinearLayout(context);folderNavigation.setGravity(Gravity.CENTER_VERTICAL);addView(folderNavigation,new LayoutParams(-1,-2));

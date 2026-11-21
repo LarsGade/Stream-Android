@@ -47,7 +47,7 @@ public final class RadioPanel extends LinearLayout {
   LinearLayout folderNavigation=new LinearLayout(context);folderNavigation.setGravity(Gravity.CENTER_VERTICAL);addView(folderNavigation,new LayoutParams(-1,-2));
   up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);folderNavigation.addView(up,new LayoutParams(dp(48),dp(48)));up.setOnClickListener(view->back());
   folderTitle=text("",18);folderTitle.setTypeface(null,android.graphics.Typeface.BOLD);folderTitle.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_folder,0,0,0);folderTitle.setCompoundDrawablePadding(MediaListStyle.iconGap(folderTitle));folderTitle.setMaxLines(2);folderTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);folderNavigation.addView(folderTitle,new LayoutParams(0,-2,1));
-  search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
+  search=new ClearableSearchEditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
   message=text("",13);message.setTextColor(Color.LTGRAY);addView(message);
   list=new FavoriteListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
