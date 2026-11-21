@@ -44,9 +44,9 @@ public final class CarRadioCatalog {
  }
  public List<MediaItem> children(String parent,int page,int pageSize) throws Exception {
   List<MediaItem> items=new ArrayList<>();
-  if(AndroidAutoPages.START.equals(parent)){Library library=store.load();String chosen=AndroidAutoPages.effective(library.androidAutoStartPage,CarAudioCatalog.hasFavorites(library,"Radio"));items=AndroidAutoPages.startItems(chosen,children(chosen,0,Integer.MAX_VALUE),folder(ROOT,"Alle sider"));}
-  else if(ROOT.equals(parent)){items.add(folder(FAVORITES,"Radio"));items.add(folder(AndroidAutoPages.PODCAST,"Podcast"));items.add(folder(AndroidAutoPages.MUSIC,"Musik"));}
-  else if(AndroidAutoPages.PODCAST.equals(parent)||AndroidAutoPages.MUSIC.equals(parent)||parent.startsWith(CarAudioCatalog.FOLDER))items.addAll(audio.children(parent));
+  if(AndroidAutoPages.START.equals(parent)){Library library=store.load();String chosen=AndroidAutoPages.view(library.androidAutoStartPage,library.androidAutoFavorites);items=AndroidAutoPages.startItems(chosen,children(chosen,0,Integer.MAX_VALUE),folder(ROOT,"Alle sider"));}
+  else if(ROOT.equals(parent)){Library settings=store.load();for(String id:AndroidAutoPages.IDS)if(!ROOT.equals(id))items.add(folder(AndroidAutoPages.view(id,settings.androidAutoFavorites),AndroidAutoPages.label(id)));}
+  else if(AndroidAutoPages.PODCAST.equals(parent)||AndroidAutoPages.MUSIC.equals(parent)||AndroidAutoPages.LOCAL.equals(parent)||AndroidAutoPages.CLOUD.equals(parent)||parent.endsWith("-all")||parent.startsWith(CarAudioCatalog.FOLDER))items.addAll(audio.children(parent));
   else if(AndroidAutoPages.COUNTRIES.equals(parent)){items.add(folder(DANISH,"Danmark"));items.add(folder(ENGLAND,"England"));items.add(folder(USA,"USA"));}
   else if(FAVORITES.equals(parent)||DANISH.equals(parent)||ENGLAND.equals(parent)||USA.equals(parent)) for(RadioStation station:FAVORITES.equals(parent)?favorites():danish()) {String country=ENGLAND.equals(parent)?"GB":USA.equals(parent)?"US":"DK";if(FAVORITES.equals(parent)||country.equals(station.country))items.add(item(station,false));}
   else throw new IllegalArgumentException("Unknown radio folder");
@@ -56,6 +56,7 @@ public final class CarRadioCatalog {
  }
  public List<MediaItem> search(String query) throws Exception {
   String key=LocalChannelLogos.key(query.trim());if(key.isEmpty()) return Collections.emptyList();
+  Library settings=store.load();if(AndroidAutoPages.MUSIC.equals(settings.androidAutoStartPage)&&!settings.androidAutoFavorites){OpenSpotSaavnApi.Page page=new OpenSpotSaavnApi(settings.openSpotApiUrl,settings.openSpotProxyUrl).searchMusic(query,0);SaavnMusic.remember(context,page.songs);List<MediaItem> songs=new ArrayList<>();for(SaavnSong song:page.songs){LocalMedia file=SaavnMusic.media(song);CarAudioCatalog.register(context,file);songs.add(CarAudioCatalog.item(context,file,false));}return songs;}
   LinkedHashMap<String,RadioStation> matches=new LinkedHashMap<>();
   for(RadioStation station:favorites()) if(LocalChannelLogos.key(station.displayName()).contains(key)) matches.put(station.id,station);
   try {for(RadioStation station:danish()) if(!matches.containsKey(station.id) && LocalChannelLogos.key(station.displayName()).contains(key)) matches.put(station.id,station);} catch(Exception e) {if(matches.isEmpty()) throw e;}

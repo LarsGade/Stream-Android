@@ -98,6 +98,7 @@ public final class Library {
  public String saavnApiUrl=SaavnApi.DEFAULT;
  public String audiusApiUrl=AudiusApi.DEFAULT;
  public String openSpotApiUrl=OpenSpotSaavnApi.DEFAULT,openSpotProxyUrl=OpenSpotSaavnApi.PROXY;
+ public boolean androidAutoFavorites=true,androidAutoAutoPlay=true;
  public String androidAutoStartPage=AndroidAutoPages.FAVORITES;
  public boolean dailyGuideUpdate;
  public Boolean startupFavorites=null;
@@ -188,7 +189,7 @@ public final class Library {
   JSONObject root=new JSONObject();root.put("startupFavorites",startupFavorites==null?JSONObject.NULL:startupFavorites);root.put("pageFavorites",new JSONObject(pageFavorites));root.put("tvFavoriteLists",new JSONObject(tvFavoriteLists));root.put("hiddenHomeButtons",new JSONArray(hiddenHomeButtons));root.put("favoriteHomeOrder",new JSONArray(favoriteHomeOrder));root.put("favoritesStartKind",favoritesStartKind);root.put("favoriteKinds",new JSONObject(favoriteKinds));root.put("favoriteAssignments",new JSONObject(favoriteAssignments));root.put("favoriteOrder",new JSONArray(favoriteOrder));if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesCurrentTab",favoritesCurrentTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   JSONArray photos=new JSONArray();for(LocalMedia photo:imageFavorites)photos.put(photo.json());root.put("imageFavorites",photos);
-  root.put("openSpotApiUrl",openSpotApiUrl);root.put("openSpotProxyUrl",openSpotProxyUrl);root.put("audiusApiUrl",audiusApiUrl);root.put("saavnApiUrl",saavnApiUrl);root.put("androidAutoStartPage",AndroidAutoPages.normalize(androidAutoStartPage));root.put("dailyGuideUpdate",dailyGuideUpdate);root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
+  root.put("openSpotApiUrl",openSpotApiUrl);root.put("openSpotProxyUrl",openSpotProxyUrl);root.put("audiusApiUrl",audiusApiUrl);root.put("saavnApiUrl",saavnApiUrl);root.put("androidAutoStartPage",AndroidAutoPages.normalize(androidAutoStartPage));root.put("androidAutoFavorites",androidAutoFavorites);root.put("androidAutoAutoPlay",androidAutoAutoPlay);root.put("dailyGuideUpdate",dailyGuideUpdate);root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
    JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
   }
@@ -219,7 +220,7 @@ public final class Library {
   try{library.openSpotApiUrl=OpenSpotSaavnApi.endpoint(root.optString("openSpotApiUrl",OpenSpotSaavnApi.DEFAULT)).toString();library.openSpotProxyUrl=OpenSpotSaavnApi.endpoint(root.optString("openSpotProxyUrl",OpenSpotSaavnApi.PROXY)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid Saavn connection address");}
   try{library.audiusApiUrl=SaavnApi.base(root.optString("audiusApiUrl",AudiusApi.DEFAULT)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid Audius API address");}
   try{library.saavnApiUrl=SaavnApi.base(root.optString("saavnApiUrl",SaavnApi.DEFAULT)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid music API address");}
-  library.androidAutoStartPage=AndroidAutoPages.normalize(root.optString("androidAutoStartPage",AndroidAutoPages.FAVORITES));
+  library.androidAutoFavorites=root.optBoolean("androidAutoFavorites",true);library.androidAutoAutoPlay=root.optBoolean("androidAutoAutoPlay",true);library.androidAutoStartPage=AndroidAutoPages.normalize(root.optString("androidAutoStartPage",AndroidAutoPages.FAVORITES));
   library.dailyGuideUpdate=root.optBoolean("dailyGuideUpdate",false);library.autoPlayLast=root.optBoolean("autoPlayLast",true);library.miniPlayer=root.optBoolean("miniPlayer",true);library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
   JSONObject last=root.optJSONObject("lastPlayed");
   if(last!=null) {
