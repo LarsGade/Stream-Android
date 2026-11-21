@@ -23,7 +23,7 @@ final class OpenSpotSaavnApi {
  static final class Page {
   final List<SaavnSong> songs;final boolean hasMore;
   Page(List<SaavnSong> songs,boolean more){this.songs=songs;this.hasMore=more;}
-  String summary(int count){return count==0?"Saavn returnerede ingen sange. Prøv en anden søgning.":count+" sange fra Saavn · Tryk for at afspille";}
+  String summary(int count){return count+" resultater";}
  }
  Page searchMusic(String query,int page)throws IOException{
   if(query==null||query.trim().isEmpty()||page<0||page==Integer.MAX_VALUE)throw new IllegalArgumentException("Indtast en søgning.");
