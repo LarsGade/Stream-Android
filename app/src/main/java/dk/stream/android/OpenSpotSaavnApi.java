@@ -99,7 +99,7 @@ final class OpenSpotSaavnApi {
   String title=SaavnSong.text(item.optString("title",item.optString("song","")));if(title.isEmpty())throw new JSONException("Missing title");
   String image=item.optString("image","").replaceFirst("^http://","https://").replace("150x150","500x500").replace("50x50","500x500");HttpUrl cover=HttpUrl.parse(image);if(cover==null)image="";
   String media="";if(stream){media=decodeMedia(more.optString("encrypted_media_url"));if("true".equalsIgnoreCase(more.optString("320kbps"))){HttpUrl url=HttpUrl.get(media);String path=url.encodedPath();if(path.endsWith("_96.mp4"))media=url.newBuilder().encodedPath(path.substring(0,path.length()-7)+"_320.mp4").build().toString();}}
-  return new SaavnSong(PREFIX+id,title,artist,SaavnSong.text(more.optString("album",item.optString("album",""))),image,media,more.optLong("duration",item.optLong("duration",0)));
+  return new SaavnSong(PREFIX+id,title,artist,SaavnSong.text(more.optString("album",item.optString("album",""))),image,media,more.optLong("duration",item.optLong("duration",0)),more.optString("album_id",more.optString("albumid",item.optString("albumid",""))));
  }
  private static String join(List<String> values){StringBuilder result=new StringBuilder();for(String value:values){if(result.length()>0)result.append(", ");result.append(value);}return result.toString();}
  /** Decode the API's obfuscated media address using the format also implemented by OpenSpot. */
