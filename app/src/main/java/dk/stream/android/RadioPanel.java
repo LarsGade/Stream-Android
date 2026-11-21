@@ -37,7 +37,7 @@ public final class RadioPanel extends LinearLayout {
  public void setBackStateListener(BackState listener){backState=listener;}
  public boolean canGoBack(){return !favorites&&countryIndex>=0;}
  public void back(){if(canGoBack()){countryIndex=-1;search.setText("");filter();}}
- private boolean folderList(){return !favorites&&countryIndex<0;}
+ private boolean folderList(){return !favorites&&countryIndex<0&&search.getText().toString().trim().isEmpty();}
  private final Runnable tick=new Runnable() {public void run() {if(closed || !isAttachedToWindow()) return;updatePlayback();postDelayed(this,1000);}};
  public RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay) {this(context,library,save,beforePlay,new RadioBrowser());}
  RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay,RadioBrowser browser) {
@@ -79,9 +79,9 @@ public final class RadioPanel extends LinearLayout {
   });
  }
  private void filter() {
-  title.setVisibility(headingManaged||favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(favorites||folderList()?GONE:VISIBLE);up.setVisibility(canGoBack()?VISIBLE:GONE);folderTitle.setVisibility(canGoBack()?VISIBLE:GONE);if(canGoBack())folderTitle.setText(COUNTRY_NAMES[countryIndex]);backState.accept(canGoBack());
+  title.setVisibility(headingManaged||favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(VISIBLE);up.setVisibility(canGoBack()?VISIBLE:GONE);folderTitle.setVisibility(canGoBack()?VISIBLE:GONE);if(canGoBack())folderTitle.setText(COUNTRY_NAMES[countryIndex]);backState.accept(canGoBack());
   visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
-  for(RadioStation station:favorites?library.get().radioFavorites:stations) if((favorites||countryIndex>=0&&COUNTRIES[countryIndex].equals(station.country))&&station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
+  for(RadioStation station:favorites?library.get().radioFavorites:stations) if((favorites||countryIndex<0||COUNTRIES[countryIndex].equals(station.country))&&station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
   showMessage(favorites||folderList()?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
