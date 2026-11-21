@@ -23,7 +23,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private final ArrayDeque<LocalMedia> parents=new ArrayDeque<>();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private final Adapter adapter=new Adapter();
- private boolean favorites,cloudFavorites,closed;
+ private boolean favorites,cloudFavorites,closed,headingManaged;
  private int generation;
  private Future<?> folderTask;
  public LocalFilesPanel(Context context,Actions actions) {
@@ -49,7 +49,7 @@ public final class LocalFilesPanel extends LinearLayout {
  public List<LocalMedia> playbackEntries() {return new ArrayList<>(visible);}
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
- public void reload() {title.setVisibility(favorites?GONE:VISIBLE);actions.navigationChanged(canGoBack());up.setVisibility(canGoBack()?VISIBLE:GONE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText("");path.setVisibility(GONE);List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
+ public void reload() {title.setVisibility(headingManaged||favorites?GONE:VISIBLE);actions.navigationChanged(canGoBack());up.setVisibility(canGoBack()?VISIBLE:GONE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText("");path.setVisibility(GONE);List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);Collections.sort(entries,NaturalNameOrder.MEDIA);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayFileName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);path.setVisibility(query.isEmpty()&&canGoBack()?VISIBLE:GONE);adapter.notifyDataSetChanged();}
@@ -59,6 +59,7 @@ public final class LocalFilesPanel extends LinearLayout {
    if(PcloudDocument.is(folder.uri)){PcloudAccount account=actions.library().pcloud;WebDavClient client=new WebDavClient(account);try{entries=new ArrayList<>();for(WebDavClient.Entry entry:client.list(PcloudDocument.url(account,folder.uri)))entries.add(entry.media(account));}finally{client.cancel();}}else entries=LocalMedia.children(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen mediefiler i mappen.":"");});}
    catch(Exception failure) {post(()->{if(!closed&&generation==request) showMessage("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
  }
+ public void setHeadingManaged(boolean value){headingManaged=value;title.setVisibility(value||favorites?GONE:VISIBLE);}
  public void close() {closed=true;if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}
  private final class Adapter extends BaseAdapter {
   public int getCount(){return visible.size();}public LocalMedia getItem(int p){return visible.get(p);}public long getItemId(int p){return p;}

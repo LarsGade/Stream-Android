@@ -11,12 +11,12 @@ import okhttp3.HttpUrl;
 @androidx.media3.common.util.UnstableApi
 public final class PcloudPanel extends LinearLayout {
  public interface Actions {Library library();boolean save(Runnable mutation);void play(LocalMedia entry,List<LocalMedia> queue);void navigationChanged(boolean inside);}
- private final Actions actions;private final EditText search;private final TextView path,message;private final ImageButton up;private final ListView list;
+ private final Actions actions;private final EditText search;private final TextView path,message,title;private final ImageButton up;private final ListView list;
  private final List<LocalMedia> entries=new ArrayList<>(),visible=new ArrayList<>();private final ArrayDeque<HttpUrl> parents=new ArrayDeque<>();private final Adapter adapter=new Adapter();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();private Future<?> task;private WebDavClient client;private int generation;private boolean closed;
  public PcloudPanel(Context context,Actions actions){
   super(context);this.actions=actions;setOrientation(VERTICAL);
-  TextView title=new TextView(context);title.setText(R.string.pcloud);title.setTextColor(Color.WHITE);title.setTextSize(20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
+  title=new TextView(context);title.setText(R.string.pcloud);title.setTextColor(Color.WHITE);title.setTextSize(20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   search=new EditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence value,int start,int count,int after){}public void onTextChanged(CharSequence value,int start,int before,int count){filter();}public void afterTextChanged(android.text.Editable value){}});
   LinearLayout folderNavigation=new LinearLayout(context);folderNavigation.setGravity(Gravity.CENTER_VERTICAL);addView(folderNavigation,new LayoutParams(-1,-2));
   up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setBackgroundColor(Color.TRANSPARENT);up.setContentDescription("Tilbage");int size=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams back=new LayoutParams(size,size);back.gravity=Gravity.LEFT;folderNavigation.addView(up,back);up.setOnClickListener(view->back());
@@ -24,6 +24,7 @@ public final class PcloudPanel extends LinearLayout {
   list=new ListView(context);MediaListStyle.apply(list);list.setAdapter(adapter);addView(list,new LayoutParams(-1,0,1));list.setOnItemClickListener((parent,view,index,id)->{LocalMedia entry=visible.get(index);if(entry.folder){try{parents.add(PcloudDocument.url(actions.library().pcloud,entry.uri));search.setText("");load();}catch(IllegalArgumentException error){showMessage(error.getMessage());}}else actions.play(entry,new ArrayList<>(visible));});
   list.setOnItemLongClickListener((parent,view,index,id)->{LocalMedia entry=visible.get(index);PopupMenu menu=new StablePopupMenu(context,view);MediaDownloads.add(menu,getContext(),FavoriteLists.of(entry));menu.getMenu().add(actions.library().isLocalFavorite(entry.uri)?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(actions.library().isLocalFavorite(entry.uri)){actions.save(()->FavoriteLists.remove(actions.library(),FavoriteLists.of(entry)));adapter.notifyDataSetChanged();}else FavoritePicker.show(getContext(),actions.library(),actions::save,FavoriteLists.of(entry),()->adapter.notifyDataSetChanged());return true;});menu.show();return true;});
  }
+ public void setHeadingManaged(boolean value){title.setVisibility(value?GONE:VISIBLE);}
  public void open(){cancel();parents.clear();PcloudAccount account=actions.library().pcloud;boolean connected=account!=null;search.setVisibility(connected?VISIBLE:GONE);search.setText("");up.setVisibility(GONE);actions.navigationChanged(false);path.setText("");path.setVisibility(GONE);showMessage("");entries.clear();filter();if(connected){parents.add(HttpUrl.get(account.server));load();}}
  public void refresh(){if(actions.library().pcloud==null)return;if(parents.isEmpty())open();else load();}
  public boolean back(){if(parents.size()<2)return false;parents.removeLast();search.setText("");load();return true;}

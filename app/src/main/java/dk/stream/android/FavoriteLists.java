@@ -3,7 +3,7 @@ import java.util.*;
 
 final class FavoriteLists {
  static final String[] NAMES={"Streaming","Radio","Podcast","Musik"};
- static boolean valid(String name){return Arrays.asList(NAMES).contains(name);}
+ static boolean valid(String name){return Arrays.asList(NAMES).contains(name)||"Lokale filer".equals(name)||"Cloud".equals(name);}
  static final class Item {
   final Library.Entry stream;final RadioStation radio;final LocalMedia file;
   Item(Library.Entry stream,RadioStation radio,LocalMedia file){this.stream=stream;this.radio=radio;this.file=file;}
@@ -20,7 +20,8 @@ final class FavoriteLists {
  static void assign(Library library,Item item,String list){if(!valid(list))throw new IllegalArgumentException("Unknown favorite list");if(!contains(library,item)){if(item.stream!=null)library.toggleFavorite(item.stream);else if(item.radio!=null)library.addRadio(item.radio);else library.toggleLocalFavorite(item.file);}library.favoriteAssignments.put(item.key(),list);if(!list.equals("Streaming")){library.favoriteKinds.remove(item.key());library.tvFavoriteLists.remove(item.key());}}
  static void remove(Library library,Item item){if(contains(library,item)){if(item.stream!=null)library.toggleFavorite(item.stream);else if(item.radio!=null)library.removeRadio(item.radio.id);else library.toggleLocalFavorite(item.file);}library.tvFavoriteLists.remove(item.key());library.favoriteAssignments.remove(item.key());library.favoriteKinds.remove(item.key());library.favoriteOrder.remove(item.key());}
  static void assignStreaming(Library library,Item item,int kind){if(kind<0||kind>2)throw new IllegalArgumentException("Unknown streaming kind");assign(library,item,"Streaming");library.favoriteKinds.put(item.key(),kind);}
- static void assignHome(Library library,Item item,String name){int kind=Arrays.asList("TV","Film","Serier").indexOf(name);if(kind>=0)assignStreaming(library,item,kind);else assign(library,item,name);}
+ static boolean homeAllowed(Item item,String name){if(name.equals("Lokale filer")||name.equals("Cloud"))return item.file!=null&&!SaavnMusic.is(item.file.uri)&&PcloudDocument.is(item.file.uri)==name.equals("Cloud");return true;}
+ static void assignHome(Library library,Item item,String name){if(!homeAllowed(item,name))throw new IllegalArgumentException("Favorite source does not match list");int kind=Arrays.asList("TV","Film","Serier").indexOf(name);if(kind>=0)assignStreaming(library,item,kind);else assign(library,item,name);}
  static void rekey(Library library,String oldKey,String newKey){if(oldKey.equals(newKey))return;Integer tv=library.tvFavoriteLists.remove(oldKey);if(tv!=null)library.tvFavoriteLists.put(newKey,tv);Integer kind=library.favoriteKinds.remove(oldKey);if(kind!=null)library.favoriteKinds.put(newKey,kind);String list=library.favoriteAssignments.remove(oldKey);if(list!=null)library.favoriteAssignments.put(newKey,list);int position=library.favoriteOrder.indexOf(oldKey);if(position>=0)library.favoriteOrder.set(position,newKey);}
  static void move(Library library,String list,Item item,int direction){List<Item> items=items(library,list);int position=-1;for(int i=0;i<items.size();i++)if(items.get(i).key().equals(item.key()))position=i;int target=position+direction;if(position<0||target<0||target>=items.size())return;Collections.swap(items,position,target);for(Item entry:items)library.favoriteOrder.remove(entry.key());for(Item entry:items)library.favoriteOrder.add(entry.key());}
  private FavoriteLists(){}
