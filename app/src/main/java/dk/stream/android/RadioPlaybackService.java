@@ -13,6 +13,7 @@ import org.json.JSONObject;
 @androidx.media3.common.util.UnstableApi
 public final class RadioPlaybackService extends MediaLibraryService {
  public static final String PREVIOUS="dk.stream.android.RADIO_PREVIOUS",NEXT="dk.stream.android.RADIO_NEXT";
+ public static final String QUEUE_WIDGET_TOGGLE="dk.stream.android.RADIO_QUEUE_TOGGLE",QUEUE_WIDGET_PREVIOUS="dk.stream.android.RADIO_QUEUE_PREVIOUS",QUEUE_WIDGET_NEXT="dk.stream.android.RADIO_QUEUE_NEXT";
  public static final String WIDE_WIDGET_TOGGLE="dk.stream.android.RADIO_WIDE_WIDGET_TOGGLE";
  public static final String LIVE="dk.stream.android.RADIO_LIVE",PLAY="dk.stream.android.RADIO_PLAY",TOGGLE="dk.stream.android.RADIO_TOGGLE",STOP="dk.stream.android.RADIO_STOP",WIDGET_TOGGLE="dk.stream.android.RADIO_WIDGET_TOGGLE",TRANSPORT_TOGGLE="dk.stream.android.RADIO_TRANSPORT_TOGGLE";
  private static RadioPlaybackService active;
@@ -114,7 +115,10 @@ public final class RadioPlaybackService extends MediaLibraryService {
   super.onStartCommand(intent,flags,startId);
   if(intent==null) return START_NOT_STICKY;
   String action=intent.getAction();
-  if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE,WIDE_WIDGET_TOGGLE,LIVE,PREVIOUS,NEXT).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
+  if(java.util.Arrays.asList(PLAY,TOGGLE,STOP,WIDGET_TOGGLE,TRANSPORT_TOGGLE,WIDE_WIDGET_TOGGLE,LIVE,PREVIOUS,NEXT,QUEUE_WIDGET_TOGGLE,QUEUE_WIDGET_PREVIOUS,QUEUE_WIDGET_NEXT).contains(action) && !commandToken(this).equals(intent.getStringExtra("command_token"))) return START_NOT_STICKY;
+  if(QUEUE_WIDGET_TOGGLE.equals(action)||QUEUE_WIDGET_PREVIOUS.equals(action)||QUEUE_WIDGET_NEXT.equals(action)){
+   int widget=intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID);foreground();try{java.util.List<RadioStation> stations=RadioQueueWidgetProvider.owns(this,widget)?RadioQueueWidgetPreferences.stations(this,new LibraryStore(this).load(),widget):java.util.Collections.emptyList();boolean toggle=QUEUE_WIDGET_TOGGLE.equals(action);RadioStation target=RadioQueueWidgetPreferences.current(this,stations,widget);if(target==null||!toggle&&stations.size()<2){if(!player.getPlayWhenReady()){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf(startId);}RadioQueueWidgetProvider.safeUpdate(this,android.appwidget.AppWidgetManager.getInstance(this),widget);return START_NOT_STICKY;}if(!toggle)target=RadioWidgetQueue.adjacent(stations,target.id,QUEUE_WIDGET_PREVIOUS.equals(action)?-1:1);RadioWidgetProvider.bind(this,widget,target.id);if(toggle&&playing(target.id)){stopRadioPlayback();return START_NOT_STICKY;}intent=playIntent(this,target);action=PLAY;}catch(Exception failure){if(!player.getPlayWhenReady()){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf(startId);}return START_NOT_STICKY;}
+  }
   if(PREVIOUS.equals(action)||NEXT.equals(action)){if(selectedFile()!=null){if(PREVIOUS.equals(action)&&player.hasPreviousMediaItem())player.seekToPreviousMediaItem();if(NEXT.equals(action)&&player.hasNextMediaItem())player.seekToNextMediaItem();return START_NOT_STICKY;}try{RadioStation station=RadioFavoriteNavigation.adjacent(new LibraryStore(this).load(),current==null?"":current.id,PREVIOUS.equals(action)?-1:1);if(station==null)return START_NOT_STICKY;intent=playIntent(this,station);action=PLAY;}catch(Exception unavailable){return START_NOT_STICKY;}}
   if(android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH.equals(action)) {
    String query=intent.getStringExtra(android.app.SearchManager.QUERY);if(query==null||query.trim().isEmpty()) return START_NOT_STICKY;

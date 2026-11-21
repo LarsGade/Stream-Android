@@ -114,4 +114,9 @@
 <string name="tv_backup_lists">TV backup-lister</string><string name="tv_backup_next">Skift til næste TV-backup med samme kanalnavn</string> <string name="record_tv">Optag TV</string>
  <string name="stop_recording">Stop optagelse</string>
  <string name="android_auto">Android Auto</string>
+ <string name="radio_widget_queue">Stream radio 4 × 1</string>
+ <string name="radio_widget_queue_description">Valgte radiofavoritter med kanallogo, forrige, play/stop og næste</string>
+ <string name="radio_widget_queue_choose">Vælg radiokanaler fra favoritter</string>
+ <string name="radio_widget_previous">Forrige valgte radiokanal</string>
+ <string name="radio_widget_next">Næste valgte radiokanal</string>
 </resources>

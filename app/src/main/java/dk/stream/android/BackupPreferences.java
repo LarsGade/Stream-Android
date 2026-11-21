@@ -19,7 +19,7 @@ final class BackupPreferences {
  private static void validate(String store,String key,Object value)throws Exception{
   if(store.equals("last_audio")){if(!key.equals("selection")||!(value instanceof String))throw new JSONException("Invalid audio selection");LastAudioSelection.read((String)value);}
   else if(store.equals("playback_history")){if(!key.matches("[0-9a-f]{64}")||!(value instanceof String)||!((String)value).matches("[0-9]+:[0-9]+:(true|false)"))throw new JSONException("Invalid playback history");String[] fields=((String)value).split(":");long position=Long.parseLong(fields[0]),duration=Long.parseLong(fields[1]);if(duration<=0||position<0||position>duration)throw new JSONException("Invalid playback position");}
-  else if(store.equals("radio_widgets")&&(!key.matches("station_[0-9]+")||!(value instanceof String)))throw new JSONException("Invalid widget binding");
+  else if(store.equals("radio_widgets")){if(!(value instanceof String))throw new JSONException("Invalid widget binding");if(key.matches("queue_[0-9]+"))RadioWidgetQueue.read((String)value);else if(!key.matches("station_[0-9]+"))throw new JSONException("Invalid widget binding");}
   else if(store.equals("audio_output")){if((key.equals("device")||key.equals("type"))&&!(value instanceof Integer))throw new JSONException("Invalid audio device");if(key.equals("name")&&!(value instanceof String))throw new JSONException("Invalid device name");}
  }
  private BackupPreferences(){}

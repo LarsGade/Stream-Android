@@ -1,3 +1,11 @@
+## 1.50.0
+
+Ny Stream radio 4 × 1-widget med samme næsten sorte baggrund (#0D0D0D), afrundinger og grå transportikoner som 2 × 1-widgetten. Kanallogoet står til venstre; højre side har forrige, play/stop og næste. Stop-ikonet er lysere end play. Forhåndsvisningen bruger en cirkel med teksten Radio.
+
+Ved tilføjelse vælges én eller flere radiofavoritter med flueben. Valget gemmes separat for hver widget, i favoritlistens rækkefølge. Forrige/næste skifter og starter afspilning mellem netop de valgte kanaler og går rundt fra sidste til første. Kun én valgt kanal gør skifteknapperne inaktive. Fjernede favoritter springes over; hvis ingen valgte favoritter er tilbage, åbner widgetten opsætningen. Konfigurationen kan ændres via launcherens rediger-widget-funktion, hvor den understøttes. Kanalvalg og aktuel kanal følger med eksport/import af opsætning.
+
+Valideret med debug-build, lint og 15 JVM-tests af kanaludvalg, rækkefølge, rundgang, fjernede favoritter, flere widgets og opsætningsbackup. Ikke afprøvet på en fysisk launcher/telefon i dette miljø.
+
 ## 1.49.4
 
 Skift fra radio til TV stopper nu selve den gamle afspiller og tømmer dens kø, før TV starter. Det gælder også, når radiotjenesten stadig holdes bundet af Android Auto eller en mediecontroller. Samme oprydning gælder skift mellem lokale filer og radio. En gammel kilde kan derfor ikke vågne igen blot fordi TV frigiver audio focus under ekstern overdragelse.
