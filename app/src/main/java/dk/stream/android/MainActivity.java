@@ -304,9 +304,8 @@ public final class MainActivity extends AppCompatActivity {
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
   Button favoritesButton=button(R.string.home,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));favoritesButton.setTextColor(Color.WHITE);favoritesButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,favoritesButton.getTextSize()*1.25f);favoritesButton.setTypeface(favoritesButton.getTypeface(),android.graphics.Typeface.BOLD);
-  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openDestination("Radio")),localButton=button(R.string.local_files,navigation,()->openDestination("Lokale filer")),musicButton=button(R.string.music_library,navigation,this::openMusic),pcloudButton=button(R.string.pcloud,navigation,()->openDestination("Cloud"));
-  for(Button primary:new Button[]{streamingButton,radioButton,localButton,musicButton,pcloudButton}){primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this,R.color.drawer_dark_blue)));primary.setTextColor(Color.WHITE);}
-  streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
+  Button tvButton=button(R.string.tv,navigation,()->openDestination("TV")),filmButton=button(R.string.films,navigation,()->openDestination("Film")),seriesButton=button(R.string.series,navigation,()->openDestination("Serier")),radioButton=button(R.string.radio,navigation,()->openDestination("Radio")),localButton=button(R.string.local_files,navigation,()->openDestination("Lokale filer")),musicButton=button(R.string.music_library,navigation,this::openMusic),pcloudButton=button(R.string.pcloud,navigation,()->openDestination("Cloud"));
+  for(Button primary:new Button[]{tvButton,filmButton,seriesButton,radioButton,localButton,musicButton,pcloudButton}){primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this,R.color.drawer_dark_blue)));primary.setTextColor(Color.WHITE);}
   settingsToggle=button(R.string.settings,navigation,()->{});
   settingsContent=column();settingsContent.setPadding(dp(8),0,dp(8),0);settingsContent.setVisibility(View.GONE);navigation.addView(settingsContent,new LinearLayout.LayoutParams(-1,-2));
   settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");
@@ -619,7 +618,6 @@ public final class MainActivity extends AppCompatActivity {
   if(favorites) {showFavoriteKind(true);return;}
   favoritesPage=false;favoritesMode=false;radioMode=true;radioPanel.setVisibility(View.VISIBLE);filter();radioPanel.open(false);
  }
- private void openStreamingService() {navigate(false);}
  private void navigate(boolean favorites) {if(recordingBlocked())return;
   minimizeVideo();
   if(favorites) {drawer.closeDrawer(androidx.core.view.GravityCompat.START);showFavoritesHome();return;}
