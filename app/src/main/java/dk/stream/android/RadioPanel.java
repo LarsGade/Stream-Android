@@ -105,7 +105,7 @@ public final class RadioPanel extends LinearLayout {
    RadioStation station=getItem(position);LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(4),dp(8));row.setBackgroundColor(0xFF1D1D1D);
    ImageView logo=new ImageView(getContext());logo.setScaleType(ImageView.ScaleType.FIT_CENTER);row.addView(logo,new LayoutParams(dp(48),dp(48)));
    TextView name=text(station.displayName(),16);name.setPadding(MediaListStyle.iconGap(name),name.getPaddingTop(),name.getPaddingRight(),name.getPaddingBottom());name.setMaxLines(2);row.addView(name,new LayoutParams(0,-2,1));
-   String local=logos.find(station.name);if(local==null)local=logos.find(station.displayName());Glide.with(RadioPanel.this).load(local==null?station.logo:local).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(getContext())).placeholder(R.drawable.ic_channel).error(R.drawable.ic_channel).override(dp(96),dp(96)).fitCenter().into(logo);
+   String local=logos.find(station.name);if(local==null)local=logos.find(station.displayName());Glide.with(RadioPanel.this).load(local==null?station.logo:local).signature(com.bumptech.glide.signature.ApplicationVersionSignature.obtain(getContext())).placeholder(R.drawable.ic_music_note).error(R.drawable.ic_music_note).override(dp(96),dp(96)).fitCenter().into(logo);
 
    boolean playing=station.id.equals(RadioPlaybackService.audibleStationId())||CastPlayback.hasMedia(getContext())&&station.displayName().equals(CastPlayback.title(getContext()));NowPlayingIndicator.show(NowPlayingIndicator.addTo(row),playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
    row.setAlpha(list.isPicked(position)?0.6f:1f);return row;

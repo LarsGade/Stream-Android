@@ -74,7 +74,7 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   }else if(filePlayback()&&player!=null){MediaMetadata metadata=player.getMediaMetadata();if(metadata.artworkData!=null&&metadata.artworkData.length>0)model=metadata.artworkData;else if(metadata.artworkUri!=null)model=metadata.artworkUri;}
   else {RadioStation station=radioStation;if(station!=null)model=PlaybackArtwork.radioModel(this,station);}
   String localCover=LocalFileArtwork.asset(local?LocalAudioService.current():RadioPlaybackService.selectedFile());if(remote==null&&localCover!=null)model=localCover;
-  int fallback=remote!=null&&!CastPlayback.audio(this)?R.drawable.ic_video:R.drawable.ic_music_note;if(model==null)model=fallback;
+  int fallback=remote!=null?(CastPlayback.image(this)?R.drawable.ic_image:CastPlayback.audio(this)?R.drawable.ic_music_note:R.drawable.ic_video):MediaFallback.icon(local?LocalAudioService.current():RadioPlaybackService.selectedFile());if(model==null)model=fallback;
   artwork.setContentDescription("Billede til "+title.getText());
   if(java.util.Objects.equals(model,artworkModel))return;
   artworkModel=model;com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?android.view.View.GONE:android.view.View.VISIBLE);if(model==null)return;
