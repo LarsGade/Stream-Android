@@ -1,23 +1,16 @@
 package dk.stream.android;
-
 import android.content.Context;
-import java.io.*;
-import java.text.Normalizer;
-import java.util.Locale;
-
-/** Named artwork for local and Pcloud programmes, independent of embedded cover art. */
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
+import java.util.*;
+/** Artwork comes only from the original media file, never from its programme name. */
 final class LocalFileArtwork {
- static String asset(LocalMedia file){
-  if(file==null||file.folder||file.image()||SaavnMusic.is(file.uri))return null;
-  String name=Normalizer.normalize(file.name,Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
-  String logo=name.contains("anders og anders")?"anders.png":name.contains("bæltestedet")||name.contains("baeltestedet")?"balte.png":name.contains("r8dio")?"roder.png":name.contains("den korte radioavis")?"korte.png":null;
-  return logo==null?null:"file:///android_asset/local_logos/"+logo;
- }
+ static String asset(LocalMedia file){return null;}
  static byte[] bytes(Context context,LocalMedia file){
-  String asset=asset(file);if(asset==null)return null;
-  try(InputStream input=context.getAssets().open(asset.substring("file:///android_asset/".length()));ByteArrayOutputStream output=new ByteArrayOutputStream()){
-   byte[] buffer=new byte[8192];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);return output.toByteArray();
-  }catch(IOException failure){return null;}
+  if(file==null||file.folder||file.image()||SaavnMusic.is(file.uri))return null;
+  MediaMetadataRetriever retriever=new MediaMetadataRetriever();
+  try{if(PcloudDocument.is(file.uri)){PcloudAccount account=new LibraryStore(context).load().pcloud;if(account==null)return null;String url=PcloudDocument.url(account,file.uri).toString();Map<String,String> headers=new HashMap<>();headers.put("Authorization",okhttp3.Credentials.basic(account.email,account.password));retriever.setDataSource(url,headers);}else retriever.setDataSource(context,Uri.parse(file.uri));byte[] data=retriever.getEmbeddedPicture();return data!=null&&data.length<=8*1024*1024?data:null;
+  }catch(Exception unavailable){return null;}finally{try{retriever.release();}catch(Exception ignored){}}
  }
  private LocalFileArtwork(){}
 }

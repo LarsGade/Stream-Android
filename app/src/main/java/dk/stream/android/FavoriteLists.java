@@ -4,12 +4,14 @@ import java.util.*;
 final class FavoriteLists {
  static final String[] NAMES={"Streaming","Radio","Podcast","Musik"};
  static boolean valid(String name){return Arrays.asList(NAMES).contains(name)||"Lokale filer".equals(name)||"Cloud".equals(name);}
+ // Preserve older favorite categorization independently of artwork availability.
+ private static boolean legacyPodcast(LocalMedia file){if(file.folder||file.image()||SaavnMusic.is(file.uri))return false;String name=java.text.Normalizer.normalize(file.name,java.text.Normalizer.Form.NFKC).toLowerCase(java.util.Locale.ROOT);return name.contains("anders og anders")||name.contains("bæltestedet")||name.contains("baeltestedet")||name.contains("r8dio")||name.contains("den korte radioavis");}
  static final class Item {
   final Library.Entry stream;final RadioStation radio;final LocalMedia file;
   Item(Library.Entry stream,RadioStation radio,LocalMedia file){this.stream=stream;this.radio=radio;this.file=file;}
   String name(){return stream!=null?stream.channel.name:radio!=null?radio.displayName():file.displayFileName();}
   String key(){return stream!=null?"stream:"+stream.sourceId+":"+stream.channel.kind+":"+stream.channel.seriesId+":"+stream.channel.url:radio!=null?"radio:"+radio.id:"file:"+file.uri;}
-  String defaultList(){if(stream!=null)return "Streaming";if(radio!=null)return "Radio";return file.folder||LocalFileArtwork.asset(file)!=null?"Podcast":"Musik";}
+  String defaultList(){if(stream!=null)return "Streaming";if(radio!=null)return "Radio";return file.folder||legacyPodcast(file)?"Podcast":"Musik";}
   Playlist.Kind kind(Library library){Integer kind=library.favoriteKinds.get(key());return kind==null?kind():Playlist.Kind.values()[kind];}
   Playlist.Kind kind(){return stream!=null?stream.channel.kind:radio!=null?Playlist.Kind.TV:Playlist.Kind.FILM;}
  }

@@ -10,7 +10,7 @@ import java.io.*;
 /** Publish actual file artwork as a URL the receiver can fetch, without a generic fallback. */
 @androidx.media3.common.util.UnstableApi
 final class CastFileArtwork {
- static byte[] available(Context context,LocalMedia file){if(!file.audio())return null;byte[] bundled=LocalFileArtwork.bytes(context,file);return bundled!=null?bundled:CastPlayback.cachedArtwork(file);}
+ static byte[] available(Context context,LocalMedia file){if(!file.audio())return null;return CastPlayback.cachedArtwork(file);}
  static byte[] read(Context context,LocalMedia file,String mediaUrl){
   if(!file.audio())return null;
   byte[] data=available(context,file);if(data!=null&&data.length>0)return data;

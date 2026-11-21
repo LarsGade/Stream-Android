@@ -56,7 +56,7 @@ public final class LocalAudioService extends MediaSessionService {
     if(item==null) {current=null;changed();return;}
     android.os.Bundle extras=item.mediaMetadata.extras;
     current=new LocalMedia(item.mediaId,extras==null?String.valueOf(item.mediaMetadata.title):extras.getString("name",String.valueOf(item.mediaMetadata.title)),extras==null?"":extras.getString("mime",""),false);
-    if(current.audio())LastAudio.file(LocalAudioService.this,current);musicArtworkGeneration++;if(SaavnMusic.is(current.uri))loadMusicArtwork(current);
+    if(current.audio())LastAudio.file(LocalAudioService.this,current);musicArtworkGeneration++;loadMusicArtwork(current);
     session.setSessionActivity(PlaybackNotices.open(LocalAudioService.this,30));changed();
    }
    @Override public void onEvents(Player source,Player.Events events) {changed();}
@@ -67,7 +67,7 @@ public final class LocalAudioService extends MediaSessionService {
    }
   });
  }
- private void loadMusicArtwork(LocalMedia file){if(player.getCurrentMediaItem()==null||player.getCurrentMediaItem().mediaMetadata.artworkData!=null)return;int generation=musicArtworkGeneration;musicArtwork.execute(()->{byte[] data=SaavnMusic.artwork(this,file);if(data==null)return;new android.os.Handler(getMainLooper()).post(()->{if(active!=this||player==null||generation!=musicArtworkGeneration||current==null||!current.uri.equals(file.uri))return;MediaItem item=player.getCurrentMediaItem();if(item!=null)player.replaceMediaItem(player.getCurrentMediaItemIndex(),item.buildUpon().setMediaMetadata(item.mediaMetadata.buildUpon().setArtworkData(data,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build());});});}
+ private void loadMusicArtwork(LocalMedia file){if(player.getCurrentMediaItem()==null||player.getCurrentMediaItem().mediaMetadata.artworkData!=null)return;int generation=musicArtworkGeneration;musicArtwork.execute(()->{byte[] data=SaavnMusic.is(file.uri)?SaavnMusic.artwork(this,file):LocalFileArtwork.bytes(this,file);if(data==null)return;new android.os.Handler(getMainLooper()).post(()->{if(active!=this||player==null||generation!=musicArtworkGeneration||current==null||!current.uri.equals(file.uri))return;MediaItem item=player.getCurrentMediaItem();if(item!=null)player.replaceMediaItem(player.getCurrentMediaItemIndex(),item.buildUpon().setMediaMetadata(item.mediaMetadata.buildUpon().setArtworkData(data,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build());});});}
  private void refreshPausedNotification(){PausedNotificationRefresh.update(this,session,2003,()->{PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);PendingIntent stop=PendingIntent.getService(this,32,command(this,STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);return PlaybackNotification.create(this,"stream_local",session,toggle,stop);});}
  @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}
  @Override public MediaSession onGetSession(MediaSession.ControllerInfo controller) {return session;}
@@ -83,7 +83,7 @@ public final class LocalAudioService extends MediaSessionService {
     if(entry.image())throw new IllegalArgumentException("Use image viewer");
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
     this.queue=queue.entries;pendingQueue=null;pendingToken=null;RadioPlaybackService.stopForSourceSwitch(this);
-    List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);byte[] cover=LocalFileArtwork.bytes(this,file);if(cover!=null)media=media.buildUpon().setMediaMetadata(media.mediaMetadata.buildUpon().setArtworkData(cover,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build();items.add(media);network|=PcloudDocument.is(file.uri)||SaavnMusic.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
+    List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);items.add(media);network|=PcloudDocument.is(file.uri)||SaavnMusic.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
     player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",PlaybackHistory.get(this,entry.uri).resume())));
     // Establish foreground immediately, before asynchronous file/decoder preparation.
     PendingIntent toggle=PendingIntent.getService(this,31,command(this,TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
