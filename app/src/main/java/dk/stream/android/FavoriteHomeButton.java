@@ -16,7 +16,7 @@ final class FavoriteHomeButton extends androidx.appcompat.widget.AppCompatButton
  }
  private int dp(float value){return Math.round(value*getResources().getDisplayMetrics().density);}
  @Override protected void onSizeChanged(int width,int height,int oldWidth,int oldHeight){super.onSizeChanged(width,height,oldWidth,oldHeight);setPadding(Math.round(width*0.33f)+dp(20),0,dp(16),0);}
- @Override protected void onMeasure(int widthSpec,int heightSpec){int width=MeasureSpec.getSize(widthSpec);int height=Math.max(dp(80),Math.round(width/4.32f));super.onMeasure(widthSpec,MeasureSpec.getMode(heightSpec)==MeasureSpec.EXACTLY?heightSpec:MeasureSpec.makeMeasureSpec(height,MeasureSpec.EXACTLY));}
+
  private final class Card extends Drawable {
   private final int icon;private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);private final Path clip=new Path();private final RectF rect=new RectF();private int alpha=255;private ColorFilter filter;
   Card(int icon){this.icon=icon;}
@@ -25,7 +25,7 @@ final class FavoriteHomeButton extends androidx.appcompat.widget.AppCompatButton
    paint.setShader(new LinearGradient(0,0,width,height,new int[]{0xFF252525,0xFF1E1E1E},null,Shader.TileMode.CLAMP));canvas.drawRect(0,0,width,height,paint);
    paint.setShader(null);
    paint.setColor(0xFF626262);paint.setStrokeWidth(dp(0.8f));canvas.drawLine(width*0.33f,height*0.20f,width*0.33f,height*0.80f,paint);
-   float size=height*0.70f;canvas.save();canvas.translate(width*0.18f-size/2,(height-size)/2);canvas.scale(size/24,size/24);drawIcon(canvas);canvas.restore();
+   float size=Math.min(height*0.70f,width*0.24f);canvas.save();canvas.translate(width*0.18f-size/2,(height-size)/2);canvas.scale(size/24,size/24);drawIcon(canvas);canvas.restore();
    paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(stroke);paint.setShader(new LinearGradient(0,0,width,height,new int[]{0xFF494949,0xFF353535,0xFF414141},new float[]{0,0.58f,1},Shader.TileMode.CLAMP));canvas.drawRoundRect(rect,radius,radius,paint);paint.setShader(null);paint.setStyle(Paint.Style.FILL);canvas.restore();
   }
   private void drawIcon(Canvas canvas){
