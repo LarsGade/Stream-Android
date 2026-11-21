@@ -54,4 +54,23 @@ public class OpenSpotSaavnApiTest {
   JSONObject saved=new JSONObject(new Library().toJson());saved.remove("openSpotApiUrl");saved.remove("openSpotProxyUrl");Library restored=Library.fromJson(saved.toString());assertEquals(OpenSpotSaavnApi.DEFAULT,restored.openSpotApiUrl);assertEquals(OpenSpotSaavnApi.PROXY,restored.openSpotProxyUrl);assertFalse(OpenSpotSaavnApi.owns("audius_song01"));assertFalse(OpenSpotSaavnApi.owns("song01"));
  }
  @Test public void endpointCannotIncludeCredentials(){try{OpenSpotSaavnApi.endpoint("https://user:secret@example.com/api.php");fail();}catch(IllegalArgumentException expected){assertTrue(expected.getMessage().contains("uden login"));}}
+ private HttpUrl proxiedUrl()throws Exception{RecordedRequest request=server.takeRequest();assertEquals("POST",request.getMethod());return HttpUrl.get(new JSONObject(request.getBody().readUtf8()).getString("url"));}
+ @Test public void artistSearchUsesArtistEndpointAndReturnsProfiles()throws Exception{
+  proxy(new JSONObject().put("response",new JSONObject().put("artists",new JSONArray().put(new JSONObject().put("id","42").put("name","Artist &amp; Band").put("image","https://example.com/150x150.jpg"))).put("total",25)));
+  OpenSpotSaavnApi.EntityPage result=api().searchEntities("Artist",0,OpenSpotSaavnApi.ARTIST);assertEquals("search.getArtistResults",proxiedUrl().queryParameter("__call"));assertEquals(1,result.items.size());assertEquals("42",result.items.get(0).id);assertEquals("Artist & Band",result.items.get(0).name);assertEquals(OpenSpotSaavnApi.ARTIST,result.items.get(0).type);assertTrue(result.hasMore);
+ }
+ @Test public void albumSearchUsesAlbumEndpointAndReadsLastPage()throws Exception{
+  proxy(new JSONObject().put("results",new JSONArray().put(new JSONObject().put("albumid","99").put("title","Album").put("year","2020"))).put("total",21));
+  OpenSpotSaavnApi.EntityPage result=api().searchEntities("Album",1,OpenSpotSaavnApi.ALBUM);HttpUrl url=proxiedUrl();assertEquals("search.getAlbumResults",url.queryParameter("__call"));assertEquals("2",url.queryParameter("p"));assertEquals("99",result.items.get(0).id);assertTrue(result.items.get(0).detail.contains("2020"));assertFalse(result.hasMore);
+ }
+ @Test public void openingArtistUsesProfileIdAndLoadsNextSongPage()throws Exception{
+  proxy(new JSONObject().put("topSongs",new JSONObject().put("songs",new JSONArray().put(song())).put("total",120)));
+  OpenSpotSaavnApi.Page result=api().collection(new OpenSpotSaavnApi.Entity(OpenSpotSaavnApi.ARTIST,"42","Artist","",""),1);HttpUrl url=proxiedUrl();assertEquals("artist.getArtistMoreSong",url.queryParameter("__call"));assertEquals("42",url.queryParameter("artistId"));assertEquals("2",url.queryParameter("page"));assertEquals("50",url.queryParameter("n_song"));assertEquals(1,result.songs.size());assertTrue(result.hasMore);
+ }
+ @Test public void openingAlbumLoadsItsSongsWithoutArtistPagination()throws Exception{
+  proxy(new JSONObject().put("list",new JSONArray().put(song())).put("song_count",12));OpenSpotSaavnApi.Page result=api().collection(new OpenSpotSaavnApi.Entity(OpenSpotSaavnApi.ALBUM,"99","Album","",""),0);HttpUrl url=proxiedUrl();assertEquals("content.getAlbumDetails",url.queryParameter("__call"));assertEquals("99",url.queryParameter("albumid"));assertNull(url.queryParameter("artistId"));assertEquals(1,result.songs.size());assertFalse(result.hasMore);
+ }
+ @Test public void brokenCollectionIsNotShownAsEmptyAlbum()throws Exception{
+  proxy(new JSONObject().put("error","unavailable"));try{api().collection(new OpenSpotSaavnApi.Entity(OpenSpotSaavnApi.ALBUM,"99","Album","",""),0);fail();}catch(IOException expected){assertTrue(expected.getMessage().contains("ikke hente sangene"));}
+ }
 }

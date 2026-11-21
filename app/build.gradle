@@ -5,7 +5,7 @@ android {
  buildFeatures { buildConfig true }
  namespace 'dk.stream.android'
  compileSdk 37
- defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 37; versionCode 238; versionName '1.53.0'; buildConfigField 'String', 'CAST_RECEIVER_APP_ID', '"' + receiverId + '"' }
+ defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 37; versionCode 239; versionName '1.54.0'; buildConfigField 'String', 'CAST_RECEIVER_APP_ID', '"' + receiverId + '"' }
  testOptions {
   unitTests.includeAndroidResources = true
   unitTests.all {

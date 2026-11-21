@@ -220,6 +220,7 @@ public final class MainActivity extends AppCompatActivity {
    public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
    public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(back?View.VISIBLE:View.INVISIBLE);updateHeaderOutputs();}}
    public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
+   public void openMusic(){MainActivity.this.openMusic();}
    public String programme(Library.Entry entry){return programmeTitle(entry,System.currentTimeMillis());}
    public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(recordingBlocked())return;if(item.stream!=null){if(item.stream.channel.kind==Playlist.Kind.TV&&favoriteHub.tvListIndex()==0){tvAnchor=item.stream;tvBackupIndex=0;tvActiveUrl=item.stream.channel.url;MainActivity.this.play(item.stream.channel);}else open(item.stream);}else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
    public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||RadioPlaybackService.playingFile(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
@@ -298,7 +299,7 @@ public final class MainActivity extends AppCompatActivity {
  private void createDrawer() {
   LinearLayout navigation=column();navigation.setBackgroundColor(Color.rgb(30,30,30));navigation.setPadding(dp(20),dp(56),dp(20),dp(20));
   Button favoritesButton=button(R.string.favorites,navigation,()->navigate(true));favoritesButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF3686FF));favoritesButton.setTextColor(Color.WHITE);favoritesButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,favoritesButton.getTextSize()*1.25f);favoritesButton.setTypeface(favoritesButton.getTypeface(),android.graphics.Typeface.BOLD);
-  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),musicButton=button(R.string.music_library,navigation,()->{if(recordingBlocked())return;drawer.closeDrawer(androidx.core.view.GravityCompat.START);startActivity(new android.content.Intent(this,MusicActivity.class));}),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
+  Button streamingButton=button(R.string.library,navigation,this::openStreamingService),radioButton=button(R.string.radio,navigation,()->openRadio(false)),localButton=button(R.string.local_files,navigation,()->openLocal(false)),musicButton=button(R.string.music_library,navigation,this::openMusic),pcloudButton=button(R.string.pcloud,navigation,this::openPcloud);
   for(Button primary:new Button[]{streamingButton,radioButton,localButton,musicButton,pcloudButton}){primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this,R.color.drawer_dark_blue)));primary.setTextColor(Color.WHITE);}
   streamingButton.setSingleLine(false);streamingButton.setGravity(Gravity.CENTER);
   settingsToggle=button(R.string.settings,navigation,()->{});
@@ -440,7 +441,8 @@ public final class MainActivity extends AppCompatActivity {
   minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;
   radioPanel.setVisibility(View.GONE);localPanel.setVisibility(View.GONE);pcloudPanel.setVisibility(View.GONE);list.setVisibility(View.GONE);pageTitle.setVisibility(View.GONE);sections.setVisibility(View.GONE);groupControls.setVisibility(View.GONE);search.setVisibility(View.GONE);status.setVisibility(View.GONE);favoriteCategories.setVisibility(View.GONE);favoriteHub.setVisibility(View.VISIBLE);favoriteHub.showHome();
  }
- private void showFavoriteTab(int tab){showFavoritesHome();if(tab==6)return;favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":tab==3?"Musik":"Streaming");if(tab==0)favoriteHub.selectStreamingKind(library.favoritesStartKind);}
+ private void openMusic(){if(recordingBlocked())return;drawer.closeDrawer(androidx.core.view.GravityCompat.START);startActivity(new android.content.Intent(this,MusicActivity.class));}
+ private void showFavoriteTab(int tab){showFavoritesHome();if(tab==6)return;if(tab==3){openMusic();return;}favoriteHub.showList(tab==1?"Radio":tab==2?"Podcast":"Streaming");if(tab==0)favoriteHub.selectStreamingKind(library.favoritesStartKind);}
  private void openLocal(boolean favorites) {if(recordingBlocked())return;
   minimizeVideo();
   pcloudMode=false;pcloudPanel.setVisibility(View.GONE);
