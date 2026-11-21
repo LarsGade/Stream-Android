@@ -901,7 +901,7 @@ public final class MainActivity extends AppCompatActivity {
  private static final class Row {ImageView logo;TextView name,group;View indicator;}
  boolean externalPlaybackAvailable(){return selected!=null&&(player==null||player.getPlaybackState()!=Player.STATE_ENDED)||ExternalPlaybackActivity.available(this);}
  void refreshExternalOutputSpacing(){updateHeaderOutputs();}
- void openExternalPlayback(){if(recordingBlocked())return;if(CastPlayback.hasMedia(this)||selected==null||localPlayerAttached)ExternalPlaybackActivity.open(this);else ExternalPlaybackActivity.openVideo(this,selected,player);}
+ void openExternalPlayback(){if(recordingBlocked())return;if(selected!=null&&!localPlayerAttached)ExternalPlaybackActivity.openVideo(this,selected,player);else ExternalPlaybackActivity.open(this);}
  private boolean recordingTouchBlocked;
  @Override public boolean dispatchTouchEvent(android.view.MotionEvent event){
   if(event.getActionMasked()==android.view.MotionEvent.ACTION_DOWN){recordingTouchBlocked=false;if(TvRecordingService.active()&&playbackPanel!=null){int[] location=new int[2];playbackPanel.getLocationOnScreen(location);android.graphics.Rect bounds=new android.graphics.Rect(location[0],location[1],location[0]+playbackPanel.getWidth(),location[1]+playbackPanel.getHeight());if(!bounds.contains((int)event.getRawX(),(int)event.getRawY())){recordingBlocked();recordingTouchBlocked=true;}}}
@@ -926,7 +926,7 @@ public final class MainActivity extends AppCompatActivity {
   videoMinimized=false;
   acceptLocalPlayback=false;detachLocalPlayback();
   requestNotificationPermission();
-  stopService(new android.content.Intent(this,RadioPlaybackService.class));stopService(new android.content.Intent(this,LocalAudioService.class));
+  RadioPlaybackService.stopForSourceSwitch(this);LocalAudioService.stopForSourceSwitch(this);
   status.setVisibility(View.VISIBLE);
   boolean same=selected!=null && selected.url.equals(channel.url);
   if(!same) resumePosition=0;else rememberPlayback();

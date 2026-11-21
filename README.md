@@ -1,3 +1,11 @@
+## 1.49.4
+
+Skift fra radio til TV stopper nu selve den gamle afspiller og tømmer dens kø, før TV starter. Det gælder også, når radiotjenesten stadig holdes bundet af Android Auto eller en mediecontroller. Samme oprydning gælder skift mellem lokale filer og radio. En gammel kilde kan derfor ikke vågne igen blot fordi TV frigiver audio focus under ekstern overdragelse.
+
+TV/video-overdragelse bruger nu altid det konkrete medie fra hovedafspilleren. Tidligere Cast- eller radiotilstand kan ikke erstatte denne kilde. Android Auto- og Bluetooth-genoptagelse spærres midlertidigt, mens den eksterne overdragelse er i gang. Valgte apps startes med deres konkrete activity; afspillere med egen task startes uden et straks-afbrudt resultatforløb. Stream betragter først et tilbagebesøg som en afsluttet ekstern visning, efter at Stream faktisk har været dækket af en anden skærm — en midlertidig pause under appstart kan ikke trække brugeren tilbage.
+
+Valideret med debug-build, lint og 23 JVM-tests for medietyper, overdragelseslås og tilbagevendingslogik. En service-regression for beholdt radiotjeneste er tilføjet og kompileret, men ikke kørt med Android/Robolectric-runtime. Fysisk test med eksterne afspillere er ikke udført i dette miljø.
+
 ## 1.49.3
 
 Overdragelse til andre afspillere bruger nu en liste over installerede apps, som kan håndtere den aktuelle URI og filtype. Lyd og video har separate typefamilier, og HLS har passende aliaser og fallback til lyd/video-afspillere. Filnavne bruges også til at bestemme typen, når dokument-URI'er ikke har en filendelse. Lokale dokumenter og pCloud deles gennem appens skrivebeskyttede dokumentrelay med filnavn i URI, MIME-type og midlertidig læseadgang. Manglende pCloud-fillængde søges via HEAD/Range, så flere filer får søgbar læseadgang på Android 8+; Android 6–7 bruger fortsat pipe ved pCloud.

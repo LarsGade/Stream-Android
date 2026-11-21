@@ -37,6 +37,8 @@ public final class LocalAudioService extends MediaSessionService {
   return new MediaItem.Builder().setMediaId(entry.uri).setUri(entry.uri).setMediaMetadata(metadata).build();
  }
  private void changed() {sendBroadcast(new Intent(CHANGED).setPackage(getPackageName()));}
+ static void stopForSourceSwitch(Context context){LocalAudioService service=active;if(service!=null)service.stopLocalPlayback();else context.stopService(new Intent(context,LocalAudioService.class));}
+ private void stopLocalPlayback(){current=null;queue=Collections.emptyList();pendingQueue=null;pendingToken=null;player.pause();player.stop();player.clearMediaItems();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();}
  @Override public void onCreate() {
   super.onCreate();active=this;
   setMediaNotificationProvider(new DismissibleLocalNotifications(this));
@@ -70,7 +72,7 @@ public final class LocalAudioService extends MediaSessionService {
  @Override public MediaSession onGetSession(MediaSession.ControllerInfo controller) {return session;}
  @Override public int onStartCommand(Intent intent,int flags,int startId) {
   super.onStartCommand(intent,flags,startId);if(intent==null) return START_NOT_STICKY;
-  if(STOP.equals(intent.getAction())) {current=null;queue=Collections.emptyList();pendingQueue=null;pendingToken=null;player.pause();player.stop();player.clearMediaItems();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();}
+  if(STOP.equals(intent.getAction())) {stopLocalPlayback();}
   else if(TOGGLE.equals(intent.getAction())) {if(current!=null) {if(player.getPlaybackState()==Player.STATE_ENDED) {player.seekTo(0);player.play();}else if(player.getPlayWhenReady()) player.pause();else {if(player.getPlaybackState()==Player.STATE_IDLE) player.prepare();player.play();}}}
   else if(PREVIOUS.equals(intent.getAction())){if(player.hasPreviousMediaItem())player.seekToPreviousMediaItem();}
   else if(NEXT.equals(intent.getAction())){if(player.hasNextMediaItem())player.seekToNextMediaItem();}
@@ -79,7 +81,7 @@ public final class LocalAudioService extends MediaSessionService {
     LocalMedia entry=new LocalMedia(intent.getStringExtra("uri"),intent.getStringExtra("name"),intent.getStringExtra("mime"),false);
     if(entry.image())throw new IllegalArgumentException("Use image viewer");
     LocalQueue queue=pendingQueue!=null&&Objects.equals(pendingToken,intent.getStringExtra("queue"))?pendingQueue:new LocalQueue(Collections.singletonList(entry),entry);
-    this.queue=queue.entries;pendingQueue=null;pendingToken=null;stopService(new Intent(this,RadioPlaybackService.class));
+    this.queue=queue.entries;pendingQueue=null;pendingToken=null;RadioPlaybackService.stopForSourceSwitch(this);
     List<MediaItem> items=new ArrayList<>();boolean network=false;for(LocalMedia file:queue.entries){MediaItem media=item(file);byte[] cover=LocalFileArtwork.bytes(this,file);if(cover!=null)media=media.buildUpon().setMediaMetadata(media.mediaMetadata.buildUpon().setArtworkData(cover,MediaMetadata.PICTURE_TYPE_FRONT_COVER).build()).build();items.add(media);network|=PcloudDocument.is(file.uri);}player.setWakeMode(network?C.WAKE_MODE_NETWORK:C.WAKE_MODE_LOCAL);
     player.setRepeatMode(Player.REPEAT_MODE_OFF);player.setShuffleModeEnabled(false);player.setMediaItems(items,queue.start,Math.max(0,intent.getLongExtra("position",PlaybackHistory.get(this,entry.uri).resume())));
     // Establish foreground immediately, before asynchronous file/decoder preparation.
