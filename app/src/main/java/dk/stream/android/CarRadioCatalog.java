@@ -45,7 +45,7 @@ public final class CarRadioCatalog {
  public List<MediaItem> children(String parent,int page,int pageSize) throws Exception {
   List<MediaItem> items=new ArrayList<>();
   if(AndroidAutoPages.START.equals(parent)){Library library=store.load();String chosen=AndroidAutoPages.effective(library.androidAutoStartPage,CarAudioCatalog.hasFavorites(library,"Radio"));items=AndroidAutoPages.startItems(chosen,children(chosen,0,Integer.MAX_VALUE),folder(ROOT,"Alle sider"));}
-  else if(ROOT.equals(parent)){items.add(folder(FAVORITES,"Radio"));items.add(folder(AndroidAutoPages.PODCAST,"Podcast"));}
+  else if(ROOT.equals(parent)){items.add(folder(FAVORITES,"Radio"));items.add(folder(AndroidAutoPages.PODCAST,"Podcast"));items.add(folder(AndroidAutoPages.MUSIC,"Musik"));}
   else if(AndroidAutoPages.PODCAST.equals(parent)||AndroidAutoPages.MUSIC.equals(parent)||parent.startsWith(CarAudioCatalog.FOLDER))items.addAll(audio.children(parent));
   else if(AndroidAutoPages.COUNTRIES.equals(parent)){items.add(folder(DANISH,"Danmark"));items.add(folder(ENGLAND,"England"));items.add(folder(USA,"USA"));}
   else if(FAVORITES.equals(parent)||DANISH.equals(parent)||ENGLAND.equals(parent)||USA.equals(parent)) for(RadioStation station:FAVORITES.equals(parent)?favorites():danish()) {String country=ENGLAND.equals(parent)?"GB":USA.equals(parent)?"US":"DK";if(FAVORITES.equals(parent)||country.equals(station.country))items.add(item(station,false));}
