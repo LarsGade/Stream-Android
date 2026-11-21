@@ -113,8 +113,8 @@ public final class MainActivity extends AppCompatActivity {
  private Playlist.Channel selected;private Library.Entry tvAnchor;private int tvBackupIndex;private String tvActiveUrl;
  private LinearLayout groupControls;
  private final SessionManagerListener<CastSession> sessions=new SessionManagerListener<CastSession>() {
-  public void onSessionStarted(CastSession s,String id) { if(!ImageSession.viewing()&&selected!=null&&!selected.url.startsWith("content:")) play(selected); }
-  public void onSessionResumed(CastSession s,boolean suspended) { if(!ImageSession.viewing()&&selected!=null&&!selected.url.startsWith("content:")) play(selected); }
+  public void onSessionStarted(CastSession s,String id) { if(!ImageSession.viewing()&&LocalAudioService.current()==null&&RadioPlaybackService.selectedFile()==null&&RadioPlaybackService.selectedStation()==null&&selected!=null&&player!=null&&player.getCurrentMediaItem()!=null&&!localPlayerAttached&&!selected.url.startsWith("content:"))play(selected); }
+  public void onSessionResumed(CastSession s,boolean suspended) {watchRemote();if(playbackPanel!=null)playbackPanel.refresh();}
   public void onSessionEnded(CastSession s,int error) {watchRemote();if(playbackPanel!=null) playbackPanel.refresh();if(adapter!=null) adapter.notifyDataSetChanged(); }
   public void onSessionStarting(CastSession s) { }
   public void onSessionStartFailed(CastSession s,int error) { status.setText(R.string.cast_failed); }
@@ -595,7 +595,7 @@ public final class MainActivity extends AppCompatActivity {
   if(recordingBlocked())return;PlaybackKeyboard.hide(this);
   if(position<=0)position=PlaybackHistory.get(this,entry.uri).resume();
   if(entry.image()){if(player!=null&&(LocalAudioService.current()==null||!LocalAudioService.current().audio()))player.pause();startActivity(ImageViewerActivity.intent(this,entry,queue));return;}
-  if(CastPlayback.connected(this)){if(CastPlayback.currentLocal(this,entry.uri)){return;}if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
+  if(CastPlayback.connected(this)){if(android.os.Build.VERSION.SDK_INT>=37&&checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK")!=android.content.pm.PackageManager.PERMISSION_GRANTED){pendingCastFile=entry;pendingCastPosition=position;pendingCastQueue=new ArrayList<>(queue);requestPermissions(new String[]{"android.permission.ACCESS_LOCAL_NETWORK"},7300);return;}CastPlayback.playLocal(this,entry,queue,position);return;}
   LocalMedia current=LocalAudioService.current();
   if(current!=null&&current.uri.equals(entry.uri)) {return;}
   videoMinimized=false;requestNotificationPermission();
@@ -960,14 +960,14 @@ public final class MainActivity extends AppCompatActivity {
   selected=channel;PlaybackMark previous=PlaybackHistory.get(this,channel.url);long legacyPosition=library.lastPlayed!=null&&library.lastPlayed.url.equals(channel.url)?library.lastPlayedPosition:resumePosition;long savedPosition=channel.kind==Playlist.Kind.TV?0:previous.duration>0?previous.resume():legacyPosition;changeLibrary(()->{library.lastPlayed=tvAnchor!=null?tvAnchor.channel:channel;library.lastPlayedPosition=savedPosition;});CastSession session=connectedCast();playbackPanel.setTitle(channel.name);playbackPanel.setVisibility(View.VISIBLE);playbackPanel.hideControls();status.setVisibility(View.GONE);hideFullscreenSystemBars();
   if(session!=null && session.isConnected() && session.getRemoteMediaClient()!=null) {
    exitFullscreen();video.setVisibility(View.VISIBLE);if(player!=null){player.stop();player.clearMediaItems();}video.setPlayer(null);watchRemote();playbackPanel.refresh();
-   CastHistory.beforeLoad();String sessionId=session.getSessionId();
+   CastHistory.beforeLoad();final int selectedRequest=CastPlayback.beginSelection();String sessionId=session.getSessionId();
    Runnable resolveCast=()->{CastStream stream=CastStream.resolve(channel.url,channel.kind==Playlist.Kind.TV);runOnUiThread(()->{
-    CastSession current=connectedCast();if(isDestroyed()||castRequest!=castLoadGeneration||current==null||!java.util.Objects.equals(sessionId,current.getSessionId())||current.getRemoteMediaClient()==null)return;
+    CastSession current=connectedCast();if(!CastPlayback.selectionCurrent(selectedRequest)||isDestroyed()||castRequest!=castLoadGeneration||current==null||!java.util.Objects.equals(sessionId,current.getSessionId())||current.getRemoteMediaClient()==null)return;
     MediaMetadata metadata=new MediaMetadata(stream.type.startsWith("audio/")?MediaMetadata.MEDIA_TYPE_MUSIC_TRACK:MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);if(stream.type.startsWith("audio/")){metadata.putString(MediaMetadata.KEY_ARTIST,UiText.text(PlaybackText.SOURCE));metadata.putString(MediaMetadata.KEY_SUBTITLE,UiText.text(PlaybackText.SOURCE));}
     if(okhttp3.HttpUrl.parse(channel.logoUrl)!=null)metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
     CastPlayback.streamLoaded(channel,stream.url);MediaInfo media=new MediaInfo.Builder(stream.url).setContentType(stream.type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
     MediaLoadRequestData.Builder request=new MediaLoadRequestData.Builder().setMediaInfo(media).setAutoplay(true);if(channel.kind!=Playlist.Kind.TV)request.setCurrentTime(savedPosition);
-    current.getRemoteMediaClient().load(request.build()).setResultCallback(result->{if(castRequest!=castLoadGeneration||isDestroyed())return;if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);else{status.setVisibility(View.VISIBLE);status.setText(R.string.cast_stream_failed);}});
+    current.getRemoteMediaClient().load(request.build()).setResultCallback(result->{if(!CastPlayback.selectionCurrent(selectedRequest)||castRequest!=castLoadGeneration||isDestroyed())return;if(result.getStatus().isSuccess())CastPlayback.releaseLocalServer(this);else{status.setVisibility(View.VISIBLE);status.setText(R.string.cast_stream_failed);}});
    });};
    if(session.getRemoteMediaClient().getMediaInfo()!=null)session.getRemoteMediaClient().stop().setResultCallback(result->{if(!isDestroyed()&&castRequest==castLoadGeneration)castStreamWorker.execute(resolveCast);});else castStreamWorker.execute(resolveCast);
   } else {
