@@ -2,9 +2,10 @@ package dk.stream.android;
 
 import android.content.*;
 
-/** Explicit app closure stops owned players, Cast and foreground notifications. */
+/** App closure preserves Cast; explicit reset can still stop all owned playback. */
 @androidx.media3.common.util.UnstableApi
 public final class PlaybackShutdown {
+ public static void closeUi(Context context){if(!CastPlayback.retainedSession(context)){stop(context);return;}BluetoothPlayback.clear();context.stopService(new Intent(context,LocalAudioService.class));context.stopService(new Intent(context,RadioPlaybackService.class));}
  public static void stop(Context context){
   BluetoothPlayback.clear();
   if(LocalAudioService.player()!=null){LocalAudioService.player().pause();LocalAudioService.player().stop();LocalAudioService.player().clearMediaItems();}

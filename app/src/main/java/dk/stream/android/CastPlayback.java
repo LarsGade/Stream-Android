@@ -31,6 +31,7 @@ public final class CastPlayback {
  }
  public static CastSession session(Context context){init(context);CastSession session=cast==null?null:cast.getSessionManager().getCurrentCastSession();return session!=null&&session.isConnected()?session:null;}
  public static boolean connected(Context context){return session(context)!=null;}
+ static boolean retainedSession(Context context){init(context);return cast!=null&&cast.getSessionManager().getCurrentCastSession()!=null;}
  public static RemoteMediaClient remote(Context context){CastSession session=session(context);RemoteMediaClient remote=session==null?null:session.getRemoteMediaClient();if(watched!=remote){if(watched!=null)watched.unregisterCallback(changes);watched=remote;if(remote!=null)remote.registerCallback(changes);}if(remote!=null)CastHistory.start(context);return remote;}
  private static boolean isImageInfo(MediaInfo info){return info!=null&&(info.getContentType()!=null&&info.getContentType().startsWith("image/")||info.getMetadata()!=null&&info.getMetadata().getMediaType()==MediaMetadata.MEDIA_TYPE_PHOTO);}
  public static boolean image(Context context){RemoteMediaClient remote=remote(context);return remote!=null&&isImageInfo(remote.getMediaInfo())&&localUrls.containsValue(remote.getMediaInfo().getContentId());}

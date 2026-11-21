@@ -27,12 +27,12 @@ public final class LocalCastService extends Service {
  public static void castRadio(Context context,RadioStation station){pending=null;pendingRadio=station;try{androidx.core.content.ContextCompat.startForegroundService(context,new Intent(context,LocalCastService.class));}catch(RuntimeException denied){pendingRadio=null;CastPlayback.failed(context);}}
  @Override public IBinder onBind(Intent intent){return null;}
  @Override public int onStartCommand(Intent intent,int flags,int id){
-  if(intent!=null&&"stop".equals(intent.getAction())){CastPlayback.stop(this);stopSelf();return START_NOT_STICKY;}
+  if(intent!=null&&"stop".equals(intent.getAction())){CastPlayback.stopCasting(this);stopSelf();return START_NOT_STICKY;}
   if(Build.VERSION.SDK_INT>=26)((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel("local_cast","Casting",NotificationManager.IMPORTANCE_LOW));
-  PendingIntent open=PendingIntent.getActivity(this,91,(pending!=null&&pending.entries.get(pending.start).image()?ImageViewerActivity.reopenIntent(this):new Intent(this,AudioPlayerActivity.class).putExtra("cast",true)),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+  PendingIntent open=PlaybackNotices.open(this,91);
   PendingIntent stop=PendingIntent.getService(this,92,new Intent(this,LocalCastService.class).setAction("stop"),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   Notification.Builder notification=Build.VERSION.SDK_INT>=26?new Notification.Builder(this,"local_cast"):new Notification.Builder(this);
-  startForeground(2004,notification.setSmallIcon(R.drawable.ic_play).setContentTitle(pendingRadio!=null?"Caster radio":"Caster lokale filer").setContentText("Stream").setContentIntent(open).setOngoing(true).addAction(R.drawable.ic_stop,"Stop",stop).build());
+  startForeground(2004,notification.setSmallIcon(R.drawable.brand_icon).setContentTitle(pendingRadio!=null?"Caster radio":"Caster lokale filer").setContentText("Stream").setContentIntent(open).setOngoing(true).addAction(R.drawable.ic_stop,"Stop",stop).build());
   LocalQueue queue=pending;RadioStation radio=pendingRadio;long position=pendingPosition;pending=null;pendingRadio=null;if(queue==null&&radio==null){stopSelf();return START_NOT_STICKY;}
   com.google.android.gms.cast.framework.CastSession session=CastPlayback.session(this);if(session==null||session.getCastDevice()==null){stopSelf();return START_NOT_STICKY;}
   InetAddress receiver=session.getCastDevice().getInetAddress();String sessionId=session.getSessionId();int request=++generation;
@@ -59,6 +59,6 @@ public final class LocalCastService extends Service {
   }catch(Exception error){android.util.Log.e("StreamCast","Could not serve local queue",error);new Handler(Looper.getMainLooper()).post(()->{if(generation==request){CastPlayback.failed(this);stopSelf();}});}});
   return START_NOT_STICKY;
  }
- @Override public void onTaskRemoved(Intent root){PlaybackShutdown.stop(this);stopSelf();}
+ @Override public void onTaskRemoved(Intent root){/* The receiver still needs the media relay after the UI closes. */}
  @Override public void onDestroy(){androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);generation++;servers.close();worker.shutdownNow();coverWorker.shutdownNow();if(wifi!=null&&wifi.isHeld())wifi.release();if(wake!=null&&wake.isHeld())wake.release();super.onDestroy();}
 }

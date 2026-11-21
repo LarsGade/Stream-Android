@@ -62,7 +62,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
    public boolean handleCustomCommand(MediaSession mediaSession,String action,android.os.Bundle extras) {return false;}
   });
   carCatalog=new CarRadioCatalog(this);carCallback=new CarRadioCallback(carCatalog,()->onStartCommand(internalIntent(this,LIVE),0,0),()->onStartCommand(internalIntent(this,PREVIOUS),0,0),()->onStartCommand(internalIntent(this,NEXT),0,0));
-  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(CarRadioCallback.transportButtons()).setMediaButtonPreferences(CarRadioCallback.transportButtons()).setSessionActivity(PendingIntent.getActivity(this,0,new Intent(this,AudioPlayerActivity.class).putExtra("local",false).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
+  session=new MediaLibrarySession.Builder(this,sessionPlayer,carCallback).setId("stream-radio").setCustomLayout(CarRadioCallback.transportButtons()).setMediaButtonPreferences(CarRadioCallback.transportButtons()).setSessionActivity(PlaybackNotices.open(this,0)).build();
   recoveryHandler.postDelayed(recoveryTick,2000);
  }
  private void createPlayer(){
@@ -166,6 +166,6 @@ public final class RadioPlaybackService extends MediaLibraryService {
   recovery.pause();artworkGeneration++;current=null;error="";behindLive=false;sessionPlayer.stop();player.clearMediaItems();
   androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2001);RadioWidgetProvider.refresh(this);stopSelf();
  }
- @Override public void onTaskRemoved(Intent rootIntent) {artworkGeneration++;current=null;error="";behindLive=false;PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
+ @Override public void onTaskRemoved(Intent rootIntent) {artworkGeneration++;current=null;error="";behindLive=false;PlaybackShutdown.closeUi(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
  @Override public void onDestroy() {recovery.pause();recoveryHandler.removeCallbacks(recoveryTick);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);artworkGeneration++;artworkWorker.shutdownNow();if(carCallback!=null) carCallback.close();if(active==this) active=null;if(session!=null) session.release();if(player!=null){PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();}RadioWidgetProvider.refresh(this);super.onDestroy();}
 }

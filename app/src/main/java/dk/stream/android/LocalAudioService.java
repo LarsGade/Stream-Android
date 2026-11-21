@@ -57,8 +57,7 @@ public final class LocalAudioService extends MediaSessionService {
     android.os.Bundle extras=item.mediaMetadata.extras;
     current=new LocalMedia(item.mediaId,extras==null?String.valueOf(item.mediaMetadata.title):extras.getString("name",String.valueOf(item.mediaMetadata.title)),extras==null?"":extras.getString("mime",""),false);
     if(current.audio())LastAudio.file(LocalAudioService.this,current);musicArtworkGeneration++;if(SaavnMusic.is(current.uri))loadMusicArtwork(current);
-    Intent screen=(current.audio()?new Intent(LocalAudioService.this,AudioPlayerActivity.class).putExtra("local",true):new Intent(LocalAudioService.this,MainActivity.class).putExtra("openFullPlayer",true)).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    session.setSessionActivity(PendingIntent.getActivity(LocalAudioService.this,30,screen,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));changed();
+    session.setSessionActivity(PlaybackNotices.open(LocalAudioService.this,30));changed();
    }
    @Override public void onEvents(Player source,Player.Events events) {changed();}
    @Override public void onPlayerError(PlaybackException error) {
@@ -99,6 +98,6 @@ public final class LocalAudioService extends MediaSessionService {
   }
   return START_NOT_STICKY;
  }
- @Override public void onTaskRemoved(Intent root) {PlaybackShutdown.stop(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
+ @Override public void onTaskRemoved(Intent root) {PlaybackShutdown.closeUi(this);androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();}
  @Override public void onDestroy() {musicArtworkGeneration++;musicArtwork.shutdownNow();androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);if(active==this) active=null;current=null;if(session!=null) session.release();if(player!=null){PlaybackTracker.detach(player);BluetoothOutputButton.unregister(player);player.release();}changed();super.onDestroy();}
 }

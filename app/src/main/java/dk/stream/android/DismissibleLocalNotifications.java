@@ -9,14 +9,14 @@ import com.google.common.collect.ImmutableList;
 @androidx.media3.common.util.UnstableApi
 final class DismissibleLocalNotifications implements MediaNotification.Provider {
  private final LocalAudioService service;private final DefaultMediaNotificationProvider delegate;
- DismissibleLocalNotifications(LocalAudioService service){this.service=service;delegate=new DefaultMediaNotificationProvider.Builder(service).setNotificationId(2003).setChannelId("stream_local").build();}
+ DismissibleLocalNotifications(LocalAudioService service){this.service=service;delegate=new DefaultMediaNotificationProvider.Builder(service).setNotificationId(2003).setChannelId("stream_local").setChannelName(R.string.notification_files).build();}
  @Override public MediaNotification createNotification(MediaSession session,ImmutableList<CommandButton> buttons,MediaNotification.ActionFactory factory,MediaNotification.Provider.Callback callback){
   return dismissible(session,delegate.createNotification(session,buttons,factory,notification->callback.onNotificationChanged(dismissible(session,notification))));
  }
  private MediaNotification dismissible(MediaSession session,MediaNotification original){
   PendingIntent stop=PendingIntent.getService(service,32,LocalAudioService.command(service,LocalAudioService.STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   Notification notification;
-  if(Build.VERSION.SDK_INT>=24)notification=Notification.Builder.recoverBuilder(service,original.notification).setOngoing(session.getPlayer().getPlayWhenReady()).setDeleteIntent(stop).build();
+  if(Build.VERSION.SDK_INT>=24)notification=Notification.Builder.recoverBuilder(service,original.notification).setSmallIcon(R.drawable.brand_icon).setContentIntent(PlaybackNotices.open(service,30)).setOngoing(session.getPlayer().getPlayWhenReady()).setDeleteIntent(stop).build();
   else {PendingIntent toggle=PendingIntent.getService(service,31,LocalAudioService.command(service,LocalAudioService.TOGGLE),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);notification=PlaybackNotification.create(service,"stream_local",session,toggle,stop);}
   if(!session.getPlayer().getPlayWhenReady())notification.flags&=~(Notification.FLAG_ONGOING_EVENT|Notification.FLAG_FOREGROUND_SERVICE|Notification.FLAG_NO_CLEAR);
   return new MediaNotification(original.notificationId,notification);

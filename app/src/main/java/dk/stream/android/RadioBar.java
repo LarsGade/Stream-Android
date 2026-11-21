@@ -38,6 +38,7 @@ public final class RadioBar extends LinearLayout {
   else if(video!=null&&!video.title().isEmpty()){title=video.title();running=video.playing();isLive=video.needsLive();liveChannel=video.liveChannel();liveNow=video.liveNow();image=video.artwork();if(!liveChannel){progressPosition=video.position();progressDuration=video.duration();}}
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();liveChannel=true;liveNow=RadioPlaybackService.audioPlayer()!=null&&RadioPlaybackService.audioPlayer().isPlaying()&&!isLive;image=PlaybackArtwork.radioModel(getContext(),station);}}
   String localCover=LocalFileArtwork.asset(LocalAudioService.current());if(localCover!=null&&!CastPlayback.hasMedia(getContext()))image=localCover;
+  if(image==null&&!title.isEmpty()){if(CastPlayback.hasMedia(getContext()))image=CastPlayback.image(getContext())?R.drawable.ic_image:CastPlayback.audio(getContext())?R.drawable.ic_music_note:R.drawable.ic_video;else if(LocalAudioService.current()!=null)image=MediaFallback.icon(LocalAudioService.current());else image=video!=null&&!video.title().isEmpty()&&RadioPlaybackService.selectedStation()==null?R.drawable.ic_video:R.drawable.ic_music_note;}
   updateArtwork(title.isEmpty()?null:image,title);
   setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(liveChannel?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(CastPlayback.image(getContext())?"Vis billede":running?(liveChannel?"Stop":"Pause"):"Afspil");toggle.setEnabled(!title.isEmpty());invalidate();
  }
@@ -46,8 +47,8 @@ public final class RadioBar extends LinearLayout {
  private void updateArtwork(Object model,String title){
   artwork.setContentDescription("Billede til "+title);if(java.util.Objects.equals(model,artworkModel))return;artworkModel=model;
   com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?GONE:VISIBLE);if(model==null)return;
-  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).override(160,160).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
-   public boolean onLoadFailed(com.bumptech.glide.load.engine.GlideException failure,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,boolean first){artwork.setVisibility(GONE);return false;}
+  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).placeholder(R.drawable.ic_music_note).error(R.drawable.ic_music_note).override(160,160).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
+   public boolean onLoadFailed(com.bumptech.glide.load.engine.GlideException failure,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,boolean first){artwork.setVisibility(VISIBLE);return false;}
    public boolean onResourceReady(android.graphics.drawable.Drawable image,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,com.bumptech.glide.load.DataSource source,boolean first){artwork.setVisibility(VISIBLE);return false;}
   }).into(artwork);
  }
