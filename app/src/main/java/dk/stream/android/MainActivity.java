@@ -147,7 +147,7 @@ public final class MainActivity extends AppCompatActivity {
   getOnBackPressedDispatcher().addCallback(this,miniBack);
   fullscreenBack=new androidx.activity.OnBackPressedCallback(false) {@Override public void handleOnBackPressed() {exitFullscreen();}};
   getOnBackPressedDispatcher().addCallback(this,fullscreenBack);
-  localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(favoriteHubMode)favoriteHub.back();else if(radioMode&&radioPanel!=null)radioPanel.back();else if(pcloudMode&&pcloudPanel!=null)pcloudPanel.back();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
+  localBack=new androidx.activity.OnBackPressedCallback(false) {public void handleOnBackPressed() {if(fullscreen) exitFullscreen();else if(favoriteHubMode)showFavoritesHome();else if(radioMode&&radioPanel!=null)radioPanel.back();else if(pcloudMode&&pcloudPanel!=null)pcloudPanel.back();else if(localPanel!=null) localPanel.back();}};getOnBackPressedDispatcher().addCallback(this,localBack);
   androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root,(view,insets)->{
    androidx.core.graphics.Insets bars=insets.getInsetsIgnoringVisibility(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout());
    view.setPadding(bars.left+dp(12),bars.top+dp(8),bars.right+dp(12),bars.bottom+dp(8));return insets;
@@ -218,9 +218,10 @@ public final class MainActivity extends AppCompatActivity {
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   favoriteHub=new FavoriteHub(this,new FavoriteHub.Actions(){
    public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
-   public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(back?View.VISIBLE:View.INVISIBLE);updateHeaderOutputs();}}
+   public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(View.INVISIBLE);updateHeaderOutputs();}}
    public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
    public void openMusic(){MainActivity.this.openMusic();}
+   public void home(){showFavoritesHome();}
    public String programme(Library.Entry entry){return programmeTitle(entry,System.currentTimeMillis());}
    public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(recordingBlocked())return;if(item.stream!=null){if(item.stream.channel.kind==Playlist.Kind.TV&&favoriteHub.tvListIndex()==0){tvAnchor=item.stream;tvBackupIndex=0;tvActiveUrl=item.stream.channel.url;MainActivity.this.play(item.stream.channel);}else open(item.stream);}else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
    public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||RadioPlaybackService.playingFile(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
