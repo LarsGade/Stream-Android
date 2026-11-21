@@ -27,4 +27,32 @@ public class SaavnApiTest {
  @Test public void savedObsoleteDefaultMigratesToCurrentSource()throws Exception{JSONObject saved=new JSONObject(new Library().toJson());saved.put("saavnApiUrl","https://saavn.dev/api");assertEquals(SaavnApi.DEFAULT,Library.fromJson(saved.toString()).saavnApiUrl);}
  @Test public void customSourcesArePreserved(){assertEquals("https://example.com/api/",SaavnApi.base("https://example.com/api").toString());assertEquals("https://saavn.dev/custom/",SaavnApi.base("https://saavn.dev/custom/").toString());}
  @Test public void dnsFailureHasDanishMessageAndPreservesCause()throws Exception{okhttp3.OkHttpClient client=SaavnApi.HTTP.newBuilder().proxy(java.net.Proxy.NO_PROXY).dns(host->{throw new java.net.UnknownHostException(host);}).build();try{new SaavnApi("https://missing.invalid/api/",client).search("metallica",0);fail();}catch(IOException expected){assertTrue(expected.getMessage().contains("adresse kunne ikke findes"));assertTrue(expected.getCause() instanceof java.net.UnknownHostException);}}
+ private void artists(String results){server.enqueue(new MockResponse().setBody("{\"success\":true,\"data\":{\"results\":"+results+"}}"));}
+ @Test public void exactArtistUsesArtistCatalogueInsteadOfTributeTitleSearch()throws Exception{
+  artists("[{\"id\":\"tribute\",\"name\":\"Artist A Tribute Band\"},{\"id\":\"original\",\"name\":\"Artist A\"}]");
+  server.enqueue(new MockResponse().setBody("{\"data\":{\"total\":40,\"songs\":["+song()+"]}}"));
+  SaavnApi.Page page=new SaavnApi(server.url("/api/").toString()).searchMusic("  ARTIST   a ",2);
+  RecordedRequest lookup=server.takeRequest(),catalogue=server.takeRequest();
+  assertEquals("/api/search/artists",lookup.getRequestUrl().encodedPath());
+  assertEquals("/api/artists/original/songs",catalogue.getRequestUrl().encodedPath());
+  assertEquals("2",catalogue.getRequestUrl().queryParameter("page"));assertEquals("desc",catalogue.getRequestUrl().queryParameter("sortOrder"));
+  assertEquals("Artist A",page.artist);assertEquals(40,page.total);assertEquals(1,page.songs.size());assertEquals(2,server.getRequestCount());
+ }
+ @Test public void emptyArtistCatalogueDoesNotSubstituteKaraokeResults()throws Exception{
+  artists("[{\"id\":\"original\",\"name\":\"Metallica\"}]");server.enqueue(new MockResponse().setBody("{\"data\":{\"total\":0,\"songs\":[]}}"));
+  SaavnApi.Page page=new SaavnApi(server.url("/api/").toString()).searchMusic("Metallica",0);
+  assertTrue(page.songs.isEmpty());assertTrue(page.summary(0).contains("Metallica"));assertTrue(page.summary(0).contains("kataloget"));assertEquals(2,server.getRequestCount());
+ }
+ @Test public void songTitleSearchDoesNotChoosePartialArtistMatch()throws Exception{
+  artists("[{\"id\":\"tribute\",\"name\":\"Rock Tribute Band\"}]");server.enqueue(new MockResponse().setBody("{\"data\":{\"results\":["+song()+"]}}"));
+  SaavnApi.Page page=new SaavnApi(server.url("/api/").toString()).searchMusic("Rock",0);
+  server.takeRequest();assertEquals("/api/search/songs",server.takeRequest().getRequestUrl().encodedPath());assertEquals("",page.artist);assertEquals(1,page.songs.size());
+ }
+ @Test public void artistFailureIsNotReportedAsMissingOriginals()throws Exception{
+  artists("[{\"id\":\"original\",\"name\":\"Metallica\"}]");server.enqueue(new MockResponse().setResponseCode(503));
+  try{new SaavnApi(server.url("/api/").toString()).searchMusic("Metallica",0);fail();}catch(IOException expected){assertTrue(expected.getMessage().contains("503"));}assertEquals(2,server.getRequestCount());
+ }
+ @Test public void malformedArtistResultsDoNotSilentlyFallBackToCovers()throws Exception{
+  server.enqueue(new MockResponse().setBody("{\"data\":{}}"));try{new SaavnApi(server.url("/api/").toString()).searchMusic("Metallica",0);fail();}catch(IOException expected){assertTrue(expected.getMessage().contains("kunstnerdata"));}assertEquals(1,server.getRequestCount());
+ }
 }
