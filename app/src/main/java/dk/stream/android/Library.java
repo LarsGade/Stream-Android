@@ -95,6 +95,7 @@ public final class Library {
  public void setFavoritesStartOption(int option){if(option<0||option>6)throw new IllegalArgumentException("Unknown start option");setFavoritesStartTab(option==0?6:option<=3?0:option-3);if(option>=1&&option<=3)favoritesStartKind=option-1;}
  public void moveFavoriteHome(String name,int direction){int index=favoriteHomeOrder.indexOf(name);if(index<0||(direction!=-1&&direction!=1))throw new IllegalArgumentException("Unknown home button movement");int target=index+direction;if(target>=0&&target<favoriteHomeOrder.size())java.util.Collections.swap(favoriteHomeOrder,index,target);}
  public String saavnApiUrl=SaavnApi.DEFAULT;
+ public String audiusApiUrl=AudiusApi.DEFAULT;
  public String androidAutoStartPage=AndroidAutoPages.FAVORITES;
  public boolean dailyGuideUpdate;
  public boolean favoritesOnStart=true,favoritesRadio,autoPlayLast=true,miniPlayer=true;
@@ -184,7 +185,7 @@ public final class Library {
   JSONObject root=new JSONObject();root.put("tvFavoriteLists",new JSONObject(tvFavoriteLists));root.put("hiddenHomeButtons",new JSONArray(hiddenHomeButtons));root.put("favoriteHomeOrder",new JSONArray(favoriteHomeOrder));root.put("favoritesStartKind",favoritesStartKind);root.put("favoriteKinds",new JSONObject(favoriteKinds));root.put("favoriteAssignments",new JSONObject(favoriteAssignments));root.put("favoriteOrder",new JSONArray(favoriteOrder));if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesCurrentTab",favoritesCurrentTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   JSONArray photos=new JSONArray();for(LocalMedia photo:imageFavorites)photos.put(photo.json());root.put("imageFavorites",photos);
-  root.put("saavnApiUrl",saavnApiUrl);root.put("androidAutoStartPage",AndroidAutoPages.normalize(androidAutoStartPage));root.put("dailyGuideUpdate",dailyGuideUpdate);root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
+  root.put("audiusApiUrl",audiusApiUrl);root.put("saavnApiUrl",saavnApiUrl);root.put("androidAutoStartPage",AndroidAutoPages.normalize(androidAutoStartPage));root.put("dailyGuideUpdate",dailyGuideUpdate);root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
    JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
   }
@@ -212,6 +213,7 @@ public final class Library {
   JSONArray locals=root.optJSONArray("localFiles"),localStars=root.optJSONArray("localFavorites");if(locals!=null) for(int i=0;i<locals.length();i++) library.addLocal(LocalMedia.from(locals.getJSONObject(i)));if(localStars!=null) for(int i=0;i<localStars.length();i++) {LocalMedia entry=LocalMedia.from(localStars.getJSONObject(i));if(!library.isLocalFavorite(entry.uri))(entry.image()?library.imageFavorites:library.localFavorites).add(entry);}
   JSONArray photos=root.optJSONArray("imageFavorites");if(photos!=null)for(int i=0;i<photos.length();i++){LocalMedia photo=LocalMedia.from(photos.getJSONObject(i));if(photo.image()&&!library.isLocalFavorite(photo.uri))library.imageFavorites.add(photo);}
   library.lastSourceId=root.optString("lastSourceId","");
+  try{library.audiusApiUrl=SaavnApi.base(root.optString("audiusApiUrl",AudiusApi.DEFAULT)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid Audius API address");}
   try{library.saavnApiUrl=SaavnApi.base(root.optString("saavnApiUrl",SaavnApi.DEFAULT)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid music API address");}
   library.androidAutoStartPage=AndroidAutoPages.normalize(root.optString("androidAutoStartPage",AndroidAutoPages.FAVORITES));
   library.dailyGuideUpdate=root.optBoolean("dailyGuideUpdate",false);library.autoPlayLast=root.optBoolean("autoPlayLast",true);library.miniPlayer=root.optBoolean("miniPlayer",true);library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
