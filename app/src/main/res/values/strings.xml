@@ -31,6 +31,7 @@
  <string name="library">TV, Film &amp; Serier</string>
  <string name="streaming_title">TV, Film &amp; Serier</string>
  <string name="favorites">Favoritter</string>
+ <string name="home">Forside</string>
  <string name="sources">Kilder til TV, Film &amp; Serier</string>
  <string name="start_favorites">Vis favoritter, når appen åbner</string>
  <string name="storage_failed">Kunne ikke læse eller gemme dine lokale indstillinger. Dine gemte data er ikke overskrevet.</string>
