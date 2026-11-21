@@ -1,3 +1,13 @@
+## 1.49.3
+
+Overdragelse til andre afspillere bruger nu en liste over installerede apps, som kan håndtere den aktuelle URI og filtype. Lyd og video har separate typefamilier, og HLS har passende aliaser og fallback til lyd/video-afspillere. Filnavne bruges også til at bestemme typen, når dokument-URI'er ikke har en filendelse. Lokale dokumenter og pCloud deles gennem appens skrivebeskyttede dokumentrelay med filnavn i URI, MIME-type og midlertidig læseadgang. Manglende pCloud-fillængde søges via HEAD/Range, så flere filer får søgbar læseadgang på Android 8+; Android 6–7 bruger fortsat pipe ved pCloud.
+
+Stream stopper den oprindelige netværksindlæsning før overdragelsen. Cast-stop afventes før den eksterne app åbnes. Positionen opdateres ved selve valget, og annullering bevarer en igangværende lydafspilning. Ved tilbagevenden genbruges den lokale kø, hvor det er muligt. En ekstern app, der fortsætter med lyd i baggrunden, bliver ikke straks afbrudt af Stream; skærmen tilbyder Fortsæt i Stream. Når anden lyd er stoppet og Stream får fokus igen, genoptages kilden automatisk.
+
+Den blå knap følger en midlertidig overdragelsessession. Den er grå i appvælgeren, efter annullering/retur, ved fejl og under afspilning i Stream. Gamle valg fra tidligere processer kan ikke holde knappen blå. Den tidligere chooser-broadcast og den vedvarende blå præference er fjernet.
+
+Valideret med debug-build, lint og 19 JVM-tests for medietyper, sessionsfarve og tilbagevenden. Fysisk test med andre afspilningsapps er ikke udført i dette miljø; deres understøttelse af formater og returpositioner varierer.
+
 ## 1.49.2
 
 Stream registrerer nu én senest valgt lydkilde på tværs af radio, lokale lydfiler, pCloud og eksplicitte Cast-valg. Når Android Auto anmoder om genoptagelse via Media3 onPlaybackResumption, gendannes netop denne kilde. Lydfiler bruger afspilningshistorikkens gemte position; radio genindlæses live. En ældre radiosession ryddes ved tilslutning eller Play fra en bilcontroller, hvis en anden lydkilde siden er valgt, så radio ikke får forrang over en nyere podcast.
