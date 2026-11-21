@@ -14,6 +14,7 @@ final class CastFileArtwork {
  static byte[] read(Context context,LocalMedia file,String mediaUrl){
   if(!file.audio())return null;
   byte[] data=available(context,file);if(data!=null&&data.length>0)return data;
+  if(SaavnMusic.is(file.uri))return SaavnMusic.artwork(context,file);
   MediaMetadataRetriever retriever=new MediaMetadataRetriever();
   try{if(PcloudDocument.is(file.uri))retriever.setDataSource(mediaUrl,new java.util.HashMap<>());else retriever.setDataSource(context,Uri.parse(file.uri));return retriever.getEmbeddedPicture();}
   catch(Exception unavailable){return null;}finally{try{retriever.release();}catch(Exception ignored){}}
