@@ -79,7 +79,7 @@ public final class RadioPanel extends LinearLayout {
   });
  }
  private void filter() {
-  title.setVisibility(headingManaged||favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(VISIBLE);up.setVisibility(canGoBack()?VISIBLE:GONE);folderTitle.setVisibility(canGoBack()?VISIBLE:GONE);if(canGoBack())folderTitle.setText(COUNTRY_NAMES[countryIndex]);backState.accept(canGoBack());
+  title.setVisibility(headingManaged||favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(headingManaged?GONE:VISIBLE);up.setVisibility(canGoBack()?VISIBLE:GONE);folderTitle.setVisibility(canGoBack()?VISIBLE:GONE);if(canGoBack())folderTitle.setText(COUNTRY_NAMES[countryIndex]);backState.accept(canGoBack());
   visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
   for(RadioStation station:favorites?library.get().radioFavorites:stations) if((favorites||countryIndex<0||COUNTRIES[countryIndex].equals(station.country))&&station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
   showMessage(favorites||folderList()?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
@@ -93,7 +93,8 @@ public final class RadioPanel extends LinearLayout {
   AlertDialog dialog=new AlertDialog.Builder(getContext()).setTitle(R.string.rename_radio).setView(name).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
   dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{if(name.getText().toString().trim().isEmpty()) {name.setError(getContext().getString(R.string.rename_radio));return;}if(save.apply(()->library.get().renameRadio(station.id,name.getText().toString()))) {dialog.dismiss();filter();}}));dialog.show();
  }
- public void setHeadingManaged(boolean value){headingManaged=value;title.setVisibility(value||favorites?GONE:VISIBLE);}
+ public void setSearchQuery(String value){search.setText(value);}
+ public void setHeadingManaged(boolean value){headingManaged=value;title.setVisibility(value||favorites?GONE:VISIBLE);search.setVisibility(value?GONE:VISIBLE);}
  public void close() {closed=true;worker.shutdownNow();removeCallbacks(tick);main.removeCallbacksAndMessages(null);}
  @Override protected void onAttachedToWindow() {super.onAttachedToWindow();removeCallbacks(tick);post(tick);}
  @Override protected void onDetachedFromWindow() {removeCallbacks(tick);super.onDetachedFromWindow();}

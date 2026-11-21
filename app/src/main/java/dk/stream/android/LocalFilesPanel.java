@@ -59,7 +59,8 @@ public final class LocalFilesPanel extends LinearLayout {
    if(PcloudDocument.is(folder.uri)){PcloudAccount account=actions.library().pcloud;WebDavClient client=new WebDavClient(account);try{entries=new ArrayList<>();for(WebDavClient.Entry entry:client.list(PcloudDocument.url(account,folder.uri)))entries.add(entry.media(account));}finally{client.cancel();}}else entries=LocalMedia.children(getContext(),folder);post(()->{if(closed||generation!=request)return;show(entries);showMessage(entries.isEmpty()?"Ingen mediefiler i mappen.":"");});}
    catch(Exception failure) {post(()->{if(!closed&&generation==request) showMessage("Kan ikke åbne mappen. Tilføj den igen, hvis den er flyttet, slettet eller adgangen er fjernet.");});}});
  }
- public void setHeadingManaged(boolean value){headingManaged=value;title.setVisibility(value||favorites?GONE:VISIBLE);}
+ public void setSearchQuery(String value){search.setText(value);}
+ public void setHeadingManaged(boolean value){headingManaged=value;title.setVisibility(value||favorites?GONE:VISIBLE);search.setVisibility(value?GONE:VISIBLE);}
  public void close() {closed=true;if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}
  private final class Adapter extends BaseAdapter {
   public int getCount(){return visible.size();}public LocalMedia getItem(int p){return visible.get(p);}public long getItemId(int p){return p;}
