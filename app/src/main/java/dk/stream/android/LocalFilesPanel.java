@@ -33,13 +33,13 @@ public final class LocalFilesPanel extends LinearLayout {
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence value,int start,int count,int after) {}public void onTextChanged(CharSequence value,int start,int before,int count) {filter();}public void afterTextChanged(android.text.Editable value) {}});
 
   LinearLayout folderNavigation=new LinearLayout(context);folderNavigation.setGravity(Gravity.CENTER_VERTICAL);addView(folderNavigation,new LayoutParams(-1,-2));
-  up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams backParams=new LayoutParams(backSize,backSize);backParams.gravity=Gravity.LEFT;folderNavigation.addView(up,backParams);up.setOnClickListener(v->back());
+  up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription(UiText.text("Tilbage"));up.setBackgroundColor(Color.TRANSPARENT);int backSize=Math.round(48*getResources().getDisplayMetrics().density);LayoutParams backParams=new LayoutParams(backSize,backSize);backParams.gravity=Gravity.LEFT;folderNavigation.addView(up,backParams);up.setOnClickListener(v->back());
   path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);path.setTypeface(null,android.graphics.Typeface.BOLD);android.graphics.drawable.Drawable folderIcon=context.getDrawable(R.drawable.ic_folder);int folderSize=Math.round(24*getResources().getDisplayMetrics().density);folderIcon.setBounds(0,0,folderSize,folderSize);path.setCompoundDrawables(folderIcon,null,null,null);path.setCompoundDrawablePadding(MediaListStyle.iconGap(path));path.setMaxLines(2);path.setEllipsize(android.text.TextUtils.TruncateAt.END);folderNavigation.addView(path,new LayoutParams(0,-2,1));
   message=new TextView(context);message.setTextColor(Color.LTGRAY);message.setVisibility(GONE);addView(message);
   list=new ListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
   list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {search.setText("");parents.addLast(entry);loadFolder();}else actions.play(entry);});
   list.setOnItemLongClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);PopupMenu menu=new StablePopupMenu(context,v);MediaDownloads.add(menu,getContext(),FavoriteLists.of(entry));
-   menu.getMenu().add(actions.library().isLocalFavorite(entry.uri)?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(actions.library().isLocalFavorite(entry.uri)){actions.save(()->FavoriteLists.remove(actions.library(),FavoriteLists.of(entry)));reload();}else FavoritePicker.show(getContext(),actions.library(),actions::save,FavoriteLists.of(entry),this::reload);return true;});
+   menu.getMenu().add(UiText.text(actions.library().isLocalFavorite(entry.uri)?"Fjern fra favoritter":"Tilføj til favoritter")).setOnMenuItemClickListener(item->{if(actions.library().isLocalFavorite(entry.uri)){actions.save(()->FavoriteLists.remove(actions.library(),FavoriteLists.of(entry)));reload();}else FavoritePicker.show(getContext(),actions.library(),actions::save,FavoriteLists.of(entry),this::reload);return true;});
    menu.show();return true;});
  }
  public void open(boolean favorites) {open(favorites,false);}
@@ -50,7 +50,7 @@ public final class LocalFilesPanel extends LinearLayout {
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
  public void reload() {title.setVisibility(headingManaged||favorites?GONE:VISIBLE);actions.navigationChanged(canGoBack());up.setVisibility(canGoBack()?VISIBLE:GONE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText("");path.setVisibility(GONE);List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
- private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
+ private void showMessage(String text) {message.setText(UiText.text(text));message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);Collections.sort(entries,NaturalNameOrder.MEDIA);filter();}
  private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayFileName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);path.setVisibility(query.isEmpty()&&canGoBack()?VISIBLE:GONE);adapter.notifyDataSetChanged();}
  private void loadFolder() {

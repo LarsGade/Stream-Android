@@ -10,7 +10,7 @@ final class FavoriteHeading {
   Drawable[] current=heading.getCompoundDrawablesRelative();Drawable star=null;
   if(favorites){star=heading.getContext().getDrawable(R.drawable.ic_favorite);int size=Math.round(24*heading.getResources().getDisplayMetrics().density);star.setBounds(0,0,size,size);}
   heading.setCompoundDrawablePadding(Math.round(8*heading.getResources().getDisplayMetrics().density));heading.setCompoundDrawablesRelative(current[0],current[1],star,current[3]);
-  heading.setContentDescription(heading.getText()+(favorites?", favoritter":""));
+  heading.setContentDescription(UiText.text(heading.getText()+(favorites?", favoritter":"")));
  }
  private FavoriteHeading(){}
 }

@@ -18,5 +18,5 @@ public final class NowPlayingIndicator {
  }
  public static void show(View dot,boolean playing) {dot.setActivated(playing);render(dot,dot.getTag() instanceof PlaybackMark?(PlaybackMark)dot.getTag():new PlaybackMark(0,0,false));}
  static void history(View dot,PlaybackMark mark){dot.setTag(mark);render(dot,mark);}
- private static void render(View dot,PlaybackMark mark){boolean playing=dot.isActivated();int color=PlaybackStatus.color(playing,mark);((GradientDrawable)dot.getBackground()).setColor(color);dot.setVisibility(color==0?View.INVISIBLE:View.VISIBLE);dot.setContentDescription(playing?dot.getContext().getString(R.string.now_playing):mark.complete?"Afspillet færdig":"Delvist afspillet");}
+ private static void render(View dot,PlaybackMark mark){boolean playing=dot.isActivated();int color=PlaybackStatus.color(playing,mark);((GradientDrawable)dot.getBackground()).setColor(color);dot.setVisibility(color==0?View.INVISIBLE:View.VISIBLE);dot.setContentDescription(UiText.text(playing?dot.getContext().getString(R.string.now_playing):mark.complete?"Afspillet færdig":"Delvist afspillet"));}
 }

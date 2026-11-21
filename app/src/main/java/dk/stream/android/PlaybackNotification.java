@@ -23,13 +23,13 @@ public final class PlaybackNotification {
  @SuppressWarnings("deprecation")
  private static Notification create(Context context,String channel,MediaSession session,PendingIntent toggle,PendingIntent stop,boolean liveRadio,PendingIntent live,boolean atLive){
   if(Build.VERSION.SDK_INT>=26) {
-   NotificationChannel settings=new NotificationChannel(channel,PlaybackNotices.channelName(channel),NotificationManager.IMPORTANCE_LOW);settings.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+   NotificationChannel settings=new NotificationChannel(channel,UiText.text(PlaybackNotices.channelName(channel)),NotificationManager.IMPORTANCE_LOW);settings.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
    ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(settings);
   }
   Notification.Builder builder=Build.VERSION.SDK_INT>=26?new Notification.Builder(context,channel):new Notification.Builder(context);
   Player player=session.getPlayer();androidx.media3.common.MediaMetadata metadata=player.getMediaMetadata();boolean playing=player.getPlayWhenReady();
   builder.setColor(0xFF3686FF).setSmallIcon(R.drawable.brand_icon).setContentTitle(metadata.title==null?context.getString(R.string.app_name):metadata.title)
-   .setContentText(PlaybackText.SOURCE).setContentIntent(PlaybackNotices.open(context,2000)).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false);
+   .setContentText(UiText.text(PlaybackText.SOURCE)).setContentIntent(PlaybackNotices.open(context,2000)).setVisibility(Notification.VISIBILITY_PUBLIC).setOnlyAlertOnce(true).setOngoing(playing).setDeleteIntent(stop).setShowWhen(false);
   boolean radio="stream_radio".equals(channel),local="stream_local".equals(channel),car="stream_car_audio".equals(channel);PendingIntent previous=null,next=null;
   if(local){if(player.hasPreviousMediaItem())previous=PendingIntent.getService(context,34,LocalAudioService.command(context,LocalAudioService.PREVIOUS),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);if(player.hasNextMediaItem())next=PendingIntent.getService(context,35,LocalAudioService.command(context,LocalAudioService.NEXT),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}
   if(car){if(player.hasPreviousMediaItem())previous=PendingIntent.getService(context,2034,RadioPlaybackService.internalIntent(context,RadioPlaybackService.PREVIOUS),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);if(player.hasNextMediaItem())next=PendingIntent.getService(context,2035,RadioPlaybackService.internalIntent(context,RadioPlaybackService.NEXT),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);}

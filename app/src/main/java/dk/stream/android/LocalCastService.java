@@ -32,7 +32,7 @@ public final class LocalCastService extends Service {
   PendingIntent open=PlaybackNotices.open(this,91);
   PendingIntent stop=PendingIntent.getService(this,92,new Intent(this,LocalCastService.class).setAction("stop"),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   Notification.Builder notification=Build.VERSION.SDK_INT>=26?new Notification.Builder(this,"local_cast"):new Notification.Builder(this);
-  startForeground(2004,notification.setSmallIcon(R.drawable.brand_icon).setContentTitle(pendingRadio!=null?"Caster radio":"Caster lokale filer").setContentText("Stream").setContentIntent(open).setOngoing(true).addAction(R.drawable.ic_stop,"Stop",stop).build());
+  startForeground(2004,notification.setSmallIcon(R.drawable.brand_icon).setContentTitle(UiText.text(pendingRadio!=null?"Caster radio":"Caster lokale filer")).setContentText("Stream").setContentIntent(open).setOngoing(true).addAction(R.drawable.ic_stop,"Stop",stop).build());
   LocalQueue queue=pending;RadioStation radio=pendingRadio;long position=pendingPosition;pending=null;pendingRadio=null;if(queue==null&&radio==null){stopSelf();return START_NOT_STICKY;}
   com.google.android.gms.cast.framework.CastSession session=CastPlayback.session(this);if(session==null||session.getCastDevice()==null){stopSelf();return START_NOT_STICKY;}
   InetAddress receiver=session.getCastDevice().getInetAddress();String sessionId=session.getSessionId();int request=++generation;

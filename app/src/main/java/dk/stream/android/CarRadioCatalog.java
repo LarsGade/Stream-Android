@@ -62,7 +62,7 @@ public final class CarRadioCatalog {
   try {for(RadioStation station:danish()) if(!matches.containsKey(station.id) && LocalChannelLogos.key(station.displayName()).contains(key)) matches.put(station.id,station);} catch(Exception e) {if(matches.isEmpty()) throw e;}
   List<MediaItem> result=new ArrayList<>();for(RadioStation station:matches.values()) result.add(item(station,false));result.addAll(audio.search(query));return result;
  }
- public static MediaItem folder(String id,String title) {return new MediaItem.Builder().setMediaId(id).setMediaMetadata(PlaybackText.metadata(title).setArtworkUri(CarArtworkProvider.page(id)).setIsBrowsable(true).setIsPlayable(false).build()).build();}
+ public static MediaItem folder(String id,String title) {return new MediaItem.Builder().setMediaId(id).setMediaMetadata(PlaybackText.metadata(UiText.text(title)).setArtworkUri(CarArtworkProvider.page(id)).setIsBrowsable(true).setIsPlayable(false).build()).build();}
  static android.os.Bundle liveExtras(){android.os.Bundle extras=new android.os.Bundle();extras.putBoolean("history_live",true);return extras;}
  static byte[] artworkData(Context context,RadioStation station){String name=PlaybackArtwork.logoName(context,station);return PlaybackArtwork.bundled(context,name)?PlaybackArtwork.local(context,name):CarPageArtwork.png("radio-placeholder");}
  public MediaItem item(RadioStation station,boolean playable) {

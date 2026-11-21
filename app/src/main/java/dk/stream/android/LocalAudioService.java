@@ -45,7 +45,7 @@ public final class LocalAudioService extends MediaSessionService {
   setMediaNotificationProvider(new DismissibleLocalNotifications(this));
   setListener(new MediaSessionService.Listener() {@Override public void onForegroundServiceStartNotAllowedException() {
    if(player!=null) player.pause();android.util.Log.e("StreamLocalPlayback","Android rejected foreground playback");
-   android.widget.Toast.makeText(LocalAudioService.this,"Åbn Stream for at genoptage afspilningen.",android.widget.Toast.LENGTH_LONG).show();
+   UiText.toast(LocalAudioService.this,"Åbn Stream for at genoptage afspilningen.",android.widget.Toast.LENGTH_LONG).show();
   }});
   player=new ExoPlayer.Builder(this,new DefaultRenderersFactory(this).setEnableDecoderFallback(true)).setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(()->new PcloudDataSource(this))).build();BluetoothOutputButton.register(this,player);PlaybackTracker.attach(this,player);
   player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true);player.setHandleAudioBecomingNoisy(true);player.setWakeMode(C.WAKE_MODE_LOCAL);
@@ -62,7 +62,7 @@ public final class LocalAudioService extends MediaSessionService {
    @Override public void onEvents(Player source,Player.Events events) {changed();}
    @Override public void onPlayerError(PlaybackException error) {
     android.util.Log.e("StreamLocalPlayback","Local playback failed: "+error.getErrorCodeName(),error);
-    android.widget.Toast.makeText(LocalAudioService.this,"Filen kan ikke afspilles. Kontrollér filformat og adgang til filen.",android.widget.Toast.LENGTH_LONG).show();
+    UiText.toast(LocalAudioService.this,"Filen kan ikke afspilles. Kontrollér filformat og adgang til filen.",android.widget.Toast.LENGTH_LONG).show();
     player.pause();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();
    }
   });
@@ -93,7 +93,7 @@ public final class LocalAudioService extends MediaSessionService {
    } catch(Exception failure) {
     android.util.Log.e("StreamLocalPlayback","Could not start local playback",failure);
     current=null;player.stop();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();
-    android.widget.Toast.makeText(this,"Kan ikke åbne filen. Vælg filen igen, hvis adgangen er fjernet.",android.widget.Toast.LENGTH_LONG).show();
+    UiText.toast(this,"Kan ikke åbne filen. Vælg filen igen, hvis adgangen er fjernet.",android.widget.Toast.LENGTH_LONG).show();
    }
   }
   return START_NOT_STICKY;

@@ -24,7 +24,7 @@ final class ClearableSearchEditText extends androidx.appcompat.widget.AppCompatE
   return super.onTouchEvent(event);
  }
  @Override public boolean performClick(){return super.performClick();}
- @Override public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info){super.onInitializeAccessibilityNodeInfo(info);if(hasQuery())info.addAction(new AccessibilityNodeInfo.AccessibilityAction(R.id.action_clear_search,"Ryd søgning"));}
+ @Override public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info){super.onInitializeAccessibilityNodeInfo(info);if(hasQuery())info.addAction(new AccessibilityNodeInfo.AccessibilityAction(R.id.action_clear_search,UiText.text("Ryd søgning")));}
  @Override public boolean performAccessibilityAction(int action,Bundle args){if(action==R.id.action_clear_search&&hasQuery()){setText("");return true;}return super.performAccessibilityAction(action,args);}
  private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
 }

@@ -170,7 +170,7 @@ public final class MainActivity extends AppCompatActivity {
    @Override public void onDrawerOpened(View view) {closeDrawer.setEnabled(true);}
    @Override public void onDrawerClosed(View view) {closeDrawer.setEnabled(false);collapseSettings();}
   });
-  destinationHeader=column();destinationHeader.setPadding(dp(4),0,dp(4),0);destinationHeader.setVisibility(View.GONE);LinearLayout destinationRow=new LinearLayout(this);destinationRow.setGravity(Gravity.CENTER_VERTICAL);ImageButton homeBack=iconButton(R.drawable.ic_back,"Tilbage til forsiden");homeBack.setOnClickListener(view->showFavoritesHome());destinationRow.addView(homeBack,new LinearLayout.LayoutParams(dp(48),dp(48)));destinationTitle=text("",28,Color.WHITE);destinationTitle.setTypeface(null,android.graphics.Typeface.BOLD);destinationRow.addView(destinationTitle,new LinearLayout.LayoutParams(0,-2,1));destinationHeader.addView(destinationRow);destinationSearch=new MusicSearchField(this,this::searchDestination);destinationHeader.addView(destinationSearch);destinationFavorites=new Button(this);destinationFavorites.setText("Favoritter");destinationFavorites.setAllCaps(false);destinationFavorites.setTextColor(Color.WHITE);destinationFavorites.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF253850));destinationFavorites.setOnClickListener(view->{String page=destination;if(page.isEmpty())return;boolean selected=!"Alle".contentEquals(destinationFavorites.getText());if(changeLibrary(()->library.pageFavorites.put(page,selected)))openDestination(page);});LinearLayout.LayoutParams favoriteSpace=new LinearLayout.LayoutParams(-1,dp(42));favoriteSpace.topMargin=dp(8);destinationHeader.addView(destinationFavorites,favoriteSpace);root.addView(destinationHeader);
+  destinationHeader=column();destinationHeader.setPadding(dp(4),0,dp(4),0);destinationHeader.setVisibility(View.GONE);LinearLayout destinationRow=new LinearLayout(this);destinationRow.setGravity(Gravity.CENTER_VERTICAL);ImageButton homeBack=iconButton(R.drawable.ic_back,"Tilbage til forsiden");homeBack.setOnClickListener(view->showFavoritesHome());destinationRow.addView(homeBack,new LinearLayout.LayoutParams(dp(48),dp(48)));destinationTitle=text("",28,Color.WHITE);destinationTitle.setTypeface(null,android.graphics.Typeface.BOLD);destinationRow.addView(destinationTitle,new LinearLayout.LayoutParams(0,-2,1));destinationHeader.addView(destinationRow);destinationSearch=new MusicSearchField(this,this::searchDestination);destinationHeader.addView(destinationSearch);destinationFavorites=new Button(this);destinationFavorites.setText(UiText.text("Favoritter"));destinationFavorites.setAllCaps(false);destinationFavorites.setTextColor(Color.WHITE);destinationFavorites.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF253850));destinationFavorites.setOnClickListener(view->{String page=destination;if(page.isEmpty())return;boolean selected=!destinationFavorites.isSelected();if(changeLibrary(()->library.pageFavorites.put(page,selected)))openDestination(page);});LinearLayout.LayoutParams favoriteSpace=new LinearLayout.LayoutParams(-1,dp(42));favoriteSpace.topMargin=dp(8);destinationHeader.addView(destinationFavorites,favoriteSpace);root.addView(destinationHeader);
   pageTitle=text("",20,Color.WHITE);pageTitle.setTypeface(null,android.graphics.Typeface.BOLD);pageTitle.setPadding(dp(4),dp(12),0,dp(8));root.addView(pageTitle);
   status=text("",13,Color.LTGRAY);status.setVisibility(View.GONE);status.setPadding(dp(4),0,0,dp(8));root.addView(status);
   playbackPanel=new PlaybackPanel(this,new PlaybackPanel.Actions() {
@@ -187,7 +187,7 @@ public final class MainActivity extends AppCompatActivity {
    public void stopPlayback() {stopPlaybackState();}
    public void toggleFullscreen() {if(fullscreen) exitFullscreen();else enterFullscreen();}
    public boolean pictureInPicture(){return android.os.Build.VERSION.SDK_INT>=26&&isInPictureInPictureMode();}
-   public void volumeFailed() {Toast.makeText(MainActivity.this,R.string.volume_failed,Toast.LENGTH_SHORT).show();}
+   public void volumeFailed() {UiText.toast(MainActivity.this,R.string.volume_failed,Toast.LENGTH_SHORT).show();}
    public boolean playing() {CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?(session.getRemoteMediaClient().isPlaying()||session.getRemoteMediaClient().isBuffering()):player!=null && player.getPlayWhenReady() && player.getPlaybackState()!=Player.STATE_IDLE && player.getPlaybackState()!=Player.STATE_ENDED && player.getPlayerError()==null;}
    public boolean fullscreen() {return fullscreen;}
    public CastSession castSession() {return connectedCast();}
@@ -200,7 +200,7 @@ public final class MainActivity extends AppCompatActivity {
    RadioButton button=new RadioButton(this);button.setId(View.generateViewId());button.setText(labels[i]);kindButtons[i]=button;sections.addView(button,new RadioGroup.LayoutParams(0,-2,1));
   }
   kindButtons[0].setChecked(true);
-  favoriteCategories=dropdown();favoriteCategories.setContentDescription("Vælg favoritkategori");root.addView(favoriteCategories,new LinearLayout.LayoutParams(-1,dp(48)));
+  favoriteCategories=dropdown();favoriteCategories.setContentDescription(UiText.text("Vælg favoritkategori"));root.addView(favoriteCategories,new LinearLayout.LayoutParams(-1,dp(48)));
   groups=new androidx.appcompat.widget.AppCompatSpinner(this,Spinner.MODE_DROPDOWN){@Override public boolean performClick(){if(getAdapter()==null)return false;androidx.appcompat.widget.ListPopupWindow popup=new androidx.appcompat.widget.ListPopupWindow(MainActivity.this);popup.setAnchorView(this);popup.setWidth(getWidth());popup.setModal(true);popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0xFF505050));popup.setAdapter((ListAdapter)getAdapter());popup.setOnItemClickListener((parent,row,position,id)->{setSelection(position);popup.dismiss();});popup.show();popup.getListView().setOnItemLongClickListener((parent,row,position,id)->{if(position==0)return false;String name=String.valueOf(getAdapter().getItem(position));showGroupFavoriteMenu(row,name);return true;});return true;}};
   groups.setContentDescription(getString(R.string.select_group));groups.setOnLongClickListener(view->{if(groups.getSelectedItemPosition()<=0)return false;showGroupFavoriteMenu(groups,String.valueOf(groups.getSelectedItem()));return true;});groupControls=new LinearLayout(this);groupControls.setGravity(Gravity.CENTER_VERTICAL);root.addView(groupControls,new LinearLayout.LayoutParams(-1,dp(48)));groupControls.addView(groups,new LinearLayout.LayoutParams(-1,-1));
   search=new ClearableSearchEditText(this);search.setSingleLine();search.setHint(R.string.search_hint);root.addView(search);
@@ -257,7 +257,7 @@ public final class MainActivity extends AppCompatActivity {
     if(position<0||position>=visible.size()) return;
     Library.Entry entry=visible.get(position);PopupMenu menu=new StablePopupMenu(MainActivity.this,anchor);MediaDownloads.add(menu,MainActivity.this,FavoriteLists.of(entry));
     boolean favorite=library.isFavorite(entry);
-    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){if(changeLibrary(()->FavoriteLists.remove(library,FavoriteLists.of(entry))))filter();}else FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});if(favorite&&entry.channel.kind==Playlist.Kind.TV)menu.getMenu().add("Vælg TV-favoritlister").setOnMenuItemClickListener(choice->{FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
+    menu.getMenu().add(UiText.text(favorite?"Fjern fra favoritter":"Tilføj til favoritter")).setOnMenuItemClickListener(item->{if(favorite){if(changeLibrary(()->FavoriteLists.remove(library,FavoriteLists.of(entry))))filter();}else FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});if(favorite&&entry.channel.kind==Playlist.Kind.TV)menu.getMenu().add(UiText.text("Vælg TV-favoritlister")).setOnMenuItemClickListener(choice->{FavoritePicker.show(MainActivity.this,library,MainActivity.this::changeLibrary,FavoriteLists.of(entry),MainActivity.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {if(from>=0&&from<visible.size()&&to>=0&&to<visible.size()) {Library.Entry entry=visible.remove(from);visible.add(to,entry);adapter.notifyDataSetChanged();}}
    public void commit() {List<Library.Entry> ordered=new ArrayList<>(visible);changeLibrary(()->library.reorderVisibleFavorites(ordered));filter();}
@@ -280,18 +280,18 @@ public final class MainActivity extends AppCompatActivity {
   catch(Exception e) { castRouteButton.setVisibility(View.INVISIBLE); }
   if(!storageReadable) {status.setVisibility(View.VISIBLE);status.setText(R.string.storage_failed);}
   getOnBackPressedDispatcher().addCallback(this,new androidx.activity.OnBackPressedCallback(true){public void handleOnBackPressed(){if(recordingBlocked())return;setEnabled(false);getOnBackPressedDispatcher().onBackPressed();setEnabled(true);}});
-  restoreCatalogs();
+  restoreCatalogs();getWindow().getDecorView().post(this::firstRunSetup);
   if(getIntent().getBooleanExtra("resumeCastFile",false))resumeCastFileOnPhone(getIntent());else if(getIntent().hasExtra("resumeCastUrl"))resumeCastOnPhone(getIntent());else if(!getIntent().getBooleanExtra("favoritesHome",false))restoreLastPlayback();if(getIntent().getBooleanExtra("openRadio",false)) openRadio(true);if(getIntent().getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);
  }
  @Override protected void onNewIntent(android.content.Intent intent) {super.onNewIntent(intent);setIntent(intent);if(TvRecordingService.active())return;if(intent.getBooleanExtra("resumeCastFile",false))resumeCastFileOnPhone(intent);if(intent.hasExtra("resumeCastUrl"))resumeCastOnPhone(intent);if(intent.getBooleanExtra("favoritesHome",false)){intent.removeExtra("favoritesHome");showFavoritesHome();}if(intent.getBooleanExtra("openRadio",false)) openRadio(true);if(intent.getBooleanExtra("openFullPlayer",false))video.post(this::openNotificationPlayer);}
  private void resumeCastFileOnPhone(android.content.Intent intent){intent.removeExtra("resumeCastFile");LocalQueue queue=CastPlayback.takePhoneQueue();if(queue!=null)playLocal(queue.entries.get(queue.start),Math.max(0,intent.getLongExtra("resumeCastPosition",0)),queue.entries);}
  private void resumeCastOnPhone(android.content.Intent intent){String url=intent.getStringExtra("resumeCastUrl");if(url==null)return;intent.removeExtra("resumeCastUrl");Playlist.Kind kind;try{kind=Playlist.Kind.valueOf(intent.getStringExtra("resumeCastKind"));}catch(Exception invalid){kind=Playlist.Kind.FILM;}long position=Math.max(0,intent.getLongExtra("resumeCastPosition",0));Playlist.Channel channel=new Playlist.Channel(intent.getStringExtra("resumeCastName"),url,"",kind,null,intent.getStringExtra("resumeCastLogo"));selected=null;resumePosition=position;play(channel);if(kind!=Playlist.Kind.TV&&player!=null)player.seekTo(position);}
  private void openNotificationPlayer(){if(isDestroyed()||isFinishing())return;if(CastPlayback.hasMedia(this)){if(CastPlayback.image(this)){startActivity(ImageViewerActivity.reopenIntent(this));return;}startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("cast",true));return;}if(RadioPlaybackService.audioPlayer()!=null&&LocalAudioService.current()==null){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",false));return;}LocalMedia file=LocalAudioService.current();if(file!=null){if(file.audio()){startActivity(new android.content.Intent(this,AudioPlayerActivity.class).putExtra("local",true));return;}syncLocalPlayback();}enterFullscreen();}
- private void collapseSettings(){if(settingsContent==null||settingsToggle==null)return;settingsContent.setVisibility(View.GONE);settingsToggle.setSelected(false);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");}
+ private void collapseSettings(){if(settingsContent==null||settingsToggle==null)return;settingsContent.setVisibility(View.GONE);settingsToggle.setSelected(false);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(UiText.text("Indstillinger, fold ud"));}
  private void minimizeVideo(){moveDestinationFilters(false);destination="";if(destinationHeader!=null)destinationHeader.setVisibility(View.GONE);if(localPanel!=null)localPanel.setHeadingManaged(false);if(pcloudPanel!=null)pcloudPanel.setHeadingManaged(false);if(radioPanel!=null)radioPanel.setHeadingManaged(false);if(favoriteHub!=null)favoriteHub.setHeadingManaged(false);if(headerMenu!=null)headerMenu.setVisibility(View.VISIBLE);favoriteHubMode=false;updateHeaderOutputs();if(favoriteHub!=null)favoriteHub.setVisibility(View.GONE);videoMinimized=true;exitFullscreen();if(playbackPanel!=null){playbackPanel.hideControls();playbackPanel.setVisibility(View.GONE);}if(video!=null)video.setKeepScreenOn(false);hideFullscreenSystemBars();}
  private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
  private LinearLayout column() {LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
- private ArrayAdapter<String> boldDropdown(String[] labels){return new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){
+ private ArrayAdapter<String> boldDropdown(String[] labels){return new UiArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){
   private View bold(View view){((TextView)view).setTypeface(null,android.graphics.Typeface.BOLD);return view;}
   @Override public View getView(int position,View recycled,ViewGroup parent){return bold(super.getView(position,recycled,parent));}
   @Override public View getDropDownView(int position,View recycled,ViewGroup parent){return bold(super.getDropDownView(position,recycled,parent));}
@@ -299,7 +299,7 @@ public final class MainActivity extends AppCompatActivity {
  private Spinner dropdown(){Spinner spinner=new Spinner(this,Spinner.MODE_DROPDOWN);spinner.setPopupBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0xFF505050));return spinner;}
  private TextView text(String value,int size,int color) {TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setTextColor(color);return view;}
  private ImageButton iconButton(int icon,String description) {
-  ImageButton button=new ImageButton(this);button.setImageResource(icon);button.setContentDescription(description);button.setBackgroundColor(Color.TRANSPARENT);button.setPadding(dp(12),dp(12),dp(12),dp(12));return button;
+  ImageButton button=new ImageButton(this);button.setImageResource(icon);button.setContentDescription(UiText.text(description));button.setBackgroundColor(Color.TRANSPARENT);button.setPadding(dp(12),dp(12),dp(12),dp(12));return button;
  }
  private Button button(int label,LinearLayout parent,Runnable action) {Button button=new Button(this);button.setText(label);parent.addView(button);button.setOnClickListener(v->action.run());return button;}
  private void createDrawer() {
@@ -309,18 +309,18 @@ public final class MainActivity extends AppCompatActivity {
   for(Button primary:new Button[]{tvButton,filmButton,seriesButton,musicButton,radioButton,localButton,pcloudButton}){primary.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this,R.color.drawer_dark_blue)));primary.setTextColor(Color.WHITE);}
   settingsToggle=button(R.string.settings,navigation,()->{});
   settingsContent=column();settingsContent.setPadding(dp(8),0,dp(8),0);settingsContent.setVisibility(View.GONE);navigation.addView(settingsContent,new LinearLayout.LayoutParams(-1,-2));
-  settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription("Indstillinger, fold ud");
-  settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud");});
-  TextView startLabel=text("Opstartsside",14,Color.WHITE);settingsContent.addView(startLabel);
-  startupPageChoice=dropdown();startupPageChoice.setContentDescription("Opstartsside");settingsContent.addView(startupPageChoice);refreshStartupPageChoice();
+  settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(UiText.text("Indstillinger, fold ud"));
+  settingsToggle.setOnClickListener(view->{boolean expanded=settingsContent.getVisibility()!=View.VISIBLE;settingsContent.setVisibility(expanded?View.VISIBLE:View.GONE);settingsToggle.setSelected(expanded);settingsToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);settingsToggle.setContentDescription(UiText.text(expanded?"Indstillinger, fold sammen":"Indstillinger, fold ud"));});
+  TextView startLabel=text(UiText.text("Opstartsside"),14,Color.WHITE);settingsContent.addView(startLabel);
+  startupPageChoice=dropdown();startupPageChoice.setContentDescription(UiText.text("Opstartsside"));settingsContent.addView(startupPageChoice);refreshStartupPageChoice();
   startupPageChoice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){if(position<0||position>=startupPageNames.size()||position!=startupPageChoice.getSelectedItemPosition())return;String name=startupPageNames.get(position);if(name.equals(StartupPages.selected(library)))return;if(!changeLibrary(()->StartupPages.select(library,name)))refreshStartupPageChoice();}});
-  startupViewChoice=dropdown();startupViewChoice.setContentDescription("Visning ved opstart");startupViewChoice.setAdapter(boldDropdown(new String[]{"Alle","Favoritter"}));settingsContent.addView(startupViewChoice);refreshStartupPageChoice();
+  startupViewChoice=dropdown();startupViewChoice.setContentDescription(UiText.text("Visning ved opstart"));startupViewChoice.setAdapter(boldDropdown(new String[]{"Alle","Favoritter"}));settingsContent.addView(startupViewChoice);refreshStartupPageChoice();
   startupViewChoice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){}public void onItemSelected(AdapterView<?> parent,View view,int position,long id){if(refreshingStartup||startupViewChoice.getVisibility()!=View.VISIBLE||position!=startupViewChoice.getSelectedItemPosition()||(position==1)==StartupPages.favorites(library))return;if(!changeLibrary(()->library.startupFavorites=position==1))refreshStartupPageChoice();}});
   playbackPreference(settingsContent,R.string.mini_player,true);
   AppCompatCheckBox dailyGuide=new AppCompatCheckBox(this);dailyGuide.setText(R.string.daily_guide_update);dailyGuide.setChecked(library.dailyGuideUpdate);dailyGuide.setPadding(0,dp(12),0,dp(12));settingsContent.addView(dailyGuide);boolean[] revertingGuide={false};dailyGuide.setOnCheckedChangeListener((button,checked)->{if(revertingGuide[0])return;if(!changeLibrary(()->library.dailyGuideUpdate=checked)){revertingGuide[0]=true;dailyGuide.setChecked(library.dailyGuideUpdate);revertingGuide[0]=false;}});
-  Button sourcesToggle=new Button(this);sourcesToggle.setText("Kilder");settingsContent.addView(sourcesToggle);LinearLayout sourceContent=column();sourceContent.setPadding(dp(8),0,0,0);sourceContent.setVisibility(View.GONE);settingsContent.addView(sourceContent);sourcesToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);sourcesToggle.setOnClickListener(view->{boolean expanded=sourceContent.getVisibility()!=View.VISIBLE;sourceContent.setVisibility(expanded?View.VISIBLE:View.GONE);sourcesToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);});
+  Button sourcesToggle=new Button(this);sourcesToggle.setText(UiText.text("Kilder"));settingsContent.addView(sourcesToggle);LinearLayout sourceContent=column();sourceContent.setPadding(dp(8),0,0,0);sourceContent.setVisibility(View.GONE);settingsContent.addView(sourceContent);sourcesToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.ic_expand_more,0);sourcesToggle.setOnClickListener(view->{boolean expanded=sourceContent.getVisibility()!=View.VISIBLE;sourceContent.setVisibility(expanded?View.VISIBLE:View.GONE);sourcesToggle.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,expanded?R.drawable.ic_expand_less:R.drawable.ic_expand_more,0);});
   button(R.string.sources,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSources();});
-  Button musicSource=new Button(this);musicSource.setText("Kilde til musik");sourceContent.addView(musicSource);musicSource.setOnClickListener(view->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);MusicSourceSettings.show(this,library,(address,proxy)->{boolean saved=changeLibrary(()->{library.openSpotApiUrl=address;library.openSpotProxyUrl=proxy;});if(saved)SaavnMusic.favoriteVersion++;return saved;});});
+  Button musicSource=new Button(this);musicSource.setText(UiText.text("Kilde til musik"));sourceContent.addView(musicSource);musicSource.setOnClickListener(view->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);MusicSourceSettings.show(this,library,(address,proxy)->{boolean saved=changeLibrary(()->{library.openSpotApiUrl=address;library.openSpotProxyUrl=proxy;});if(saved)SaavnMusic.favoriteVersion++;return saved;});});
   button(R.string.tv_guide_sources,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
   button(R.string.local_source_folder,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showLocalSourceOptions();});
   button(R.string.refresh_radio,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioPanel.refreshStations();});
@@ -328,7 +328,8 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.home_buttons,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showHomeButtons();});
   button(R.string.android_auto,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showAndroidAutoSettings();});
   button(R.string.tv_backup_lists,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showTvBackupLists();});
-  button(R.string.reset_history,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);PlaybackHistory.clear(this);PlaybackTracker.resetPlayers();CastPlayback.resetProgress(this);resumePosition=0;changeLibrary(()->library.lastPlayedPosition=0);localPanel.playbackChanged();pcloudPanel.playbackChanged();favoriteHub.refresh();adapter.notifyDataSetChanged();Toast.makeText(this,"Lyttede/sete er nulstillet.",Toast.LENGTH_SHORT).show();});
+  button(R.string.reset_history,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);PlaybackHistory.clear(this);PlaybackTracker.resetPlayers();CastPlayback.resetProgress(this);resumePosition=0;changeLibrary(()->library.lastPlayedPosition=0);localPanel.playbackChanged();pcloudPanel.playbackChanged();favoriteHub.refresh();adapter.notifyDataSetChanged();UiText.toast(this,"Lyttede/sete er nulstillet.",Toast.LENGTH_SHORT).show();});
+  Button languageButton=new Button(this);languageButton.setText("Sprog/Language");settingsContent.addView(languageButton);languageButton.setOnClickListener(view->{int[] selected={AppLanguage.saved(this).equals("en")?1:0};new AlertDialog.Builder(this).setTitle("Sprog/Language").setSingleChoiceItems(UiText.labels(new String[]{"Dansk","English"}),selected[0],(dialog,index)->selected[0]=index).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save,(dialog,which)->{String code=selected[0]==1?"en":"da";if(changeLibrary(()->library.appLanguage=code)){AppLanguage.choose(this,code);PlaybackNotices.rename(this);RadioWidgetProvider.refresh(this);RadioPlaybackService.refreshCarStartPage();recreate();}}).show();});
   button(R.string.import_export,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showSettingsTransfer();});
   Button updateButton=button(R.string.update_all,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);updateAll();});updateButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF2E7D32));updateButton.setTextColor(Color.WHITE);
   Button resetButton=button(R.string.reset_app,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);confirmReset();});resetButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFD32F2F));resetButton.setTextColor(Color.WHITE);
@@ -398,6 +399,7 @@ public final class MainActivity extends AppCompatActivity {
   }
   playbackPanel.refresh();
  }
+ private void firstRunSetup(){if(isFinishing()||isDestroyed())return;if(getSharedPreferences("app_language",0).contains("language")){StartupPermissions.request(this);return;}new AlertDialog.Builder(this).setTitle("Choose language").setItems(new String[]{"Dansk (Danish)","English"},(dialog,index)->{String code=index==1?"en":"da";if(changeLibrary(()->library.appLanguage=code)){AppLanguage.choose(this,code);if(code.equals("da"))getWindow().getDecorView().post(()->StartupPermissions.request(this));else recreate();}}).setCancelable(false).show();}
  private void requestNotificationPermission() {
   if(android.os.Build.VERSION.SDK_INT>=33 && androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED && !getPreferences(0).getBoolean("notifications_requested",false)) {
    getPreferences(0).edit().putBoolean("notifications_requested",true).apply();notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS);
@@ -430,7 +432,7 @@ public final class MainActivity extends AppCompatActivity {
   List<Integer> available=new ArrayList<>();List<String> labels=new ArrayList<>();int[] resources={R.string.tv,R.string.radio,R.string.local_files,R.string.pcloud,R.string.films,R.string.series};
   for(int tab:Library.favoriteTabOrder())if(library.hasFavoriteTab(tab)){available.add(tab);labels.add(getString(resources[tab]));}
   choosingFavoriteTab=true;
-  if(!available.equals(favoriteCategoryIds)){favoriteCategoryIds.clear();favoriteCategoryIds.addAll(available);ArrayAdapter<String> choices=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){
+  if(!available.equals(favoriteCategoryIds)){favoriteCategoryIds.clear();favoriteCategoryIds.addAll(available);ArrayAdapter<String> choices=new UiArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){
    private View bold(View view){if(view instanceof TextView)((TextView)view).setTypeface(null,android.graphics.Typeface.BOLD);return view;}
    @Override public View getView(int position,View recycled,ViewGroup parent){return bold(super.getView(position,recycled,parent));}
    @Override public View getDropDownView(int position,View recycled,ViewGroup parent){return bold(super.getDropDownView(position,recycled,parent));}
@@ -456,7 +458,7 @@ public final class MainActivity extends AppCompatActivity {
   else if(name.equals("Radio")){openRadio(false);radioPanel.open(saved);}
   else if(name.equals("Lokale filer")){openLocal(false);if(saved)localPanel.open(true,false);}
   else if(name.equals("Cloud")){if(saved){openLocal(false);localPanel.open(true,true);}else openPcloud();}else return;
-  destination=name;destinationSearch.input.setText("");if(kind>=0&&!saved)moveDestinationFilters(true);destinationTitle.setText(name);FavoriteHeading.show(destinationTitle,saved);destinationFavorites.setText(saved?"Alle":"Favoritter");((LinearLayout.LayoutParams)destinationFavorites.getLayoutParams()).topMargin=dp(8);destinationHeader.setVisibility(View.VISIBLE);localPanel.setHeadingManaged(true);pcloudPanel.setHeadingManaged(true);radioPanel.setHeadingManaged(true);favoriteHub.setHeadingManaged(true);localBack.setEnabled(true);headerMenu.setVisibility(View.INVISIBLE);pageTitle.setVisibility(View.GONE);if(kind>=0)sections.setVisibility(View.GONE);updateHeaderOutputs();filter();
+  destination=name;destinationSearch.input.setText("");if(kind>=0&&!saved)moveDestinationFilters(true);destinationTitle.setText(UiText.text(name));FavoriteHeading.show(destinationTitle,saved);destinationFavorites.setSelected(saved);destinationFavorites.setText(UiText.text(saved?"Alle":"Favoritter"));((LinearLayout.LayoutParams)destinationFavorites.getLayoutParams()).topMargin=dp(8);destinationHeader.setVisibility(View.VISIBLE);localPanel.setHeadingManaged(true);pcloudPanel.setHeadingManaged(true);radioPanel.setHeadingManaged(true);favoriteHub.setHeadingManaged(true);localBack.setEnabled(true);headerMenu.setVisibility(View.INVISIBLE);pageTitle.setVisibility(View.GONE);if(kind>=0)sections.setVisibility(View.GONE);updateHeaderOutputs();filter();
  }
  private void openMusic(){if(recordingBlocked())return;drawer.closeDrawer(androidx.core.view.GravityCompat.START);startActivity(new android.content.Intent(this,MusicActivity.class));}
  private void showFavoriteTab(int tab){if(tab==6){showFavoritesHome();return;}openDestination(tab==7?"Cloud":tab==1?"Radio":tab==2?"Lokale filer":tab==3?"Musik":tab==4?"Film":tab==5?"Serier":new String[]{"TV","Film","Serier"}[library.favoritesStartKind]);}
@@ -471,7 +473,7 @@ public final class MainActivity extends AppCompatActivity {
  private void showPcloudAccount(){
   if(library.pcloud==null){showPcloudLogin();return;}
   drawer.closeDrawer(androidx.core.view.GravityCompat.START);
-  new AlertDialog.Builder(this).setTitle(R.string.pcloud_account).setItems(new String[]{"Redigér konto","Opdatér","Log ud"},(dialog,which)->{
+  new AlertDialog.Builder(this).setTitle(R.string.pcloud_account).setItems(UiText.labels(new String[]{"Redigér konto","Opdatér","Log ud"}),(dialog,which)->{
    switch(which){
     case 0:showPcloudLogin();break;
     case 1:if(pcloudMode)pcloudPanel.refresh();else openPcloud();break;
@@ -488,65 +490,65 @@ public final class MainActivity extends AppCompatActivity {
   LocalMedia current=LocalAudioService.current();if(current!=null&&PcloudDocument.is(current.uri))stopService(new android.content.Intent(this,LocalAudioService.class));if(CastPlayback.pcloud(this))CastPlayback.stop(this);pcloudPanel.open();
  }
  private void showPcloudLogin(){
-  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=dropdown();ArrayAdapter<String> regions=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU","USA"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
+  LinearLayout form=column();form.setPadding(dp(20),dp(8),dp(20),dp(8));Spinner region=dropdown();ArrayAdapter<String> regions=new UiArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"EU","USA"});regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);region.setAdapter(regions);form.addView(region);
   EditText email=new EditText(this);email.setHint("E-mail");email.setSingleLine();email.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);email.setSaveEnabled(false);form.addView(email);
-  EditText password=new EditText(this);password.setHint("Adgangskode");password.setSingleLine();password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);form.addView(password);
+  EditText password=new EditText(this);password.setHint(UiText.text("Adgangskode"));password.setSingleLine();password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);form.addView(password);
   if(library.pcloud!=null){region.setSelection(PcloudAccount.US.equals(library.pcloud.server)?1:0);email.setText(library.pcloud.email);}
   TextView error=text("",13,Color.LTGRAY);error.setVisibility(View.GONE);form.addView(error);
-  AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Cloud").setView(form).setNegativeButton(android.R.string.cancel,null).setPositiveButton("Log på",null).create();
+  AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Cloud").setView(form).setNegativeButton(android.R.string.cancel,null).setPositiveButton(UiText.text("Log på"),null).create();
   dialog.setOnDismissListener(ignored->{if(pcloudLoginClient!=null){pcloudLoginClient.cancel();pcloudLoginClient=null;}password.setText("");});
   dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
    PcloudAccount account;try{account=new PcloudAccount(region.getSelectedItemPosition()==1?PcloudAccount.US:PcloudAccount.EU,email.getText().toString(),password.getText().toString());}catch(IllegalArgumentException invalid){error.setText(invalid.getMessage());error.setVisibility(View.VISIBLE);return;}
-   error.setText("Bekræft login på din mail");error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
-   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openDestination("Cloud");}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText("Bekræft login på din mail\n\n"+(failure instanceof java.io.IOException?failure.getMessage():"Cloud-login mislykkedes."));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
+   error.setText(UiText.text("Bekræft login på din mail"));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);WebDavClient client=new WebDavClient(account);pcloudLoginClient=client;
+   localWorker.execute(()->{try{client.list(okhttp3.HttpUrl.get(account.server));runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;if(changeLibrary(()->library.pcloud=account)){dialog.dismiss();openDestination("Cloud");}else dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}catch(Exception failure){runOnUiThread(()->{if(isDestroyed()||!dialog.isShowing())return;error.setText(UiText.text("Bekræft login på din mail\n\n"+(failure instanceof java.io.IOException?failure.getMessage():"Cloud-login mislykkedes.")));error.setVisibility(View.VISIBLE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);});}});
   }));dialog.show();
  }
- private void showTvBackupLists(){new AlertDialog.Builder(this).setTitle("TV backup-lister").setItems(new String[]{"TV 2","TV 3","TV 4"},(dialog,index)->{showFavoritesHome();favoriteHub.showTvList(index+1);}).setNegativeButton("Luk",null).show();}
- private void switchTvBackup(){if(recordingBlocked())return;if(tvAnchor==null)return;TvFavorites.Match match=TvFavorites.next(library,tvAnchor,tvBackupIndex,selected==null?tvActiveUrl:selected.url);if(match==null){Toast.makeText(this,"Ingen anden TV-liste har en kanal med samme navn.",Toast.LENGTH_SHORT).show();return;}tvBackupIndex=match.index;tvActiveUrl=match.entry.channel.url;play(match.entry.channel);playbackPanel.showControls();if(adapter!=null)adapter.notifyDataSetChanged();favoriteHub.programmeChanged();}
- private void showGroupFavoriteMenu(View anchor,String group){PopupMenu menu=new StablePopupMenu(this,anchor);menu.getMenu().add("Tilføj gruppe til favoritter").setOnMenuItemClickListener(item->{addGroupToFavorites(group);return true;});if(currentKind!=Playlist.Kind.TV){List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));MediaDownloads.addGroup(menu,this,entries,group);}menu.show();}
- private void addGroupToFavorites(String group){List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));if(entries.isEmpty())return;String[] choices=currentKind==Playlist.Kind.TV?new String[]{"TV 1","TV 2","TV 3","TV 4"}:new String[]{currentKind==Playlist.Kind.FILM?"Film":"Serier"};new AlertDialog.Builder(this).setTitle("Tilføj gruppen til favoritliste").setItems(choices,(dialog,index)->{if(changeLibrary(()->{if(entries.get(0).channel.kind==Playlist.Kind.TV)TvFavorites.addGroup(library,entries,index);else{for(Library.Entry entry:entries)FavoriteLists.assignStreaming(library,FavoriteLists.of(entry),entry.channel.kind.ordinal());List<String> order=new ArrayList<>();for(FavoriteLists.Item item:FavoriteLists.items(library,"Streaming"))order.add(item.key());for(Library.Entry entry:entries)order.remove(FavoriteLists.of(entry).key());for(Library.Entry entry:entries)order.add(FavoriteLists.of(entry).key());library.favoriteOrder.removeAll(order);library.favoriteOrder.addAll(order);}})){Toast.makeText(this,entries.size()+" kanaler tilføjet til "+choices[index],Toast.LENGTH_SHORT).show();filter();}}).setNegativeButton("Annuller",null).show();}
+ private void showTvBackupLists(){new AlertDialog.Builder(this).setTitle(UiText.text("TV backup-lister")).setItems(UiText.labels(new String[]{"TV 2","TV 3","TV 4"}),(dialog,index)->{showFavoritesHome();favoriteHub.showTvList(index+1);}).setNegativeButton(UiText.text("Luk"),null).show();}
+ private void switchTvBackup(){if(recordingBlocked())return;if(tvAnchor==null)return;TvFavorites.Match match=TvFavorites.next(library,tvAnchor,tvBackupIndex,selected==null?tvActiveUrl:selected.url);if(match==null){UiText.toast(this,"Ingen anden TV-liste har en kanal med samme navn.",Toast.LENGTH_SHORT).show();return;}tvBackupIndex=match.index;tvActiveUrl=match.entry.channel.url;play(match.entry.channel);playbackPanel.showControls();if(adapter!=null)adapter.notifyDataSetChanged();favoriteHub.programmeChanged();}
+ private void showGroupFavoriteMenu(View anchor,String group){PopupMenu menu=new StablePopupMenu(this,anchor);menu.getMenu().add(UiText.text("Tilføj gruppe til favoritter")).setOnMenuItemClickListener(item->{addGroupToFavorites(group);return true;});if(currentKind!=Playlist.Kind.TV){List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));MediaDownloads.addGroup(menu,this,entries,group);}menu.show();}
+ private void addGroupToFavorites(String group){List<Library.Entry> entries=new ArrayList<>();if(!sourceCatalogs.isEmpty())entries.addAll(combinedCatalog.filter(currentKind,group,""));else if(activeSource!=null)for(Playlist.Channel channel:catalog.filter(currentKind,group,""))entries.add(new Library.Entry(activeSource.id,channel));if(entries.isEmpty())return;String[] choices=currentKind==Playlist.Kind.TV?new String[]{"TV 1","TV 2","TV 3","TV 4"}:new String[]{currentKind==Playlist.Kind.FILM?"Film":"Serier"};new AlertDialog.Builder(this).setTitle(UiText.text("Tilføj gruppen til favoritliste")).setItems(UiText.labels(choices),(dialog,index)->{if(changeLibrary(()->{if(entries.get(0).channel.kind==Playlist.Kind.TV)TvFavorites.addGroup(library,entries,index);else{for(Library.Entry entry:entries)FavoriteLists.assignStreaming(library,FavoriteLists.of(entry),entry.channel.kind.ordinal());List<String> order=new ArrayList<>();for(FavoriteLists.Item item:FavoriteLists.items(library,"Streaming"))order.add(item.key());for(Library.Entry entry:entries)order.remove(FavoriteLists.of(entry).key());for(Library.Entry entry:entries)order.add(FavoriteLists.of(entry).key());library.favoriteOrder.removeAll(order);library.favoriteOrder.addAll(order);}})){UiText.toast(this,entries.size()+" kanaler tilføjet til "+choices[index],Toast.LENGTH_SHORT).show();filter();}}).setNegativeButton(UiText.text("Annuller"),null).show();}
  private void showAndroidAutoSettings(){
-  LinearLayout content=column();content.setPadding(dp(20),dp(8),dp(20),0);TextView explanation=text("Vælg den side, der åbnes i Android Auto. Du kan altid åbne de andre sider via Alle sider.",15,Color.LTGRAY);content.addView(explanation);TextView heading=text("Standardside",16,Color.WHITE);heading.setTypeface(null,android.graphics.Typeface.BOLD);heading.setPadding(0,dp(16),0,dp(4));content.addView(heading);
+  LinearLayout content=column();content.setPadding(dp(20),dp(8),dp(20),0);TextView explanation=text(UiText.text("Vælg den side, der åbnes i Android Auto. Du kan altid åbne de andre sider via Alle sider."),15,Color.LTGRAY);content.addView(explanation);TextView heading=text(UiText.text("Standardside"),16,Color.WHITE);heading.setTypeface(null,android.graphics.Typeface.BOLD);heading.setPadding(0,dp(16),0,dp(4));content.addView(heading);
   RadioGroup choices=new RadioGroup(this);choices.setOrientation(RadioGroup.VERTICAL);content.addView(choices);String[] selected={AndroidAutoPages.normalize(library.androidAutoStartPage)};
-  for(int i=0;i<AndroidAutoPages.IDS.length;i++){final String page=AndroidAutoPages.IDS[i];RadioButton choice=new RadioButton(this);choice.setId(View.generateViewId());choice.setText(AndroidAutoPages.LABELS[i]);choice.setMinHeight(dp(52));choices.addView(choice,new RadioGroup.LayoutParams(-1,-2));choice.setChecked(page.equals(selected[0]));choice.setOnCheckedChangeListener((button,checked)->{if(checked)selected[0]=page;});}
-  TextView viewLabel=text("Visning",16,Color.WHITE);content.addView(viewLabel);Spinner view=dropdown();view.setAdapter(boldDropdown(new String[]{"Alle","Favoritter"}));view.setSelection(library.androidAutoFavorites?1:0);content.addView(view);
-  AppCompatCheckBox autoplay=new AppCompatCheckBox(this);autoplay.setText("Afspil automatisk seneste");autoplay.setChecked(library.androidAutoAutoPlay);autoplay.setPadding(0,dp(12),0,dp(12));content.addView(autoplay);ScrollView scroll=new ScrollView(this);scroll.addView(content);
-  new AlertDialog.Builder(this).setTitle(R.string.android_auto).setView(scroll).setNegativeButton("Annuller",null).setPositiveButton("Gem",(dialog,which)->{if(changeLibrary(()->{library.androidAutoStartPage=selected[0];library.androidAutoFavorites=view.getSelectedItemPosition()==1;library.androidAutoAutoPlay=autoplay.isChecked();}))RadioPlaybackService.refreshCarStartPage();}).show();
+  for(int i=0;i<AndroidAutoPages.IDS.length;i++){final String page=AndroidAutoPages.IDS[i];RadioButton choice=new RadioButton(this);choice.setId(View.generateViewId());choice.setText(UiText.text(AndroidAutoPages.LABELS[i]));choice.setMinHeight(dp(52));choices.addView(choice,new RadioGroup.LayoutParams(-1,-2));choice.setChecked(page.equals(selected[0]));choice.setOnCheckedChangeListener((button,checked)->{if(checked)selected[0]=page;});}
+  TextView viewLabel=text(UiText.text("Visning"),16,Color.WHITE);content.addView(viewLabel);Spinner view=dropdown();view.setAdapter(boldDropdown(new String[]{"Alle","Favoritter"}));view.setSelection(library.androidAutoFavorites?1:0);content.addView(view);
+  AppCompatCheckBox autoplay=new AppCompatCheckBox(this);autoplay.setText(UiText.text("Afspil automatisk seneste"));autoplay.setChecked(library.androidAutoAutoPlay);autoplay.setPadding(0,dp(12),0,dp(12));content.addView(autoplay);ScrollView scroll=new ScrollView(this);scroll.addView(content);
+  new AlertDialog.Builder(this).setTitle(R.string.android_auto).setView(scroll).setNegativeButton(UiText.text("Annuller"),null).setPositiveButton(UiText.text("Gem"),(dialog,which)->{if(changeLibrary(()->{library.androidAutoStartPage=selected[0];library.androidAutoFavorites=view.getSelectedItemPosition()==1;library.androidAutoAutoPlay=autoplay.isChecked();}))RadioPlaybackService.refreshCarStartPage();}).show();
  }
  private void showHomeButtons(){
   String[] names=FavoriteHomeOrder.NAMES.clone();boolean[] checked=new boolean[names.length];for(int i=0;i<names.length;i++)checked[i]=!library.hiddenHomeButtons.contains(names[i]);
-  new AlertDialog.Builder(this).setTitle(R.string.home_buttons).setMultiChoiceItems(names,checked,(dialog,which,selected)->checked[which]=selected).setNegativeButton("Annuller",null).setPositiveButton("Gem",(dialog,which)->{if(changeLibrary(()->{library.hiddenHomeButtons.clear();for(int i=0;i<names.length;i++)if(!checked[i])library.hiddenHomeButtons.add(names[i]);}))favoriteHub.rebuildHome();}).show();
+  new AlertDialog.Builder(this).setTitle(R.string.home_buttons).setMultiChoiceItems(UiText.labels(names),checked,(dialog,which,selected)->checked[which]=selected).setNegativeButton(UiText.text("Annuller"),null).setPositiveButton(UiText.text("Gem"),(dialog,which)->{if(changeLibrary(()->{library.hiddenHomeButtons.clear();for(int i=0;i<names.length;i++)if(!checked[i])library.hiddenHomeButtons.add(names[i]);}))favoriteHub.rebuildHome();}).show();
  }
  private void showSettingsTransfer(){
-  if(settingsTransferBusy){Toast.makeText(this,"Vent, til overførslen er færdig.",Toast.LENGTH_SHORT).show();return;}
-  new AlertDialog.Builder(this).setTitle(R.string.import_export).setItems(new String[]{"Importér opsætning","Eksportér opsætning"},(dialog,which)->{
+  if(settingsTransferBusy){UiText.toast(this,"Vent, til overførslen er færdig.",Toast.LENGTH_SHORT).show();return;}
+  new AlertDialog.Builder(this).setTitle(R.string.import_export).setItems(UiText.labels(new String[]{"Importér opsætning","Eksportér opsætning"}),(dialog,which)->{
    android.content.Intent intent=new android.content.Intent(which==0?android.content.Intent.ACTION_OPEN_DOCUMENT:android.content.Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-   if(which==0){intent.setType("*/*");intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","application/octet-stream"});}else {intent.setType("application/json");intent.putExtra(android.content.Intent.EXTRA_TITLE,"Stream-opsætning.json");}
-   try{startActivityForResult(intent,which==0?7210:7211);}catch(android.content.ActivityNotFoundException unavailable){Toast.makeText(this,"Telefonen har ingen filvælger.",Toast.LENGTH_LONG).show();}
+   if(which==0){intent.setType("*/*");intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","application/octet-stream"});}else {intent.setType("application/json");intent.putExtra(android.content.Intent.EXTRA_TITLE,UiText.text("Stream-opsætning.json"));}
+   try{startActivityForResult(intent,which==0?7210:7211);}catch(android.content.ActivityNotFoundException unavailable){UiText.toast(this,"Telefonen har ingen filvælger.",Toast.LENGTH_LONG).show();}
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
  private void exportSettings(android.net.Uri uri){
-  if(settingsTransferBusy)return;if(!storageReadable){Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return;}
+  if(settingsTransferBusy)return;if(!storageReadable){UiText.toast(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return;}
   final String settings;final Map<String,Map<String,Object>> preferences;
-  try{PlaybackTracker.flushAll();CastHistory.capture(true);PlaybackHistory.flush(this);settings=library.toJson();preferences=AppSettingsState.capture(this);}catch(Exception invalid){Toast.makeText(this,"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();return;}settingsTransferBusy=true;
-  settingsWorker.execute(()->{boolean success=false;try{byte[] bytes=SettingsBackup.encode(Library.fromJson(settings),preferences);try(java.io.OutputStream output=getContentResolver().openOutputStream(uri,"wt")){if(output==null)throw new java.io.IOException();output.write(bytes);output.flush();}success=true;}catch(Exception failure){}boolean saved=success;runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,saved?"Hele opsætningen er eksporteret, inklusive logins og afspilningshistorik.":"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();});});
+  try{PlaybackTracker.flushAll();CastHistory.capture(true);PlaybackHistory.flush(this);settings=library.toJson();preferences=AppSettingsState.capture(this);}catch(Exception invalid){UiText.toast(this,"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();return;}settingsTransferBusy=true;
+  settingsWorker.execute(()->{boolean success=false;try{byte[] bytes=SettingsBackup.encode(Library.fromJson(settings),preferences);try(java.io.OutputStream output=getContentResolver().openOutputStream(uri,"wt")){if(output==null)throw new java.io.IOException();output.write(bytes);output.flush();}success=true;}catch(Exception failure){}boolean saved=success;runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;UiText.toast(this,saved?"Hele opsætningen er eksporteret, inklusive logins og afspilningshistorik.":"Kunne ikke eksportere opsætningen.",Toast.LENGTH_LONG).show();});});
  }
  private void importSettings(android.net.Uri uri){
   if(settingsTransferBusy)return;settingsTransferBusy=true;
-  settingsWorker.execute(()->{try{SettingsBackup.Snapshot imported;try(java.io.InputStream input=getContentResolver().openInputStream(uri)){imported=SettingsBackup.decodeSnapshot(input);}runOnUiThread(()->applyImportedSettings(imported));}catch(Exception invalid){runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;Toast.makeText(this,"Filen kunne ikke importeres. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
+  settingsWorker.execute(()->{try{SettingsBackup.Snapshot imported;try(java.io.InputStream input=getContentResolver().openInputStream(uri)){imported=SettingsBackup.decodeSnapshot(input);}runOnUiThread(()->applyImportedSettings(imported));}catch(Exception invalid){runOnUiThread(()->{if(isDestroyed())return;settingsTransferBusy=false;UiText.toast(this,"Filen kunne ikke importeres. Den nuværende opsætning er bevaret.",Toast.LENGTH_LONG).show();});}});
  }
  private void applyImportedSettings(SettingsBackup.Snapshot imported){
   if(isDestroyed()||isFinishing())return;
   final Library previous;final Map<String,Map<String,Object>> previousPreferences;
-  try{PlaybackTracker.flushAll();CastHistory.capture(true);PlaybackHistory.flush(this);previous=Library.fromJson(library.toJson());previousPreferences=AppSettingsState.capture(this);}catch(Exception failure){settingsTransferBusy=false;Toast.makeText(this,"Opsætningen kunne ikke importeres.",Toast.LENGTH_LONG).show();return;}
+  try{PlaybackTracker.flushAll();CastHistory.capture(true);PlaybackHistory.flush(this);previous=Library.fromJson(library.toJson());previousPreferences=AppSettingsState.capture(this);}catch(Exception failure){settingsTransferBusy=false;UiText.toast(this,"Opsætningen kunne ikke importeres.",Toast.LENGTH_LONG).show();return;}
   applyingSettings=true;PlaybackHistory.suspend();PlaybackTracker.detachAll();PlaybackShutdown.stop(this);stopPlaybackState();
-  settingsWorker.execute(()->{try{store.save(imported.library);AppSettingsState.restore(this,imported.preferences);runOnUiThread(()->{PlaybackHistory.reload();finishImportedSettings(imported.library);});}catch(Exception failure){boolean recovered=true;try{store.save(previous);AppSettingsState.restore(this,previousPreferences);}catch(Exception rollbackFailure){recovered=false;}boolean restored=recovered;runOnUiThread(()->{PlaybackHistory.reload();if(isDestroyed())return;applyingSettings=false;settingsTransferBusy=false;Toast.makeText(this,restored?"Import mislykkedes. Den tidligere opsætning er gendannet.":"Import mislykkedes. Opsætningen kunne ikke gendannes fuldt. Prøv at importere igen.",Toast.LENGTH_LONG).show();});}});
+  settingsWorker.execute(()->{try{store.save(imported.library);AppSettingsState.restore(this,imported.preferences);runOnUiThread(()->{PlaybackHistory.reload();finishImportedSettings(imported.library);});}catch(Exception failure){boolean recovered=true;try{store.save(previous);AppSettingsState.restore(this,previousPreferences);}catch(Exception rollbackFailure){recovered=false;}boolean restored=recovered;runOnUiThread(()->{PlaybackHistory.reload();if(isDestroyed())return;applyingSettings=false;settingsTransferBusy=false;UiText.toast(this,restored?"Import mislykkedes. Den tidligere opsætning er gendannet.":"Import mislykkedes. Opsætningen kunne ikke gendannes fuldt. Prøv at importere igen.",Toast.LENGTH_LONG).show();});}});
  }
  private void finishImportedSettings(Library imported){
   if(isDestroyed()||isFinishing())return;getPreferences(0).edit().remove("playlist").apply();
-  library=imported;storageReadable=true;DailyGuideJob.sync(this,library);RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
+  library=imported;AppLanguage.choose(this,library.appLanguage);storageReadable=true;DailyGuideJob.sync(this,library);RadioWidgetProvider.refresh(this);ImageSession.favoritesChanged();
   boolean folderAccess=hasLocalFolderAccess(imported);
-  Toast.makeText(this,folderAccess?"Hele opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale filer for at give adgang.",Toast.LENGTH_LONG).show();recreate();
+  UiText.toast(this,folderAccess?"Hele opsætningen er importeret.":"Opsætningen er importeret. Vælg kildemappen igen under Kildemappe til lokale filer for at give adgang.",Toast.LENGTH_LONG).show();recreate();
  }
  private boolean hasLocalFolderAccess(Library settings){
   for(LocalMedia entry:settings.localFiles)if(entry.folder&&!PcloudDocument.is(entry.uri)){
@@ -557,22 +559,22 @@ public final class MainActivity extends AppCompatActivity {
  }
  private void showLocalSourceOptions() {
   new android.app.AlertDialog.Builder(this).setTitle(R.string.local_source_folder)
-   .setItems(new String[]{"Vælg kildemappe","Ingen lokale filer"},(dialog,which)->{
+   .setItems(UiText.labels(new String[]{"Vælg kildemappe","Ingen lokale filer"}),(dialog,which)->{
     replacingLocalFolder=null;
     if(which==0) {pickLocal(true);return;}
     changeLibrary(()->library.localFiles.clear());
     if(localMode&&!favoritesPage) localPanel.sourceChanged();
-   }).setNegativeButton("Annuller",null).show();
+   }).setNegativeButton(UiText.text("Annuller"),null).show();
  }
  private void pickLocal(boolean folder) {
   android.content.Intent intent=new android.content.Intent(folder?android.content.Intent.ACTION_OPEN_DOCUMENT_TREE:android.content.Intent.ACTION_OPEN_DOCUMENT);
   intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION|android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
   if(folder && replacingLocalFolder!=null && android.os.Build.VERSION.SDK_INT>=26) intent.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI,android.net.Uri.parse(replacingLocalFolder));
   if(!folder) {intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);intent.setType("*/*");intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,new String[]{"audio/*","video/*","image/*"});intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE,true);}
-  try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {Toast.makeText(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
+  try {startActivityForResult(intent,folder?7202:7201);}catch(android.content.ActivityNotFoundException error) {UiText.toast(this,"Ingen filvælger er tilgængelig på enheden.",Toast.LENGTH_LONG).show();}
  }
  @Override protected void onSaveInstanceState(Bundle state) {state.putString("replacingLocalFolder",replacingLocalFolder);state.putBoolean("videoMinimized",videoMinimized);super.onSaveInstanceState(state);}
- @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7320){if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)confirmTvRecording();else Toast.makeText(this,"Tillad adgang for at optage og vise optagelsesnotifikationen.",Toast.LENGTH_LONG).show();}if(request==7303&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)headerCast.performClick();if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else Toast.makeText(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
+ @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7320){if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)confirmTvRecording();else UiText.toast(this,"Tillad adgang for at optage og vise optagelsesnotifikationen.",Toast.LENGTH_LONG).show();}if(request==7303&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)headerCast.performClick();if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){castRouteButton.performClick();}if(request==7300&&pendingCastFile!=null){LocalMedia file=pendingCastFile;pendingCastFile=null;if(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)playLocal(file,pendingCastPosition,pendingCastQueue==null?Collections.singletonList(file):pendingCastQueue);else UiText.toast(this,"Adgang til lokalt netværk kræves for at caste lokale filer.",Toast.LENGTH_LONG).show();}}
  @Override protected void onActivityResult(int request,int result,android.content.Intent data) {
   super.onActivityResult(request,result,data);
   if(request==7210||request==7211){if(result==RESULT_OK&&data!=null&&data.getData()!=null){if(request==7210)importSettings(data.getData());else exportSettings(data.getData());}return;}
@@ -583,7 +585,7 @@ public final class MainActivity extends AppCompatActivity {
   localWorker.execute(()->{
    List<LocalMedia> linked=new ArrayList<>();boolean failed=false;
    for(android.net.Uri uri:uris) try {if(grants==0) throw new SecurityException("Read grant missing");getContentResolver().takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);LocalMedia entry=LocalMedia.describe(this,uri,folder);if(!entry.supported()) throw new IllegalArgumentException("Unsupported media");linked.add(entry);}catch(Exception error) {failed=true;}
-   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(folder) library.setLocalSource(entry);else library.addLocal(entry);}});if(localMode) {if(folder&&!linked.isEmpty()&&!favoritesPage) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) Toast.makeText(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
+   boolean incomplete=failed;runOnUiThread(()->{if(isDestroyed()) return;if(!linked.isEmpty()) changeLibrary(()->{for(LocalMedia entry:linked) {if(folder) library.setLocalSource(entry);else library.addLocal(entry);}});if(localMode) {if(folder&&!linked.isEmpty()&&!favoritesPage) localPanel.sourceChanged();else localPanel.reload();}if(incomplete) UiText.toast(this,"En eller flere filer kunne ikke tilføjes. Vælg lyd/video fra en placering med varig læseadgang.",Toast.LENGTH_LONG).show();});
   });
  }
  private void playLocal(LocalMedia entry) {playLocal(entry,PlaybackHistory.get(this,entry.uri).resume());}
@@ -600,7 +602,7 @@ public final class MainActivity extends AppCompatActivity {
   acceptLocalPlayback=true;resumeLocalPlayback=false;
   stopService(new android.content.Intent(this,RadioPlaybackService.class));
   try {androidx.core.content.ContextCompat.startForegroundService(this,LocalAudioService.playIntent(this,entry,queue).putExtra("position",position));}
-  catch(RuntimeException error) {android.util.Log.e("StreamLocalPlayback","Could not start media service",error);Toast.makeText(this,"Afspilningen kunne ikke startes. Prøv igen, mens appen er åben.",Toast.LENGTH_LONG).show();}
+  catch(RuntimeException error) {android.util.Log.e("StreamLocalPlayback","Could not start media service",error);UiText.toast(this,"Afspilningen kunne ikke startes. Prøv igen, mens appen er åben.",Toast.LENGTH_LONG).show();}
  }
  private void detachLocalPlayback() {
   if(!localPlayerAttached) return;
@@ -641,7 +643,7 @@ public final class MainActivity extends AppCompatActivity {
   if(favoritesMode) {for(Library.Entry entry:library.favorites) if(entry.channel.kind==currentKind && !entry.channel.group.isEmpty()) names.add(entry.channel.group);}
   else names.addAll(catalog.groups(currentKind));
   List<String> labels=new ArrayList<>();labels.add(getString(R.string.all_groups));labels.addAll(names);
-  ArrayAdapter<String> choices=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){@Override public View getView(int position,View recycled,ViewGroup parent){return parent instanceof ListView?super.getDropDownView(position,recycled,parent):super.getView(position,recycled,parent);}};choices.setDropDownViewResource(R.layout.group_dropdown_item);groups.setAdapter(choices);filter();
+  ArrayAdapter<String> choices=new UiArrayAdapter<String>(this,android.R.layout.simple_spinner_item,labels){@Override public View getView(int position,View recycled,ViewGroup parent){return parent instanceof ListView?super.getDropDownView(position,recycled,parent):super.getView(position,recycled,parent);}};choices.setDropDownViewResource(R.layout.group_dropdown_item);groups.setAdapter(choices);filter();
  }
  private void filter() {
   updateHeaderOutputs();
@@ -674,21 +676,21 @@ public final class MainActivity extends AppCompatActivity {
   try {change.run();store.save(library);if(startupPageChoice!=null)startupPageChoice.post(this::refreshStartupPageChoice);DailyGuideJob.sync(this,library);RadioWidgetProvider.refresh(this);if(favoriteCategories!=null&&favoritesPage)favoriteCategories.post(()->{if(!isDestroyed()&&favoritesPage)filter();});return true;}
   catch(Exception e) {
    try {library=Library.fromJson(previous);} catch(Exception ignored) {storageReadable=false;}
-   status.setText(R.string.storage_failed);Toast.makeText(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return false;
+   status.setText(R.string.storage_failed);UiText.toast(this,R.string.storage_failed,Toast.LENGTH_LONG).show();return false;
   }
  }
  private void showSources() {
-  if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
+  if(loading||updatingAll) {UiText.toast(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
   List<Library.Source> sources=new ArrayList<>(library.sources);
   LinearLayout actions=column();actions.setPadding(dp(16),dp(8),dp(16),dp(12));
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(R.string.sources)
-   .setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(d,position)->loadSource(sources.get(position))).setView(actions).create();
+   .setAdapter(new UiArrayAdapter<>(this,android.R.layout.simple_list_item_1,sources),(d,position)->loadSource(sources.get(position))).setView(actions).create();
   button(R.string.add_m3u,actions,()->{dialog.dismiss();showAddSource(false);});
   button(R.string.xtream_login,actions,()->{dialog.dismiss();showAddSource(true);});
   button(android.R.string.cancel,actions,dialog::dismiss);
   dialog.setOnShowListener(d->dialog.getListView().setOnItemLongClickListener((parent,view,position,id)->{
    Library.Source source=sources.get(position);
-   new AlertDialog.Builder(this).setTitle(source.name).setItems(new String[]{getString(R.string.edit_source),getString(R.string.remove_source)},(choice,which)->{
+   new AlertDialog.Builder(this).setTitle(source.name).setItems(UiText.labels(new String[]{getString(R.string.edit_source),getString(R.string.remove_source)}),(choice,which)->{
     if(which==0) {dialog.dismiss();showSourceEditor(source,source.xtream);}
     else new AlertDialog.Builder(this).setTitle(R.string.remove_source).setMessage(getString(R.string.remove_source_note,source.name))
      .setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.remove_source,(confirmation,selected)->{
@@ -712,7 +714,7 @@ public final class MainActivity extends AppCompatActivity {
   if(password!=null) password.setSaveEnabled(false);
   form.addView(text(getString(R.string.select_epg),13,Color.LTGRAY));
   List<Library.Guide> choices=new ArrayList<>(library.guides);List<String> labels=new ArrayList<>();labels.add(getString(R.string.no_epg));for(Library.Guide guide:choices) labels.add(guide.name);
-  Spinner epg=dropdown();ArrayAdapter<String> epgChoices=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);epgChoices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);epg.setAdapter(epgChoices);form.addView(epg);
+  Spinner epg=dropdown();ArrayAdapter<String> epgChoices=new UiArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);epgChoices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);epg.setAdapter(epgChoices);form.addView(epg);
   if(existing!=null) for(int i=0;i<choices.size();i++) if(choices.get(i).id.equals(existing.epgId)) epg.setSelection(i+1);
   ScrollView scroll=new ScrollView(this);scroll.addView(form);
   AlertDialog dialog=new AlertDialog.Builder(this).setTitle(existing!=null?R.string.edit_source:xtream?R.string.xtream_login:R.string.add_m3u).setView(scroll).setNegativeButton(android.R.string.cancel,null).setPositiveButton(R.string.save_source,null).create();
@@ -754,7 +756,7 @@ public final class MainActivity extends AppCompatActivity {
    EpgData cached=epgRepository.cached(guide);
    if(cached!=null) runOnUiThread(()->acceptGuide(guide,cached));
    try {if(force) {EpgData fetched=epgRepository.fetch(guide,System.currentTimeMillis());runOnUiThread(()->acceptGuide(guide,fetched));}}
-   catch(Exception ignored) {if(force&&!quiet) runOnUiThread(()->{if(!isDestroyed()) Toast.makeText(this,getString(R.string.epg_fetch_failed,guide.name),Toast.LENGTH_LONG).show();});}
+   catch(Exception ignored) {if(force&&!quiet) runOnUiThread(()->{if(!isDestroyed()) UiText.toast(this,getString(R.string.epg_fetch_failed,guide.name),Toast.LENGTH_LONG).show();});}
    finally {runOnUiThread(()->{if(!isDestroyed()) {epgPending.remove(guide.id);adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();Library.Guide current=library.findGuide(guide.id);if(current!=null && !current.url.equals(guide.url)) {epgAttempted.remove(guide.id);refreshGuide(current,true);}}});}
   });
  }
@@ -763,9 +765,9 @@ public final class MainActivity extends AppCompatActivity {
   if(current!=null && current.url.equals(guide.url)) {epgData.put(guide.id,data);adapter.notifyDataSetChanged();if(favoriteHub!=null)favoriteHub.programmeChanged();}
  }
  private void showGuides() {
-  if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
+  if(loading||updatingAll) {UiText.toast(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
   List<Library.Guide> guides=new ArrayList<>(library.guides);
-  new AlertDialog.Builder(this).setTitle(R.string.tv_guide_sources).setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,guides),(dialog,position)->showGuideEditor(guides.get(position)))
+  new AlertDialog.Builder(this).setTitle(R.string.tv_guide_sources).setAdapter(new UiArrayAdapter<>(this,android.R.layout.simple_list_item_1,guides),(dialog,position)->showGuideEditor(guides.get(position)))
    .setPositiveButton(R.string.add_epg,(dialog,which)->showGuideEditor(null)).setNegativeButton(android.R.string.cancel,null).show();
  }
  private void showGuideEditor(Library.Guide existing) {
@@ -793,11 +795,11 @@ public final class MainActivity extends AppCompatActivity {
    if(player!=null) player.stop();
    if(cast!=null) cast.getSessionManager().endCurrentSession(true);
    android.app.ActivityManager manager=(android.app.ActivityManager)getSystemService(android.content.Context.ACTIVITY_SERVICE);
-   if(manager==null || !manager.clearApplicationUserData()) Toast.makeText(this,R.string.reset_failed,Toast.LENGTH_LONG).show();
+   if(manager==null || !manager.clearApplicationUserData()) UiText.toast(this,R.string.reset_failed,Toast.LENGTH_LONG).show();
   }).show();
  }
  private void updateAll() {
-  if(loading||updatingAll) {Toast.makeText(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
+  if(loading||updatingAll) {UiText.toast(this,R.string.wait_loading,Toast.LENGTH_SHORT).show();return;}
   cancelCatalogRestore();updatingAll=true;radioPanel.refreshStations();
   List<Library.Source> sources=new ArrayList<>(library.sources);List<Library.Guide> guides=new ArrayList<>(library.guides);
   TextView progress=text(getString(R.string.updating_all),14,Color.LTGRAY);progress.setPadding(dp(24),dp(16),dp(24),dp(16));
@@ -846,7 +848,7 @@ public final class MainActivity extends AppCompatActivity {
     if(isDestroyed()||applyingSettings)return;
     if(!loaded.isEmpty())changeLibrary(()->{for(Map.Entry<Library.Source,Catalog> entry:loaded.entrySet()){Library.Source saved=library.addSource(entry.getKey());sourceCatalogs.put(saved.id,entry.getValue());cachedSourceConfigs.put(saved.id,saved);if(!saved.id.equals(entry.getKey().id)){Catalog snapshot=entry.getValue();worker.execute(()->new CatalogStore(this).save(saved,snapshot));}library.refreshFavorites(saved.id,entry.getValue().items);}});
     rebuildStreamingCatalog();busy(false);if(!favoritesMode&&catalog.filter(currentKind,null,"").isEmpty()&&!catalog.items.isEmpty())chooseFirstKind();rebuildGroups();loadAssignedGuides(false);
-    if(error!=null){if(catalog.items.isEmpty()&&!radioMode&&!localMode&&!pcloudMode&&!favoritesPage)showError(error);else Toast.makeText(this,getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures)),Toast.LENGTH_LONG).show();}
+    if(error!=null){if(catalog.items.isEmpty()&&!radioMode&&!localMode&&!pcloudMode&&!favoritesPage)showError(error);else UiText.toast(this,getString(R.string.update_failed_names,android.text.TextUtils.join(", ",failures)),Toast.LENGTH_LONG).show();}
    });
   });
  }
@@ -859,7 +861,7 @@ public final class MainActivity extends AppCompatActivity {
   } else if(e instanceof javax.net.ssl.SSLException) message=getString(R.string.tls_failed);
   else if(e instanceof java.io.InterruptedIOException) message=getString(R.string.timeout);
   else message=getString(R.string.network_failed);
-  status.setText(message);
+  status.setText(UiText.text(message));
  }
  private void open(Library.Entry entry) {
   if(recordingBlocked())return;
@@ -878,7 +880,7 @@ public final class MainActivity extends AppCompatActivity {
     runOnUiThread(()->{
      if(isDestroyed()) return;
      LinearLayout choices=column();EditText query=new ClearableSearchEditText(this);query.setSingleLine();query.setHint(R.string.search_hint);choices.addView(query);
-     ListView episodeList=new ListView(this);MediaListStyle.apply(episodeList);ArrayAdapter<Playlist.Channel> episodeAdapter=new ArrayAdapter<Playlist.Channel>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes)){@Override public View getView(int position,View recycled,ViewGroup parent){View row=super.getView(position,null,parent);MediaListStyle.row(row);Playlist.Channel episode=getItem(position);LinearLayout content=new LinearLayout(MainActivity.this);content.setGravity(Gravity.CENTER_VERTICAL);ImageView episodeIcon=new ImageView(MainActivity.this);episodeIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);content.addView(episodeIcon,new LinearLayout.LayoutParams(dp(48),dp(48)));Glide.with(MainActivity.this).load(episode==null?null:episode.logoUrl).placeholder(R.drawable.ic_video).error(R.drawable.ic_video).override(dp(96),dp(96)).fitCenter().into(episodeIcon);content.addView(row,new LinearLayout.LayoutParams(0,-1,1));boolean playing=episode!=null&&isChannelPlaying(episode);((TextView)row).setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);NowPlayingIndicator.show(NowPlayingIndicator.addTo(content),playing);MediaListStyle.row(content);return ProgressRows.wrap(content,episode==null?"":episode.url,true);}};episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
+     ListView episodeList=new ListView(this);MediaListStyle.apply(episodeList);ArrayAdapter<Playlist.Channel> episodeAdapter=new UiArrayAdapter<Playlist.Channel>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes)){@Override public View getView(int position,View recycled,ViewGroup parent){View row=super.getView(position,null,parent);MediaListStyle.row(row);Playlist.Channel episode=getItem(position);LinearLayout content=new LinearLayout(MainActivity.this);content.setGravity(Gravity.CENTER_VERTICAL);ImageView episodeIcon=new ImageView(MainActivity.this);episodeIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);content.addView(episodeIcon,new LinearLayout.LayoutParams(dp(48),dp(48)));Glide.with(MainActivity.this).load(episode==null?null:episode.logoUrl).placeholder(R.drawable.ic_video).error(R.drawable.ic_video).override(dp(96),dp(96)).fitCenter().into(episodeIcon);content.addView(row,new LinearLayout.LayoutParams(0,-1,1));boolean playing=episode!=null&&isChannelPlaying(episode);((TextView)row).setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);NowPlayingIndicator.show(NowPlayingIndicator.addTo(content),playing);MediaListStyle.row(content);return ProgressRows.wrap(content,episode==null?"":episode.url,true);}};episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
      AlertDialog dialog=new AlertDialog.Builder(this).setTitle(series.name).setView(choices).setNegativeButton(android.R.string.cancel,null).create();
      query.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence value,int start,int count,int after){}public void onTextChanged(CharSequence value,int start,int before,int count){episodeAdapter.getFilter().filter(value);}public void afterTextChanged(Editable value){}});
      episodeList.setOnItemLongClickListener((parent,row,position,id)->{Playlist.Channel episode=episodeAdapter.getItem(position);if(episode==null)return false;MediaDownloads.show(row,MainActivity.this,FavoriteLists.of(new Library.Entry(source.id,episode)));return true;});
@@ -930,16 +932,16 @@ public final class MainActivity extends AppCompatActivity {
   if(event.getActionMasked()==android.view.MotionEvent.ACTION_DOWN){recordingTouchBlocked=false;if(TvRecordingService.active()&&playbackPanel!=null){int[] location=new int[2];playbackPanel.getLocationOnScreen(location);android.graphics.Rect bounds=new android.graphics.Rect(location[0],location[1],location[0]+playbackPanel.getWidth(),location[1]+playbackPanel.getHeight());if(!bounds.contains((int)event.getRawX(),(int)event.getRawY())){recordingBlocked();recordingTouchBlocked=true;}}}
   if(recordingTouchBlocked){if(event.getActionMasked()==android.view.MotionEvent.ACTION_UP||event.getActionMasked()==android.view.MotionEvent.ACTION_CANCEL)recordingTouchBlocked=false;return true;}return super.dispatchTouchEvent(event);
  }
- private boolean recordingBlocked(){if(!TvRecordingService.active())return false;Toast.makeText(this,"Stop optagelsen, før du skifter afspilning eller forlader siden.",Toast.LENGTH_SHORT).show();return true;}
+ private boolean recordingBlocked(){if(!TvRecordingService.active())return false;UiText.toast(this,"Stop optagelsen, før du skifter afspilning eller forlader siden.",Toast.LENGTH_SHORT).show();return true;}
  private void confirmTvRecording(){
   if(TvRecordingService.active()){TvRecordingService.stop(this);playbackPanel.refresh();return;}
   if(selected==null||selected.kind!=Playlist.Kind.TV)return;
   Playlist.Channel channel=selected;
-  new AlertDialog.Builder(this).setTitle("Start TV-optagelse?").setMessage("Vil du optage "+channel.name+"?\n\nOptagelsen gemmes i Download. Du kan ikke skifte kanal eller lukke appen med tilbage-knappen, før optagelsen er stoppet.").setNegativeButton("Annuller",null).setPositiveButton("Start optagelse",(dialog,which)->{
+  new AlertDialog.Builder(this).setTitle(UiText.text("Start TV-optagelse?")).setMessage(UiText.text("Vil du optage "+channel.name+"?\n\nOptagelsen gemmes i Download. Du kan ikke skifte kanal eller lukke appen med tilbage-knappen, før optagelsen er stoppet.")).setNegativeButton(UiText.text("Annuller"),null).setPositiveButton(UiText.text("Start optagelse"),(dialog,which)->{
    if(selected==null||!selected.url.equals(channel.url)||TvRecordingService.active())return;
    if(android.os.Build.VERSION.SDK_INT<=28&&checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},7320);return;}
    if(android.os.Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},7320);return;}
-   try{TvRecordingService.start(this,channel);playbackPanel.refresh();}catch(RuntimeException error){Toast.makeText(this,"Optagelsen kunne ikke startes.",Toast.LENGTH_LONG).show();}
+   try{TvRecordingService.start(this,channel);playbackPanel.refresh();}catch(RuntimeException error){UiText.toast(this,"Optagelsen kunne ikke startes.",Toast.LENGTH_LONG).show();}
   }).show();
  }
  private void play(Playlist.Channel channel) {
@@ -960,7 +962,7 @@ public final class MainActivity extends AppCompatActivity {
    CastHistory.beforeLoad();String sessionId=session.getSessionId();
    Runnable resolveCast=()->{CastStream stream=CastStream.resolve(channel.url,channel.kind==Playlist.Kind.TV);runOnUiThread(()->{
     CastSession current=connectedCast();if(isDestroyed()||castRequest!=castLoadGeneration||current==null||!java.util.Objects.equals(sessionId,current.getSessionId())||current.getRemoteMediaClient()==null)return;
-    MediaMetadata metadata=new MediaMetadata(stream.type.startsWith("audio/")?MediaMetadata.MEDIA_TYPE_MUSIC_TRACK:MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);if(stream.type.startsWith("audio/")){metadata.putString(MediaMetadata.KEY_ARTIST,PlaybackText.SOURCE);metadata.putString(MediaMetadata.KEY_SUBTITLE,PlaybackText.SOURCE);}
+    MediaMetadata metadata=new MediaMetadata(stream.type.startsWith("audio/")?MediaMetadata.MEDIA_TYPE_MUSIC_TRACK:MediaMetadata.MEDIA_TYPE_MOVIE);metadata.putString(MediaMetadata.KEY_TITLE,channel.name);if(stream.type.startsWith("audio/")){metadata.putString(MediaMetadata.KEY_ARTIST,UiText.text(PlaybackText.SOURCE));metadata.putString(MediaMetadata.KEY_SUBTITLE,UiText.text(PlaybackText.SOURCE));}
     if(okhttp3.HttpUrl.parse(channel.logoUrl)!=null)metadata.addImage(new com.google.android.gms.common.images.WebImage(android.net.Uri.parse(channel.logoUrl)));
     CastPlayback.streamLoaded(channel,stream.url);MediaInfo media=new MediaInfo.Builder(stream.url).setContentType(stream.type).setStreamType(channel.kind==Playlist.Kind.TV?MediaInfo.STREAM_TYPE_LIVE:MediaInfo.STREAM_TYPE_BUFFERED).setMetadata(metadata).build();
     MediaLoadRequestData.Builder request=new MediaLoadRequestData.Builder().setMediaInfo(media).setAutoplay(true);if(channel.kind!=Playlist.Kind.TV)request.setCurrentTime(savedPosition);
@@ -973,7 +975,7 @@ public final class MainActivity extends AppCompatActivity {
     player=new ExoPlayer.Builder(this).setSeekBackIncrementMs(10000).setSeekForwardIncrementMs(10000).build();PlaybackTracker.attach(this,player);video.setPlayer(player);BluetoothOutputButton.register(this,player);player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA).setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);
     videoSession=new androidx.media3.session.MediaSession.Builder(this,player).setId("stream-video").setSessionActivity(android.app.PendingIntent.getActivity(this,10,new android.content.Intent(this,MainActivity.class).putExtra("openFullPlayer",true).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE)).build();
     player.addListener(new Player.Listener() {
-     @Override public void onPlayerError(PlaybackException e) {Toast.makeText(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
+     @Override public void onPlayerError(PlaybackException e) {UiText.toast(MainActivity.this,R.string.playback_failed,Toast.LENGTH_SHORT).show();}
      @Override public void onEvents(Player source,Player.Events events) {video.setKeepScreenOn(source.isPlaying());playbackPanel.refresh();updateVideoNotification();updateMiniBack();if(adapter!=null) adapter.notifyDataSetChanged();}
     });
    }

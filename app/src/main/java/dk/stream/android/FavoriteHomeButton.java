@@ -11,7 +11,7 @@ import android.view.Gravity;
 @android.annotation.SuppressLint("ViewConstructor")
 final class FavoriteHomeButton extends androidx.appcompat.widget.AppCompatButton {
  FavoriteHomeButton(Context context,String label,int icon){
-  super(context);setText(label);setAllCaps(false);setTextColor(Color.WHITE);setTypeface(Typeface.create("sans-serif",Typeface.BOLD));setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);setMaxLines(1);setEllipsize(android.text.TextUtils.TruncateAt.END);setMinHeight(0);setMinimumHeight(0);setMinWidth(0);setMinimumWidth(0);setStateListAnimator(null);setElevation(0);
+  super(context);setText(UiText.text(label));setAllCaps(false);setTextColor(Color.WHITE);setTypeface(Typeface.create("sans-serif",Typeface.BOLD));setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);setMaxLines(1);setEllipsize(android.text.TextUtils.TruncateAt.END);setMinHeight(0);setMinimumHeight(0);setMinWidth(0);setMinimumWidth(0);setStateListAnimator(null);setElevation(0);
   GradientDrawable mask=new GradientDrawable();mask.setColor(Color.WHITE);mask.setCornerRadius(dp(5));setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF),new Card(icon),mask));androidx.core.view.ViewCompat.setBackgroundTintList(this,null);androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this,18,28,1,TypedValue.COMPLEX_UNIT_SP);
  }
  private int dp(float value){return Math.round(value*getResources().getDisplayMetrics().density);}

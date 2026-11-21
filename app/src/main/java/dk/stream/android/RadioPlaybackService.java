@@ -86,7 +86,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
     if(item!=null && item.mediaId.startsWith(CarRadioCatalog.PREFIX)) {RadioStation station=carCatalog.known(item.mediaId);if(station!=null) {LastAudio.radio(RadioPlaybackService.this,station);LocalAudioService.stopForSourceSwitch(RadioPlaybackService.this);if(current==null || !current.id.equals(station.id)) behindLive=false;current=station;error="";loadArtwork(station);}}
    }
    @Override public void onEvents(Player source,Player.Events events) {RadioWidgetProvider.refresh(RadioPlaybackService.this);}
-   @Override public void onPlayerError(PlaybackException failure) {if(selectedFile()!=null){error="Lydfilen kan ikke afspilles. Kontrollér format og adgang til filen.";player.pause();android.widget.Toast.makeText(RadioPlaybackService.this,error,android.widget.Toast.LENGTH_LONG).show();}else handleRadioFailure();}
+   @Override public void onPlayerError(PlaybackException failure) {if(selectedFile()!=null){error="Lydfilen kan ikke afspilles. Kontrollér format og adgang til filen.";player.pause();UiText.toast(RadioPlaybackService.this,error,android.widget.Toast.LENGTH_LONG).show();}else handleRadioFailure();}
  };
  private void refreshPausedNotification(){PausedNotificationRefresh.update(this,session,2001,()->notification(session));}
  @Override public void onUpdateNotification(MediaSession mediaSession,boolean foregroundRequired){super.onUpdateNotification(mediaSession,foregroundRequired&&mediaSession.getPlayer().getPlayWhenReady());}

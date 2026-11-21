@@ -42,10 +42,10 @@ public final class RadioPanel extends LinearLayout {
  public RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay) {this(context,library,save,beforePlay,new RadioBrowser());}
  RadioPanel(Context context,LibrarySource library,Save save,Runnable beforePlay,RadioBrowser browser) {
   super(context);this.library=library;this.save=save;this.beforePlay=beforePlay;this.browser=browser;logos=LocalChannelLogos.load(context);setOrientation(VERTICAL);
-  worker.execute(()->{List<RadioStation> cached=CarRadioCatalog.readCache(context);main.post(()->{if(closed||loading||loaded)return;stations=cached;loaded=true;filter();});});
+  worker.execute(()->{List<RadioStation> cached=CarRadioCatalog.readCache(context);main.post(()->{if(closed||loading||loaded)return;stations=cached;loaded=true;filter();if(cached.isEmpty())load();});});
   title=text("",20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   LinearLayout folderNavigation=new LinearLayout(context);folderNavigation.setGravity(Gravity.CENTER_VERTICAL);addView(folderNavigation,new LayoutParams(-1,-2));
-  up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription("Tilbage");up.setBackgroundColor(Color.TRANSPARENT);folderNavigation.addView(up,new LayoutParams(dp(48),dp(48)));up.setOnClickListener(view->back());
+  up=new ImageButton(context);up.setImageResource(R.drawable.ic_back);up.setContentDescription(UiText.text("Tilbage"));up.setBackgroundColor(Color.TRANSPARENT);folderNavigation.addView(up,new LayoutParams(dp(48),dp(48)));up.setOnClickListener(view->back());
   folderTitle=text("",18);folderTitle.setTypeface(null,android.graphics.Typeface.BOLD);folderTitle.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_folder,0,0,0);folderTitle.setCompoundDrawablePadding(MediaListStyle.iconGap(folderTitle));folderTitle.setMaxLines(2);folderTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);folderNavigation.addView(folderTitle,new LayoutParams(0,-2,1));
   search=new ClearableSearchEditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence s,int a,int c,int f) { }public void onTextChanged(CharSequence s,int a,int b,int c) {filter();}public void afterTextChanged(android.text.Editable e) { }});
@@ -59,7 +59,7 @@ public final class RadioPanel extends LinearLayout {
     if(position<0||position>=visible.size()) return;RadioStation station=visible.get(position);PopupMenu menu=new StablePopupMenu(context,anchor);
     boolean favorite=library.get().findRadio(station.id)!=null;
     if(favorite)menu.getMenu().add(0,1,0,R.string.rename_radio).setOnMenuItemClickListener(item->{rename(station);return true;});
-    menu.getMenu().add(favorite?"Fjern fra favoritter":"Tilføj til favoritter").setOnMenuItemClickListener(item->{if(favorite){save.apply(()->FavoriteLists.remove(library.get(),FavoriteLists.of(station)));filter();}else FavoritePicker.show(getContext(),library.get(),save::apply,FavoriteLists.of(station),RadioPanel.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
+    menu.getMenu().add(UiText.text(favorite?"Fjern fra favoritter":"Tilføj til favoritter")).setOnMenuItemClickListener(item->{if(favorite){save.apply(()->FavoriteLists.remove(library.get(),FavoriteLists.of(station)));filter();}else FavoritePicker.show(getContext(),library.get(),save::apply,FavoriteLists.of(station),RadioPanel.this::filter);return true;});list.addReorderActions(menu,position);menu.show();
    }
    public void move(int from,int to) {RadioStation station=visible.remove(from);visible.add(to,station);adapter.notifyDataSetChanged();}
    public void commit() {List<RadioStation> order=new ArrayList<>(visible);save.apply(()->library.get().reorderRadio(order));filter();}
@@ -74,19 +74,19 @@ public final class RadioPanel extends LinearLayout {
  private void load() {
   if(loading) return;loading=true;filter();List<RadioStation> previous=new ArrayList<>(stations);
   worker.execute(()->{
-   try {List<RadioStation> result=new ArrayList<>();List<String> failures=new ArrayList<>();for(String country:COUNTRIES){try{result.addAll(browser.loadCountry(country));}catch(Exception error){failures.add(country);for(RadioStation station:previous)if(country.equals(station.country))result.add(station);}}if(failures.size()==COUNTRIES.length)throw new java.io.IOException("Radio unavailable");CarRadioCatalog.writeCache(getContext(),result);main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;filter();if(!failures.isEmpty())Toast.makeText(getContext(),"Kunne ikke opdatere alle lande. Tidligere stationer er bevaret.",Toast.LENGTH_LONG).show();});}
+   try {List<RadioStation> result=new ArrayList<>();List<String> failures=new ArrayList<>();for(String country:COUNTRIES){try{result.addAll(browser.loadCountry(country));}catch(Exception error){failures.add(country);for(RadioStation station:previous)if(country.equals(station.country))result.add(station);}}if(failures.size()==COUNTRIES.length)throw new java.io.IOException("Radio unavailable");CarRadioCatalog.writeCache(getContext(),result);main.post(()->{if(closed)return;stations=result;loaded=true;loading=false;filter();if(!failures.isEmpty())UiText.toast(getContext(),"Kunne ikke opdatere alle lande. Tidligere stationer er bevaret.",Toast.LENGTH_LONG).show();});}
    catch(Exception error) {main.post(()->{if(closed)return;loading=false;filter();if(!favorites) showMessage(getContext().getString(R.string.radio_failed));});}
   });
  }
  private void filter() {
-  title.setVisibility(headingManaged||favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(headingManaged?GONE:VISIBLE);up.setVisibility(canGoBack()?VISIBLE:GONE);folderTitle.setVisibility(canGoBack()?VISIBLE:GONE);if(canGoBack())folderTitle.setText(COUNTRY_NAMES[countryIndex]);backState.accept(canGoBack());
+  title.setVisibility(headingManaged||favorites?GONE:VISIBLE);title.setText(favorites?"":getContext().getString(R.string.radio));search.setVisibility(headingManaged?GONE:VISIBLE);up.setVisibility(canGoBack()?VISIBLE:GONE);folderTitle.setVisibility(canGoBack()?VISIBLE:GONE);if(canGoBack())folderTitle.setText(UiText.text(COUNTRY_NAMES[countryIndex]));backState.accept(canGoBack());
   visible=new ArrayList<>();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
   for(RadioStation station:favorites?library.get().radioFavorites:stations) if((favorites||countryIndex<0||COUNTRIES[countryIndex].equals(station.country))&&station.displayName().toLowerCase(Locale.ROOT).contains(query)) visible.add(station);
   showMessage(favorites||folderList()?"":loading?getContext().getString(R.string.radio_loading):visible.isEmpty()?getContext().getString(R.string.radio_empty):"");adapter.notifyDataSetChanged();
  }
  private void showMessage(String text) {message.setText(text);message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  public void play(RadioStation station) {PlaybackKeyboard.hide(getContext());beforePlay.run();if(CastPlayback.connected(getContext())) {CastPlayback.playRadio(getContext(),station);return;}androidx.core.content.ContextCompat.startForegroundService(getContext(),RadioPlaybackService.playIntent(getContext(),station));postDelayed(this::updatePlayback,300);}
- private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String error=RadioPlaybackService.error();playbackError.setText(error);playbackError.setVisibility(error.isEmpty()?GONE:VISIBLE);}
+ private void updatePlayback() {String marker=RadioPlaybackService.audibleStationId();if(!marker.equals(markedStation)) {markedStation=marker;adapter.notifyDataSetChanged();}String error=RadioPlaybackService.error();playbackError.setText(UiText.text(error));playbackError.setVisibility(error.isEmpty()?GONE:VISIBLE);}
 
  private void rename(RadioStation station) {
   EditText name=new EditText(getContext());name.setSingleLine();name.setText(station.displayName());
@@ -101,7 +101,7 @@ public final class RadioPanel extends LinearLayout {
  private final class Adapter extends BaseAdapter {
   public int getCount() {return folderList()?3:visible.size();}public RadioStation getItem(int position) {return folderList()?null:visible.get(position);}public long getItemId(int position) {return position;}
   public View getView(int position,View recycled,ViewGroup parent) {
-   if(folderList()){LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(8),dp(8));MediaListStyle.row(row);ImageView icon=new ImageView(getContext());icon.setImageResource(R.drawable.ic_folder);row.addView(icon,new LayoutParams(dp(40),dp(40)));TextView label=text(COUNTRY_NAMES[position],16);label.setPadding(MediaListStyle.iconGap(label),label.getPaddingTop(),label.getPaddingRight(),label.getPaddingBottom());row.addView(label,new LayoutParams(0,-2,1));row.setLayoutParams(new android.widget.AbsListView.LayoutParams(-1,MediaRowHeight.pixels(label)));return row;}
+   if(folderList()){LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(8),dp(8));MediaListStyle.row(row);ImageView icon=new ImageView(getContext());icon.setImageResource(R.drawable.ic_folder);row.addView(icon,new LayoutParams(dp(40),dp(40)));TextView label=text(UiText.text(COUNTRY_NAMES[position]),16);label.setPadding(MediaListStyle.iconGap(label),label.getPaddingTop(),label.getPaddingRight(),label.getPaddingBottom());row.addView(label,new LayoutParams(0,-2,1));row.setLayoutParams(new android.widget.AbsListView.LayoutParams(-1,MediaRowHeight.pixels(label)));return row;}
    RadioStation station=getItem(position);LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(8),dp(8),dp(4),dp(8));row.setBackgroundColor(0xFF1D1D1D);
    ImageView logo=new ImageView(getContext());logo.setScaleType(ImageView.ScaleType.FIT_CENTER);row.addView(logo,new LayoutParams(dp(48),dp(48)));
    TextView name=text(station.displayName(),16);name.setPadding(MediaListStyle.iconGap(name),name.getPaddingTop(),name.getPaddingRight(),name.getPaddingBottom());name.setMaxLines(2);row.addView(name,new LayoutParams(0,-2,1));
