@@ -214,10 +214,11 @@ public final class MainActivity extends AppCompatActivity {
    public void pickFolder() {replacingLocalFolder=null;pickLocal(true);}
    public void changeFolder(LocalMedia entry) {replacingLocalFolder=entry.uri;pickLocal(true);}
    public void play(LocalMedia entry) {playLocal(entry);}
+   public boolean playing(LocalMedia entry){return isFilePlaying(entry);}
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
   pcloudPanel=new PcloudPanel(this,new PcloudPanel.Actions(){
-   public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
+   public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public boolean playing(LocalMedia entry){return isFilePlaying(entry);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   favoriteHub=new FavoriteHub(this,new FavoriteHub.Actions(){
    public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
@@ -228,7 +229,7 @@ public final class MainActivity extends AppCompatActivity {
    public void openPage(String name){openDestination(name);}
    public String programme(Library.Entry entry){return programmeTitle(entry,System.currentTimeMillis());}
    public void play(FavoriteLists.Item item,List<LocalMedia> queue){if(recordingBlocked())return;if(item.stream!=null){if(item.stream.channel.kind==Playlist.Kind.TV&&favoriteHub.tvListIndex()==0){tvAnchor=item.stream;tvBackupIndex=0;tvActiveUrl=item.stream.channel.url;MainActivity.this.play(item.stream.channel);}else open(item.stream);}else if(item.radio!=null)radioPanel.play(item.radio);else playLocal(item.file,0,queue);}
-   public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):LocalAudioService.playing(item.file.uri)||RadioPlaybackService.playingFile(item.file.uri)||CastPlayback.playingLocal(MainActivity.this,item.file.uri);}
+   public boolean playing(FavoriteLists.Item item){return item.stream!=null?isChannelPlaying(item.stream.channel):item.radio!=null?RadioPlaybackService.playing(item.radio.id)||CastPlayback.hasMedia(MainActivity.this)&&CastPlayback.title(MainActivity.this).equals(item.radio.displayName()):isFilePlaying(item.file);}
   });favoriteHub.setVisibility(View.GONE);root.addView(favoriteHub,new LinearLayout.LayoutParams(-1,0,1));
   root.addView(new RadioBar(this,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();},new RadioBar.VideoActions(){
    public FavoriteLists.Item downloadItem(){return selected!=null&&selected.kind!=Playlist.Kind.TV?FavoriteLists.of(new Library.Entry("",selected)):null;}
@@ -876,7 +877,7 @@ public final class MainActivity extends AppCompatActivity {
     runOnUiThread(()->{
      if(isDestroyed()) return;
      LinearLayout choices=column();EditText query=new ClearableSearchEditText(this);query.setSingleLine();query.setHint(R.string.search_hint);choices.addView(query);
-     ListView episodeList=new ListView(this);MediaListStyle.apply(episodeList);ArrayAdapter<Playlist.Channel> episodeAdapter=new ArrayAdapter<Playlist.Channel>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes)){@Override public View getView(int position,View recycled,ViewGroup parent){View row=super.getView(position,null,parent);MediaListStyle.row(row);Playlist.Channel episode=getItem(position);LinearLayout content=new LinearLayout(MainActivity.this);content.setGravity(Gravity.CENTER_VERTICAL);content.addView(row,new LinearLayout.LayoutParams(0,-1,1));NowPlayingIndicator.show(NowPlayingIndicator.addTo(content),episode!=null&&isChannelPlaying(episode));MediaListStyle.row(content);return ProgressRows.wrap(content,episode==null?"":episode.url,true);}};episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
+     ListView episodeList=new ListView(this);MediaListStyle.apply(episodeList);ArrayAdapter<Playlist.Channel> episodeAdapter=new ArrayAdapter<Playlist.Channel>(this,android.R.layout.simple_list_item_1,new ArrayList<>(episodes)){@Override public View getView(int position,View recycled,ViewGroup parent){View row=super.getView(position,null,parent);MediaListStyle.row(row);Playlist.Channel episode=getItem(position);LinearLayout content=new LinearLayout(MainActivity.this);content.setGravity(Gravity.CENTER_VERTICAL);content.addView(row,new LinearLayout.LayoutParams(0,-1,1));boolean playing=episode!=null&&isChannelPlaying(episode);((TextView)row).setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);NowPlayingIndicator.show(NowPlayingIndicator.addTo(content),playing);MediaListStyle.row(content);return ProgressRows.wrap(content,episode==null?"":episode.url,true);}};episodeList.setAdapter(episodeAdapter);choices.addView(episodeList,new LinearLayout.LayoutParams(-1,dp(360)));
      AlertDialog dialog=new AlertDialog.Builder(this).setTitle(series.name).setView(choices).setNegativeButton(android.R.string.cancel,null).create();
      query.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence value,int start,int count,int after){}public void onTextChanged(CharSequence value,int start,int before,int count){episodeAdapter.getFilter().filter(value);}public void afterTextChanged(Editable value){}});
      episodeList.setOnItemLongClickListener((parent,row,position,id)->{Playlist.Channel episode=episodeAdapter.getItem(position);if(episode==null)return false;MediaDownloads.show(row,MainActivity.this,FavoriteLists.of(new Library.Entry(source.id,episode)));return true;});
@@ -914,6 +915,7 @@ public final class MainActivity extends AppCompatActivity {
    ProgressRows.bind(recycled,channel.url,channel.kind!=Playlist.Kind.TV&&channel.seriesId==null);return recycled;
   }
  }
+ private boolean isFilePlaying(LocalMedia file){return LocalAudioService.playing(file.uri)||RadioPlaybackService.playingFile(file.uri)||CastPlayback.playingLocal(this,file.uri)||localPlayerAttached&&selected!=null&&selected.url.equals(file.uri)&&player!=null&&player.isPlaying();}
  private boolean isChannelPlaying(Playlist.Channel channel) {
   if(selected==null || !(tvAnchor!=null?tvAnchor.channel.url:selected.url).equals(channel.url)) return false;
   CastSession session=connectedCast();return session!=null && session.getRemoteMediaClient()!=null?(session.getRemoteMediaClient().isPlaying()||session.getRemoteMediaClient().isBuffering()):player!=null && player.isPlaying();

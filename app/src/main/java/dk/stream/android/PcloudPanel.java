@@ -10,7 +10,7 @@ import okhttp3.HttpUrl;
 
 @androidx.media3.common.util.UnstableApi
 public final class PcloudPanel extends LinearLayout {
- public interface Actions {Library library();boolean save(Runnable mutation);void play(LocalMedia entry,List<LocalMedia> queue);void navigationChanged(boolean inside);}
+ public interface Actions {Library library();boolean save(Runnable mutation);void play(LocalMedia entry,List<LocalMedia> queue);void navigationChanged(boolean inside);default boolean playing(LocalMedia entry){return LocalAudioService.playing(entry.uri)||RadioPlaybackService.playingFile(entry.uri);}}
  private final Actions actions;private final EditText search;private final TextView path,message,title;private final ImageButton up;private final ListView list;
  private final List<LocalMedia> entries=new ArrayList<>(),visible=new ArrayList<>();private final ArrayDeque<HttpUrl> parents=new ArrayDeque<>();private final Adapter adapter=new Adapter();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();private Future<?> task;private WebDavClient client;private int generation;private boolean closed;
@@ -44,7 +44,7 @@ public final class PcloudPanel extends LinearLayout {
    if(entry.folder||entry.image()){ImageView icon=new ImageView(getContext());icon.setImageResource(entry.folder?R.drawable.ic_folder:R.drawable.ic_image);icon.setContentDescription(entry.folder?"Åbn mappe":"Vis billede");row.addView(icon,new LayoutParams(pad*5,pad*5));if(entry.image())com.bumptech.glide.Glide.with(PcloudPanel.this).load(android.net.Uri.parse(entry.uri)).override(144,144).fitCenter().placeholder(R.drawable.ic_image).error(R.drawable.ic_image).into(icon);}
    String cover=entry.image()?null:LocalFileArtwork.asset(entry);if(cover!=null){ImageView logo=new ImageView(getContext());logo.setScaleType(ImageView.ScaleType.FIT_CENTER);row.addView(logo,new LayoutParams(pad*5,pad*5));com.bumptech.glide.Glide.with(PcloudPanel.this).load(cover).override(96,96).fitCenter().into(logo);}
    TextView name=new TextView(getContext());name.setText(entry.displayName());name.setTextColor(Color.WHITE);name.setTextSize(16);name.setPadding(entry.folder||entry.image()||cover!=null?MediaListStyle.iconGap(name):0,0,0,0);row.addView(name,new LayoutParams(0,-2,1));
-   boolean playing=!entry.folder&&!entry.image()&&(LocalAudioService.playing(entry.uri)||RadioPlaybackService.playingFile(entry.uri)||CastPlayback.playingLocal(getContext(),entry.uri));View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
+   boolean playing=!entry.folder&&!entry.image()&&(actions.playing(entry)||CastPlayback.playingLocal(getContext(),entry.uri));View indicator=NowPlayingIndicator.addTo(row);NowPlayingIndicator.show(indicator,playing);name.setTypeface(null,playing?android.graphics.Typeface.BOLD:android.graphics.Typeface.NORMAL);
    name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);
    row.setLayoutParams(new AbsListView.LayoutParams(-1,MediaRowHeight.pixels(name)));
    return ProgressRows.wrap(row,entry.uri,!entry.folder&&!entry.image());
