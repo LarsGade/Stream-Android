@@ -126,4 +126,6 @@
  <string name="page_widget">Stream side 2 × 1</string>
  <string name="page_widget_choose">Vælg side fra forsiden</string>
  <string name="page_widget_description">Åbn en valgt side direkte i Stream</string>
+ <string name="keep_screen_on_fullscreen">Hold skærm tændt ved fuldskærmsafspiller</string>
+ <string name="confirm_reset_history">Er du sikker på, at du vil nulstille alle lyttede/sete markeringer og gemte afspilningspositioner?</string>
 </resources>

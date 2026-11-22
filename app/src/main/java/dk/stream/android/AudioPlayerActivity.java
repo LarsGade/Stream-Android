@@ -87,6 +87,6 @@ public final class AudioPlayerActivity extends AppCompatActivity {
  }
  @Override protected void onNewIntent(android.content.Intent intent){super.onNewIntent(intent);setIntent(intent);radioStation=null;radioCastInfo=null;local=intent.getBooleanExtra("local",false);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}coverState.clear();refresh();}
  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)castButton.performClick();}
- @Override protected void onStart(){super.onStart();coverState.clear();handler.post(tick);}
- @Override protected void onStop(){handler.removeCallbacks(tick);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}coverState.clear();super.onStop();}
+ @Override protected void onStart(){super.onStart();try{navigationLibrary=new LibraryStore(this).load();}catch(Exception ignored){}FullscreenScreenAwake.apply(getWindow(),navigationLibrary.keepScreenOnFullscreen);coverState.clear();handler.post(tick);}
+ @Override protected void onStop(){FullscreenScreenAwake.apply(getWindow(),false);handler.removeCallbacks(tick);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}coverState.clear();super.onStop();}
 }

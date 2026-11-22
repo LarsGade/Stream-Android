@@ -102,6 +102,7 @@ public final class Library {
  public String androidAutoStartPage=AndroidAutoPages.ROOT;
  public String appLanguage="da";
  public boolean dailyGuideUpdate=true;
+ public boolean keepScreenOnFullscreen=false;
  public Boolean startupFavorites=null;
  public String startupDestination="";
  public boolean favoritesOnStart=true,favoritesRadio,autoPlayLast=true,miniPlayer=true;
@@ -191,7 +192,7 @@ public final class Library {
   JSONObject root=new JSONObject();root.put("appLanguage",AppLanguage.normalize(appLanguage));root.put("startupDestination",startupDestination);root.put("startupFavorites",startupFavorites==null?JSONObject.NULL:startupFavorites);root.put("pageFavorites",new JSONObject(pageFavorites));root.put("tvFavoriteLists",new JSONObject(tvFavoriteLists));root.put("hiddenHomeButtons",new JSONArray(hiddenHomeButtons));root.put("homeOrderVersion",2);root.put("favoriteHomeOrder",new JSONArray(favoriteHomeOrder));root.put("favoritesStartKind",favoritesStartKind);root.put("favoriteKinds",new JSONObject(favoriteKinds));root.put("favoriteAssignments",new JSONObject(favoriteAssignments));root.put("favoriteOrder",new JSONArray(favoriteOrder));if(pcloud!=null)root.put("pcloud",pcloud.json()); root.put("version",1);root.put("favoritesOnStart",favoritesOnStart);root.put("favoritesStartTab",favoritesStartTab);root.put("favoritesCurrentTab",favoritesCurrentTab);root.put("favoritesRadio",favoritesRadio);root.put("favoritesLocal",favoritesLocal);root.put("favoritesImages",favoritesImages);
   JSONArray locals=new JSONArray(),localStars=new JSONArray();for(LocalMedia entry:localFiles) locals.put(entry.json());for(LocalMedia entry:localFavorites) localStars.put(entry.json());root.put("localFiles",locals);root.put("localFavorites",localStars);root.put("lastSourceId",lastSourceId);
   JSONArray photos=new JSONArray();for(LocalMedia photo:imageFavorites)photos.put(photo.json());root.put("imageFavorites",photos);
-  root.put("openSpotApiUrl",openSpotApiUrl);root.put("openSpotProxyUrl",openSpotProxyUrl);root.put("audiusApiUrl",audiusApiUrl);root.put("saavnApiUrl",saavnApiUrl);root.put("androidAutoStartPage",AndroidAutoPages.normalize(androidAutoStartPage));root.put("androidAutoFavorites",androidAutoFavorites);root.put("androidAutoAutoPlay",androidAutoAutoPlay);root.put("dailyGuideUpdate",dailyGuideUpdate);root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("lastPlayedPosition",lastPlayedPosition);
+  root.put("openSpotApiUrl",openSpotApiUrl);root.put("openSpotProxyUrl",openSpotProxyUrl);root.put("audiusApiUrl",audiusApiUrl);root.put("saavnApiUrl",saavnApiUrl);root.put("androidAutoStartPage",AndroidAutoPages.normalize(androidAutoStartPage));root.put("androidAutoFavorites",androidAutoFavorites);root.put("androidAutoAutoPlay",androidAutoAutoPlay);root.put("dailyGuideUpdate",dailyGuideUpdate);root.put("autoPlayLast",autoPlayLast);root.put("miniPlayer",miniPlayer);root.put("keepScreenOnFullscreen",keepScreenOnFullscreen);root.put("lastPlayedPosition",lastPlayedPosition);
   if(lastPlayed!=null) {
    JSONObject value=new JSONObject();value.put("name",lastPlayed.name);value.put("url",lastPlayed.url);value.put("group",lastPlayed.group);value.put("kind",lastPlayed.kind.name());value.put("logoUrl",lastPlayed.logoUrl);value.put("epgId",lastPlayed.epgId);value.put("epgName",lastPlayed.epgName);root.put("lastPlayed",value);
   }
@@ -223,7 +224,7 @@ public final class Library {
   try{library.audiusApiUrl=SaavnApi.base(root.optString("audiusApiUrl",AudiusApi.DEFAULT)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid Audius API address");}
   try{library.saavnApiUrl=SaavnApi.base(root.optString("saavnApiUrl",SaavnApi.DEFAULT)).toString();}catch(IllegalArgumentException invalid){throw new JSONException("Invalid music API address");}
   library.androidAutoFavorites=root.optBoolean("androidAutoFavorites",true);library.androidAutoAutoPlay=root.optBoolean("androidAutoAutoPlay",true);library.androidAutoStartPage=AndroidAutoPages.normalize(root.optString("androidAutoStartPage",AndroidAutoPages.ROOT));
-  library.dailyGuideUpdate=root.optBoolean("dailyGuideUpdate",true);library.autoPlayLast=root.optBoolean("autoPlayLast",true);library.miniPlayer=root.optBoolean("miniPlayer",true);library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
+  library.dailyGuideUpdate=root.optBoolean("dailyGuideUpdate",true);library.autoPlayLast=root.optBoolean("autoPlayLast",true);library.miniPlayer=root.optBoolean("miniPlayer",true);library.keepScreenOnFullscreen=root.optBoolean("keepScreenOnFullscreen",false);library.lastPlayedPosition=Math.max(0,root.optLong("lastPlayedPosition"));
   JSONObject last=root.optJSONObject("lastPlayed");
   if(last!=null) {
    try {library.lastPlayed=new Playlist.Channel(last.getString("name"),last.getString("url"),last.optString("group",""),Playlist.Kind.valueOf(last.getString("kind")),null,last.optString("logoUrl",""),last.optString("epgId",""),last.optString("epgName",""));}
