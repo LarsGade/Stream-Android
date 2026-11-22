@@ -131,7 +131,7 @@
  <string name="seek_back_10">Spol 10 sekunder tilbage</string>
  <string name="seek_forward_10">Spol 10 sekunder frem</string>
  <string name="dot_meanings">Prikkernes betydning</string>
- <string name="dot_white_meaning">Hvid: Afspilles nu</string>
- <string name="dot_yellow_meaning">Gul: Delvist afspillet</string>
- <string name="dot_green_meaning">Grøn: Afspillet færdig</string>
+ <string name="dot_white_meaning">Afspilles nu</string>
+ <string name="dot_yellow_meaning">Delvist afspillet</string>
+ <string name="dot_green_meaning">Afspillet færdig</string>
 </resources>

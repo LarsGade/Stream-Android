@@ -158,7 +158,7 @@
  <string name="seek_back_10">Rewind 10 seconds</string>
  <string name="seek_forward_10">Forward 10 seconds</string>
  <string name="dot_meanings">What the dots mean</string>
- <string name="dot_white_meaning">White: Playing now</string>
- <string name="dot_yellow_meaning">Yellow: Partially played</string>
- <string name="dot_green_meaning">Green: Finished playing</string>
+ <string name="dot_white_meaning">Playing now</string>
+ <string name="dot_yellow_meaning">Partially played</string>
+ <string name="dot_green_meaning">Finished playing</string>
 </resources>
