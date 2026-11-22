@@ -122,4 +122,5 @@
  <string name="radio_widget_next">Næste valgte radiokanal</string>
  <string name="music_library">Musik</string>
  <string name="notification_files">Musik og filer</string>
+ <string name="podcast">Podcast</string>
 </resources>
