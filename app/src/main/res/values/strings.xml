@@ -123,7 +123,7 @@
  <string name="music_library">Musik</string>
  <string name="notification_files">Musik og filer</string>
  <string name="podcast">Podcast</string>
- <string name="page_widget">Stream side 4 × 1</string>
+ <string name="page_widget">Stream side 2 × 1</string>
  <string name="page_widget_choose">Vælg side fra forsiden</string>
  <string name="page_widget_description">Åbn en valgt side direkte i Stream</string>
 </resources>
