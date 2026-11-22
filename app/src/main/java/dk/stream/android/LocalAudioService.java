@@ -39,6 +39,7 @@ public final class LocalAudioService extends MediaSessionService {
  }
  private void changed() {sendBroadcast(new Intent(CHANGED).setPackage(getPackageName()));}
  static void stopForSourceSwitch(Context context){LocalAudioService service=active;if(service!=null)service.stopLocalPlayback();else context.stopService(new Intent(context,LocalAudioService.class));}
+ static void dismissPlayback(){if(active!=null)active.stopLocalPlayback();}
  private void stopLocalPlayback(){current=null;queue=Collections.emptyList();pendingQueue=null;pendingToken=null;player.pause();player.stop();player.clearMediaItems();androidx.core.app.ServiceCompat.stopForeground(LocalAudioService.this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);changed();stopSelf();}
  @Override public void onCreate() {
   super.onCreate();active=this;

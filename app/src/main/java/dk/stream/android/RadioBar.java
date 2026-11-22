@@ -7,9 +7,9 @@ import android.widget.*;
 
 /** One transport icon; the rest of the bar opens the full player for every source. */
 @androidx.media3.common.util.UnstableApi
-public final class RadioBar extends LinearLayout {
- private long progressPosition,progressDuration;
- public interface VideoActions {default FavoriteLists.Item downloadItem(){return null;}default long position(){return 0;}default long duration(){return 0;}default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
+public final class RadioBar extends SwipePlaybackBar {
+ private long progressPosition,progressDuration;private int dismissedSelection=-1;
+ public interface VideoActions {default boolean stop(){return true;}default FavoriteLists.Item downloadItem(){return null;}default long position(){return 0;}default long duration(){return 0;}default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
  private final TextView name;
  private final ImageView artwork;private final PlaybackCoverState coverState=new PlaybackCoverState();
  private final ImageButton toggle;
@@ -24,7 +24,7 @@ public final class RadioBar extends LinearLayout {
   artwork=new ImageView(context);artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);int artSize=Math.round(size*1.25f);artwork.setPadding(artSize/12,artSize/12,artSize/12,artSize/12);artwork.setVisibility(GONE);LayoutParams artParams=new LayoutParams(artSize,artSize);artParams.setMarginEnd(MediaListStyle.iconGap(artwork));addView(artwork,artParams);
   name=new TextView(context);name.setTextColor(Color.WHITE);name.setTextSize(16);name.setMaxLines(2);name.setEllipsize(android.text.TextUtils.TruncateAt.END);name.setGravity(Gravity.CENTER_VERTICAL);addView(name,new LayoutParams(0,-2,1));
   addView(toggle,new LayoutParams(size,size));
-  setOnClickListener(view->open());setOnLongClickListener(view->{FavoriteLists.Item item=MediaDownloads.current(getContext());if(item==null&&video!=null)item=video.downloadItem();if(!MediaDownloads.eligible(item))return false;MediaDownloads.show(this,getContext(),item);return true;});refresh();
+  setDismissAction(()->{if(video!=null&&!video.stop())return false;if(!PlaybackDismiss.stop(getContext()))return false;dismissedSelection=CastPlayback.selection();return true;});setOnClickListener(view->open());setOnLongClickListener(view->{FavoriteLists.Item item=MediaDownloads.current(getContext());if(item==null&&video!=null)item=video.downloadItem();if(!MediaDownloads.eligible(item))return false;MediaDownloads.show(this,getContext(),item);return true;});refresh();
  }
  private void sizeButtonIcon(ImageButton button,float iconDp){
   int padding=Math.round((48-iconDp)/2*getResources().getDisplayMetrics().density);
@@ -41,7 +41,7 @@ public final class RadioBar extends LinearLayout {
   int fallback=R.drawable.ic_music_note;if(CastPlayback.hasMedia(getContext()))fallback=CastPlayback.image(getContext())?R.drawable.ic_image:CastPlayback.audio(getContext())?R.drawable.ic_music_note:R.drawable.ic_video;else if(LocalAudioService.current()!=null)fallback=MediaFallback.icon(LocalAudioService.current());else if(RadioPlaybackService.selectedFile()!=null)fallback=MediaFallback.icon(RadioPlaybackService.selectedFile());else if(video!=null&&!video.title().isEmpty()&&RadioPlaybackService.selectedStation()==null)fallback=R.drawable.ic_video;
   String mediaKey=CastPlayback.hasMedia(getContext())?CastPlayback.historyKey(getContext()):LocalAudioService.current()!=null?LocalAudioService.current().uri:RadioPlaybackService.selectedFile()!=null?RadioPlaybackService.selectedFile().uri:RadioPlaybackService.selectedStation()!=null?"radio:"+RadioPlaybackService.selectedStation().id:title;if(SaavnMusic.is(mediaKey))image=SaavnMusic.cover(mediaKey);
   updateArtwork(image,title,fallback,mediaKey);
-  setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(liveChannel?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(UiText.text(CastPlayback.image(getContext())?"Vis billede":running?(liveChannel?"Stop":"Pause"):"Afspil"));toggle.setEnabled(!title.isEmpty());invalidate();
+  setVisibility(title.isEmpty()||CastPlayback.hasMedia(getContext())&&dismissedSelection==CastPlayback.selection()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(liveChannel?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(UiText.text(CastPlayback.image(getContext())?"Vis billede":running?(liveChannel?"Stop":"Pause"):"Afspil"));toggle.setEnabled(!title.isEmpty());invalidate();
  }
  @Override protected void onMeasure(int widthSpec,int heightSpec){super.onMeasure(widthSpec,View.MeasureSpec.makeMeasureSpec(MediaRowHeight.pixels(name),View.MeasureSpec.EXACTLY));}
  @Override protected void onDraw(android.graphics.Canvas canvas){super.onDraw(canvas);android.graphics.Paint paint=new android.graphics.Paint();paint.setColor(Color.WHITE);canvas.drawRect(0,0,getWidth(),getPaddingTop(),paint);if(progressDuration>0){int height=Math.max(1,Math.round(2*getResources().getDisplayMetrics().density));paint.setColor(0xFF343434);canvas.drawRect(0,getHeight()-height,getWidth(),getHeight(),paint);paint.setColor(0xFF3686FF);canvas.drawRect(0,getHeight()-height,(float)(getWidth()*Math.max(0,Math.min(1,progressPosition/(double)progressDuration))),getHeight(),paint);}}

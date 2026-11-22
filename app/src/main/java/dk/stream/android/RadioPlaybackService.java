@@ -163,6 +163,7 @@ public final class RadioPlaybackService extends MediaLibraryService {
   } catch(Exception failure) {sessionPlayer.stop();current=null;androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);stopSelf();RadioWidgetProvider.refresh(this);}
   return START_NOT_STICKY;
  }
+ static void dismissPlayback(){if(active!=null)active.stopRadioPlayback();}
  private void stopRadioPlayback(){
   recovery.pause();artworkGeneration++;current=null;error="";behindLive=false;sessionPlayer.stop();player.clearMediaItems();
   androidx.core.app.ServiceCompat.stopForeground(this,androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE);((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(2001);RadioWidgetProvider.refresh(this);stopSelf();
