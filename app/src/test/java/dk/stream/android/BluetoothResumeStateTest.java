@@ -1,0 +1,13 @@
+package dk.stream.android;
+import org.junit.Test;
+import static org.junit.Assert.*;
+public class BluetoothResumeStateTest {
+ @Test public void podcastResumesInsteadOfAnEarlierRadio(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object radio=new Object(),podcast=new Object();state.started(radio);state.started(podcast);state.interrupted(podcast);assertSame(podcast,state.take());assertNull(state.take());assertSame(podcast,state.owner());}
+ @Test public void radioResumesIfItWasActuallyLastPlaying(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object radio=new Object(),podcast=new Object();state.started(podcast);state.started(radio);state.interrupted(radio);assertSame(radio,state.take());}
+ @Test public void oldPlayerCannotClaimAReconnect(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object old=new Object(),current=new Object();state.started(old);state.started(current);state.interrupted(old);assertNull(state.take());}
+ @Test public void explicitPauseCancelsAutomaticResume(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object player=new Object();state.started(player);state.interrupted(player);state.paused(player);assertNull(state.take());assertSame(player,state.owner());}
+ @Test public void switchDuringDisconnectionCancelsOldResume(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object old=new Object(),current=new Object();state.started(old);state.interrupted(old);state.started(current);assertNull(state.take());assertSame(current,state.owner());state.stopped(old);assertSame(current,state.owner());}
+ @Test public void stopAndAppClosureClearPendingResume(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object player=new Object();state.started(player);state.interrupted(player);state.stopped(player);assertNull(state.take());assertNull(state.owner());state.started(player);state.interrupted(player);state.clear();assertNull(state.take());assertNull(state.owner());}
+ @Test public void manuallyPausedMediaDoesNotStartOnANewConnection(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object player=new Object();state.started(player);state.paused(player);state.interrupted(player);assertFalse(state.eligible());assertNull(state.take());}
+ @Test public void newOutputSelectionCancelsPendingButAllowsFutureInterruptions(){BluetoothResumeState<Object> state=new BluetoothResumeState<>();Object player=new Object();state.started(player);state.interrupted(player);state.cancelPending();assertNull(state.take());state.interrupted(player);assertSame(player,state.take());}
+}

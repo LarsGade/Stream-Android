@@ -1,0 +1,7 @@
+Stream's OpenSpotSaavnApi independently adapts the JioSaavn request format,
+search transport, and media address format documented in OpenSpot Music 3.1.5:
+https://github.com/BlackHatDevX/openspot-music-app
+Reference: openspot-mobile/lib/api.ts, source commit 640af82.
+OpenSpot is copyright (c) 2025 Jash Gro and distributed under the MIT License.
+See OpenSpot-LICENSE.txt. Stream is not affiliated with OpenSpot or JioSaavn.
+The public search relay is operated by a third party.

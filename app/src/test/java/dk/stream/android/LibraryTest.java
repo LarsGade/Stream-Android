@@ -1,0 +1,147 @@
+package dk.stream.android;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.*;
+
+public class LibraryTest {
+ @Test public void favoriteTabsOnlyExistForPopulatedLists(){
+  Library l=new Library();for(int i=0;i<4;i++)assertFalse(l.hasFavoriteTab(i));assertEquals(-1,l.availableFavoriteTab(3));
+  LocalMedia image=new LocalMedia("content://photos/1","photo.jpg","image/jpeg",false);l.toggleLocalFavorite(image);assertTrue(l.hasFavoriteTab(2));assertEquals(2,l.availableFavoriteTab(0));
+  l.addRadio(new RadioStation("one","Radio","https://example.com/radio",""));assertEquals(1,l.availableFavoriteTab(3));assertEquals(2,l.availableFavoriteTab(2));l.toggleLocalFavorite(image);assertFalse(l.hasFavoriteTab(3));assertEquals(1,l.availableFavoriteTab(3));
+  l.toggleLocalFavorite(new LocalMedia("content://music/1","song.mp3","audio/mpeg",false));assertTrue(l.hasFavoriteTab(2));l.toggleFavorite(new Library.Entry("source",channel("TV","https://example.com/tv")));assertTrue(l.hasFavoriteTab(0));assertEquals(0,l.availableFavoriteTab(0));
+ }
+ @Test public void sourceFavoritesKeepCloudAndLocalMediaAndFoldersSeparate() throws Exception {
+  Library l=new Library();PcloudAccount account=new PcloudAccount(PcloudAccount.EU,"user@example.com","secret");
+  LocalMedia cloudFolder=new LocalMedia(PcloudDocument.uri(account,okhttp3.HttpUrl.get(account.server+"Music/"),-1),"Music","",true);
+  LocalMedia cloudImage=new LocalMedia(PcloudDocument.uri(account,okhttp3.HttpUrl.get(account.server+"Photo.jpg"),42),"Photo.jpg","image/jpeg",false);
+  LocalMedia localImage=new LocalMedia("content://local/photo","Local.jpg","image/jpeg",false),localFolder=new LocalMedia("content://local/folder","Folder","",true);
+  for(LocalMedia entry:Arrays.asList(cloudFolder,cloudImage,localImage,localFolder))l.toggleLocalFavorite(entry);
+  Library restored=Library.fromJson(l.toJson());assertEquals(2,restored.sourceFavorites(true).size());assertEquals(2,restored.sourceFavorites(false).size());assertTrue(restored.hasFavoriteTab(2));assertTrue(restored.hasFavoriteTab(3));
+  for(LocalMedia entry:restored.sourceFavorites(true))assertTrue(PcloudDocument.is(entry.uri));for(LocalMedia entry:restored.sourceFavorites(false))assertFalse(PcloudDocument.is(entry.uri));
+  restored.toggleLocalFavorite(cloudFolder);restored.toggleLocalFavorite(cloudImage);assertFalse(restored.hasFavoriteTab(3));assertTrue(restored.hasFavoriteTab(2));assertEquals(2,restored.availableFavoriteTab(3));
+ }
+ @Test public void streamingFavoritesAreSeparatedByKindAndSurviveReload() throws Exception {
+  Library library=new Library();Library.Source source=library.addSource(Library.Source.m3u("Source","https://example.com/list"));for(Playlist.Kind kind:Playlist.Kind.values())library.toggleFavorite(new Library.Entry(source.id,new Playlist.Channel(kind.name(),"https://example.com/"+kind,"",kind,null,"")));
+  Library copy=Library.fromJson(library.toJson());for(int tab:new int[]{0,4,5})assertTrue(copy.hasFavoriteTab(tab));assertEquals(Playlist.Kind.FILM,Library.favoriteKind(4));assertEquals(Playlist.Kind.SERIES,Library.favoriteKind(5));
+  copy.favorites.removeIf(entry->entry.channel.kind==Playlist.Kind.TV);assertFalse(copy.hasFavoriteTab(0));assertEquals(4,copy.availableFavoriteTab(0));copy.favoritesCurrentTab=5;copy.setFavoritesStartTab(4);Library restored=Library.fromJson(copy.toJson());assertEquals(5,restored.favoritesCurrentTab);assertEquals(4,restored.favoritesStartTab);
+ }
+ @Test public void reorderingOneStreamingTabKeepsOtherTabsInPlace(){
+  Library l=new Library();Library.Entry a=new Library.Entry("source",channel("A","https://example.com/a")),b=new Library.Entry("source",channel("B","https://example.com/b")),film=new Library.Entry("source",new Playlist.Channel("Film","https://example.com/f","",Playlist.Kind.FILM,null,""));
+  l.favorites.addAll(Arrays.asList(a,film,b));l.reorderVisibleFavorites(Arrays.asList(b,a));assertEquals(Arrays.asList(b,film,a),l.favorites);
+ }
+ @Test public void favoriteOrderPutsStreamingKindsFirstAndRetainsStoredIds() throws Exception {
+  assertEquals(Arrays.asList(0,4,5,1,2,3),Library.favoriteTabOrder());Library l=new Library();for(int tab:Library.favoriteTabOrder()){l.setFavoritesStartTab(tab);Library restored=Library.fromJson(l.toJson());assertEquals(tab,restored.favoritesStartTab);assertEquals(tab,(int)Library.favoriteTabOrder().get(Library.favoriteTabOrder().indexOf(restored.favoritesStartTab)));}
+ }
+ private Playlist.Channel channel(String name,String url) {return new Playlist.Channel(name,url,"DK",Playlist.Kind.TV,null,"https://example.com/logo.png");}
+ @Test public void radioFavoritesAreIndependentOrderedAndAliasesSurviveReload() throws Exception {
+  Library library=new Library();RadioStation one=new RadioStation("one","Original","https://example.com/one",""),two=new RadioStation("two","Two","https://example.com/two","");
+  library.addRadio(one);library.addRadio(two);library.addRadio(one);assertEquals(2,library.radioFavorites.size());
+  library.renameRadio("one"," P1 ");library.reorderRadio(Arrays.asList(two,one));
+  Library restored=Library.fromJson(library.toJson());assertTrue(restored.favorites.isEmpty());assertEquals("two",restored.radioFavorites.get(0).id);
+  assertEquals("P1",restored.findRadio("one").displayName());assertEquals("Original",restored.findRadio("one").name);assertEquals(one.url,restored.findRadio("one").url);
+  try {restored.reorderRadio(Arrays.asList(one,one));fail();} catch(IllegalArgumentException expected) { }
+  assertEquals("two",restored.radioFavorites.get(0).id);restored.removeRadio("two");assertEquals(1,restored.radioFavorites.size());
+  assertTrue(Library.fromJson("{\"version\":1,\"sources\":[],\"favorites\":[]}").radioFavorites.isEmpty());
+ }
+ @Test public void playbackSettingsAndPositionSurviveReload() throws Exception {
+  Library library=new Library();library.autoPlayLast=true;library.miniPlayer=true;library.lastPlayedPosition=12345;
+  library.lastPlayed=new Playlist.Channel("Episode","https://example.com/series/u/p/123.mp4","Shows",Playlist.Kind.SERIES,null,"https://example.com/cover");
+  Library restored=Library.fromJson(library.toJson());assertTrue(restored.autoPlayLast);assertTrue(restored.miniPlayer);
+  assertEquals(12345,restored.lastPlayedPosition);assertEquals(library.lastPlayed.url,restored.lastPlayed.url);assertEquals(Playlist.Kind.SERIES,restored.lastPlayed.kind);assertNull(restored.lastPlayed.seriesId);
+  Library legacy=Library.fromJson("{\"version\":1,\"sources\":[],\"favorites\":[]}");
+  assertTrue(legacy.autoPlayLast);assertTrue(legacy.miniPlayer);assertNull(legacy.lastPlayed);
+ }
+ @Test public void favoritesAndStartupPreferenceSurviveReload() throws Exception {
+  Library library=new Library();Library.Source source=library.addSource(Library.Source.m3u("Min liste","https://example.com/get.php?password=p%26x"));
+  library.lastSourceId=source.id;library.favoritesOnStart=true;library.favoritesRadio=true;
+  Library.Entry z=new Library.Entry(source.id,channel("Z","https://example.com/z"));
+  Library.Entry a=new Library.Entry(source.id,channel("A","https://example.com/a"));
+  library.toggleFavorite(z);library.toggleFavorite(a);
+  Library restored=Library.fromJson(library.toJson());
+  assertTrue(restored.favoritesOnStart);assertTrue(restored.favoritesRadio);assertEquals(source.id,restored.lastSourceId);assertTrue(restored.isFavorite(z));
+  assertEquals("Z",restored.favorites.get(0).channel.name);assertEquals("A",restored.favorites.get(1).channel.name);
+  assertEquals("https://example.com/logo.png",restored.favorites.get(0).channel.logoUrl);
+ }
+ @Test public void togglingIsSourceSpecificAndRemovesDuplicates() {
+  Library library=new Library();Playlist.Channel channel=channel("TV","https://example.com/tv");
+  Library.Entry one=new Library.Entry("one",channel),two=new Library.Entry("two",channel);
+  library.toggleFavorite(one);library.toggleFavorite(two);assertEquals(2,library.favorites.size());
+  library.toggleFavorite(new Library.Entry("one",channel("Renamed","https://example.com/tv")));
+  assertEquals(1,library.favorites.size());assertTrue(library.isFavorite(two));assertFalse(library.isFavorite(one));
+ }
+ @Test public void filtersFavoritesWithoutSortingOrMixingSections() {
+  Library library=new Library();library.toggleFavorite(new Library.Entry("s",channel("Z","https://example.com/z")));
+  library.toggleFavorite(new Library.Entry("s",new Playlist.Channel("Movie","https://example.com/movie","Action",Playlist.Kind.FILM,null)));
+  library.toggleFavorite(new Library.Entry("s",channel("A","https://example.com/a")));
+  var tv=library.favoriteItems(Playlist.Kind.TV,"DK","");assertEquals(2,tv.size());assertEquals("Z",tv.get(0).channel.name);
+  assertEquals(1,library.favoriteItems(Playlist.Kind.FILM,null,"movie").size());assertTrue(library.favoriteItems(Playlist.Kind.TV,null,"movie").isEmpty());
+ }
+ @Test public void savedXtreamSourceRetainsExactCredentialsAndSeriesFavorites() throws Exception {
+  Library library=new Library();Library.Source source=library.addSource(Library.Source.xtream("TV server","https://example.com:8443","u+æ","p& +#"));
+  library.toggleFavorite(new Library.Entry(source.id,new Playlist.Channel("Series","","Drama",Playlist.Kind.SERIES,"99","https://example.com/cover.jpg")));
+  Library restored=Library.fromJson(library.toJson());
+  assertEquals("p& +#",restored.findSource(source.id).password);assertEquals("u+æ",restored.findSource(source.id).username);assertTrue(restored.findSource(source.id).xtream);
+  assertEquals("99",restored.favorites.get(0).channel.seriesId);
+ }
+ @Test public void removingSourceRemovesOnlyItsFavorites() {
+  Library library=new Library();var one=library.addSource(Library.Source.m3u("one","https://example.com/one"));var two=library.addSource(Library.Source.m3u("two","https://example.com/two"));library.lastSourceId=one.id;
+  library.toggleFavorite(new Library.Entry(one.id,channel("one","https://example.com/1")));library.toggleFavorite(new Library.Entry(two.id,channel("two","https://example.com/2")));
+  library.removeSource(one.id);assertEquals(1,library.sources.size());assertEquals(1,library.favorites.size());assertEquals(two.id,library.lastSourceId);
+ }
+ @Test public void reloadingSameSourceDoesNotDuplicateIt() {
+  Library library=new Library();var old=library.addSource(Library.Source.m3u("One","https://example.com/list"));
+  var again=library.addSource(Library.Source.m3u("Other name","https://example.com/list"));assertEquals(old.id,again.id);assertEquals(1,library.sources.size());
+ }
+ @Test public void refreshUpdatesLogoAndTitleWithoutReorderingFavorites() {
+  Library library=new Library();library.toggleFavorite(new Library.Entry("s",channel("Old Z","https://example.com/z")));library.toggleFavorite(new Library.Entry("s",channel("A","https://example.com/a")));
+  var fresh=new Playlist.Channel("New Z","https://example.com/z","DK",Playlist.Kind.TV,null,"https://example.com/new.png");
+  library.refreshFavorites("s",Arrays.asList(channel("A","https://example.com/a"),fresh));
+  assertEquals("New Z",library.favorites.get(0).channel.name);assertEquals("https://example.com/new.png",library.favorites.get(0).channel.logoUrl);assertEquals("A",library.favorites.get(1).channel.name);
+ }
+ @Test public void refreshingFavoritesStillRejectsAmbiguousNames() {
+  Library library=new Library();Playlist.Channel old=channel("TV","https://example.com/old");
+  library.toggleFavorite(new Library.Entry("s",old));
+  library.refreshFavorites("s",Arrays.asList(channel("TV","https://example.com/new1"),channel("TV","https://example.com/new2")));
+  assertSame(old,library.favorites.get(0).channel);
+  Playlist.Channel exact=channel("Renamed","https://example.com/old");
+  library.refreshFavorites("s",Arrays.asList(channel("TV","https://example.com/new1"),channel("TV","https://example.com/new2"),exact));
+  assertSame(exact,library.favorites.get(0).channel);
+ }
+ @Test(expected=org.json.JSONException.class) public void rejectsUnknownStorageVersion() throws Exception {Library.fromJson("{\"version\":999}");}
+ @Test public void guidesAndSourceSelectionSurviveUpgradeAndDeletionKeepsFavorites() throws Exception {
+  Library library=new Library();var guide=Library.Guide.create("Dansk TV","https://example.com/guide.xml.gz");library.putGuide(guide);
+  var source=library.addSource(Library.Source.m3u("TV","https://example.com/list").withEpg(guide.id));
+  var channel=new Playlist.Channel("DR1","https://example.com/live","DK",Playlist.Kind.TV,null,"","dr1.dk","DR 1");library.toggleFavorite(new Library.Entry(source.id,channel));
+  Library loaded=Library.fromJson(library.toJson());assertEquals(guide.id,loaded.findSource(source.id).epgId);assertEquals("dr1.dk",loaded.favorites.get(0).channel.epgId);
+  loaded.removeGuide(guide.id);assertEquals("",loaded.findSource(source.id).epgId);assertEquals(1,loaded.favorites.size());assertEquals(1,loaded.sources.size());
+ }
+ @Test public void editingSourceKeepsItsIdentityAndRefreshesFavoriteUrls() {
+  Library library=new Library();var source=library.addSource(Library.Source.m3u("Old name","https://example.com/old"));
+  library.toggleFavorite(new Library.Entry(source.id,new Playlist.Channel("DR1","https://example.com/old-stream","DK")));
+  library.addSource(new Library.Source(source.id,"New name","https://example.com/new","","",false));
+  library.refreshFavorites(source.id,java.util.Arrays.asList(new Playlist.Channel("DR1","https://example.com/new-stream","DK")));
+  assertEquals(1,library.sources.size());assertEquals("New name",library.findSource(source.id).name);assertEquals("https://example.com/new-stream",library.favorites.get(0).channel.url);
+ }
+ @Test public void manualFavoriteOrderSurvivesReloadAndRemovalDoesNotToggleBackOn() throws Exception {
+  Library library=new Library();var source=library.addSource(Library.Source.m3u("TV","https://example.com/list"));
+  Library.Entry first=new Library.Entry(source.id,channel("A","https://example.com/a")),second=new Library.Entry(source.id,channel("B","https://example.com/b"));
+  library.toggleFavorite(first);library.toggleFavorite(second);library.reorderFavorites(java.util.Arrays.asList(second,first));
+  Library restored=Library.fromJson(library.toJson());assertEquals("B",restored.favorites.get(0).channel.name);assertEquals("A",restored.favorites.get(1).channel.name);
+  restored.removeFavorite(second);restored.removeFavorite(second);assertEquals(1,restored.favorites.size());assertEquals("A",restored.favorites.get(0).channel.name);
+ }
+ @Test public void invalidReorderDoesNotLoseFavorites() {
+  Library library=new Library();Library.Entry one=new Library.Entry("s",channel("A","https://example.com/a")),two=new Library.Entry("s",channel("B","https://example.com/b"));library.toggleFavorite(one);library.toggleFavorite(two);
+  try {library.reorderFavorites(java.util.Arrays.asList(one,one));fail("Expected invalid favorite set");} catch(IllegalArgumentException expected) { }
+  assertEquals(2,library.favorites.size());assertTrue(library.isFavorite(two));
+ }
+ @Test public void startFavoriteTabIsSavedIndependentlyOfTheLastViewedTab() throws Exception {
+  for(int tab=0;tab<6;tab++) {Library library=new Library();library.favoritesOnStart=true;library.setFavoritesStartTab(tab);library.favoritesRadio=tab!=1;library.favoritesLocal=tab!=2;Library restored=Library.fromJson(library.toJson());assertEquals(tab,restored.favoritesStartTab);assertTrue(restored.favoritesOnStart);}
+ }
+ @Test public void oldStartPreferenceKeepsPreviouslyChosenFavoritesTab() throws Exception {
+  Library library=new Library();library.favoritesLocal=true;org.json.JSONObject old=new org.json.JSONObject(library.toJson());old.remove("favoritesStartTab");assertEquals(2,Library.fromJson(old.toString()).favoritesStartTab);old.put("favoritesLocal",false).put("favoritesRadio",true);assertEquals(1,Library.fromJson(old.toString()).favoritesStartTab);
+ }
+ @Test public void invalidSavedStartTabIsClampedToAnAvailableTab() throws Exception {
+  org.json.JSONObject json=new org.json.JSONObject(new Library().toJson());json.put("favoritesStartTab",99);assertEquals(6,Library.fromJson(json.toString()).favoritesStartTab);json.put("favoritesStartTab",-1);assertEquals(0,Library.fromJson(json.toString()).favoritesStartTab);
+ }
+
+}

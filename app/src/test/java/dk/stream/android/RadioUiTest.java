@@ -1,0 +1,141 @@
+package dk.stream.android;
+
+import android.app.Activity;
+import android.appwidget.AppWidgetManager;
+import android.content.*;
+import android.os.Looper;
+import android.view.*;
+import android.widget.*;
+import androidx.appcompat.app.AlertDialog;
+import java.util.*;
+import java.util.concurrent.*;
+import okhttp3.mockwebserver.*;
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.robolectric.*;
+import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
+import org.robolectric.shadows.*;
+import org.robolectric.util.ReflectionHelpers;
+import static org.junit.Assert.*;
+
+@RunWith(RobolectricTestRunner.class) @Config(sdk=28)
+public class RadioUiTest {
+ private ActivityController<MainActivity> controller;private MainActivity activity;private RadioPanel panel;private Library library;private MockWebServer server;
+ @Before public void setup() throws Exception {
+  Shadows.shadowOf((android.app.Application)org.robolectric.RuntimeEnvironment.getApplication()).grantPermissions("dk.stream.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION");
+  server=new MockWebServer();server.start();controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();library=new Library();
+  panel=new RadioPanel(activity,()->library,change->{change.run();return true;},()->{},new RadioBrowser(Arrays.asList(server.url("/"))));
+ }
+ @After public void close() throws Exception {panel.close();controller.pause().stop().destroy();server.shutdown();}
+ private List<TextView> texts(View view) {List<TextView> result=new ArrayList<>();if(view instanceof TextView) result.add((TextView)view);if(view instanceof ViewGroup) for(int i=0;i<((ViewGroup)view).getChildCount();i++) result.addAll(texts(((ViewGroup)view).getChildAt(i)));return result;}
+ @Test public void p4RegionsUseBundledLogo() {
+  LocalChannelLogos logos=LocalChannelLogos.load(activity);
+  for(String name:Arrays.asList("P4", "DR P4 København", "p4 nordjylland", "DR P4 Fyn (128 kbps)")) assertEquals("file:///android_asset/channel_logos/DR P4.png",logos.find(name));
+  assertEquals("file:///android_asset/channel_logos/DR P3.png",logos.find("DR P3"));
+ }
+ @Test public void fixedBarHasOneIconAndHidesAfterStop() {
+  RadioBar bar=new RadioBar(activity,()->{});assertEquals(View.GONE,bar.getVisibility());
+  org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
+  try {
+   server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+   RadioPlaybackService service=serviceController.get();RadioStation station=new RadioStation("bar", "P4 Fyn",server.url("/radio.mp3").toString(),"");
+   service.onStartCommand(RadioPlaybackService.playIntent(service,station),0,1);bar.refresh();
+   androidx.media3.common.Player player=service.onGetSession(null).getPlayer();
+   assertEquals("P4 Fyn",player.getMediaMetadata().title);assertNull(player.getMediaMetadata().artist);assertNull(player.getMediaMetadata().subtitle);
+   player.pause();bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals("Afspil",bar.getChildAt(0).getContentDescription());player.play();bar.refresh();
+   assertEquals("P4 Fyn",((TextView)bar.getChildAt(1)).getText().toString());
+   assertEquals(View.VISIBLE,bar.getVisibility());assertTrue(bar.getChildAt(0) instanceof ImageView);
+   ImageButton toggle=ReflectionHelpers.getField(bar,"toggle");assertEquals("Pause",toggle.getContentDescription());toggle.performClick();
+   Intent stop=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.TRANSPORT_TOGGLE,stop.getAction());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,2);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
+  } finally {serviceController.destroy();}
+ }
+ @Test public void liveIconRemainsVisibleAndOffersLiveAfterPause() {
+  panel.open(true);
+  for(TextView text:texts(panel)) if(text instanceof Button) {assertNotEquals("Live",text.getText().toString());assertNotEquals("Stop radio",text.getText().toString());}
+  RadioBar bar=new RadioBar(activity,()->{});ImageButton live=ReflectionHelpers.getField(bar,"live");assertEquals(View.GONE,live.getVisibility());
+  org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();
+  try {
+   server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));RadioPlaybackService service=serviceController.get();
+   service.onStartCommand(RadioPlaybackService.playIntent(service,new RadioStation("station","DR P1",server.url("/radio.mp3").toString(),"")),0,1);
+   bar.refresh();assertEquals(View.VISIBLE,bar.getVisibility());assertEquals(View.VISIBLE,live.getVisibility());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.TRANSPORT_TOGGLE),0,2);
+   bar.refresh();assertEquals(View.VISIBLE,live.getVisibility());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.TRANSPORT_TOGGLE),0,3);
+   bar.refresh();assertEquals(View.VISIBLE,live.getVisibility()); // Resuming the old buffer is still behind live.
+   live.performClick();Intent command=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertEquals(RadioPlaybackService.LIVE,command.getAction());
+   service.onStartCommand(command,0,4);bar.refresh();assertEquals(View.VISIBLE,live.getVisibility());assertFalse(RadioPlaybackService.needsLive());
+   service.onStartCommand(RadioPlaybackService.internalIntent(service,RadioPlaybackService.STOP),0,5);bar.refresh();assertEquals(View.GONE,bar.getVisibility());
+  } finally {serviceController.destroy();}
+ }
+ @Test public void browseCanAddFavoriteAndFavoritesCanRenameReorderAndRemove() throws Exception {
+  server.enqueue(new MockResponse().setBody("[{\"stationuuid\":\"a\",\"name\":\"Station\",\"countrycode\":\"DK\",\"url\":\"https://example.com/radio\"}]"));panel.open(false);
+  ReflectionHelpers.<ExecutorService>getField(panel,"worker").submit(()->{}).get(10,TimeUnit.SECONDS);Shadows.shadowOf(Looper.getMainLooper()).idle();
+  FavoriteListView list=ReflectionHelpers.getField(panel,"list");assertEquals(1,list.getCount());View row=list.getAdapter().getView(0,null,list);
+  ((ImageButton)((ViewGroup)row).getChildAt(2)).performClick();assertEquals(1,library.radioFavorites.size());
+  library.addRadio(new RadioStation("b","Second","https://example.com/second",""));panel.open(true);assertEquals(View.GONE,ReflectionHelpers.<TextView>getField(panel,"title").getVisibility());
+  row=list.getAdapter().getView(0,null,list);assertEquals(3,((ViewGroup)row).getChildCount());
+  list.getOnItemLongClickListener().onItemLongClick(list,row,0,0);PopupMenu popup=ShadowPopupMenu.getLatestPopupMenu();assertEquals(2,popup.getMenu().size());
+  // Popup listeners live on each menu item, matching a real click.
+  popup.getMenu().performIdentifierAction(popup.getMenu().getItem(0).getItemId(),0);
+  Shadows.shadowOf(Looper.getMainLooper()).idle();AlertDialog dialog=(AlertDialog)ShadowDialog.getLatestDialog();assertNotNull(dialog);
+  EditText name=null;for(TextView text:texts(dialog.getWindow().getDecorView())) if(text instanceof EditText) name=(EditText)text;
+  assertNotNull(name);name.setText("DR P1");dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();assertEquals("DR P1",library.findRadio("a").displayName());assertNotNull(LocalChannelLogos.load(activity).find(library.findRadio("a").displayName()));
+  FavoriteListView.Listener listener=ReflectionHelpers.getField(list,"listener");listener.move(0,1);listener.commit();assertEquals("b",library.radioFavorites.get(0).id);assertEquals("DR P1",library.radioFavorites.get(1).displayName());
+  listener.showActions(1,list);popup=ShadowPopupMenu.getLatestPopupMenu();popup.getMenu().performIdentifierAction(popup.getMenu().getItem(1).getItemId(),0);assertNull(library.findRadio("a"));
+ }
+ @Test public void radioWidgetUsesAliasAndUniqueFavoriteBindingAndCleansUp() {
+  RadioStation station=new RadioStation("a","Original","https://example.com/radio","", "DR P1");
+  RadioWidgetProvider.bind(activity,21,station.id);RadioWidgetProvider.bind(activity,22,"b");assertEquals("a",RadioWidgetProvider.favoriteId(activity,21));assertEquals("b",RadioWidgetProvider.favoriteId(activity,22));
+  View widget=RadioWidgetProvider.views(activity,21,station).apply(activity.getApplicationContext(),new FrameLayout(activity.getApplicationContext()));assertEquals("DR P1",widget.findViewById(R.id.widget_logo).getContentDescription().toString());assertEquals(activity.getString(R.string.radio_start),widget.findViewById(R.id.widget_play).getContentDescription().toString());
+  assertTrue(texts(widget).isEmpty());assertEquals(0,((ViewFlipper)widget.findViewById(R.id.widget_feedback)).getDisplayedChild());assertEquals(android.graphics.Color.TRANSPARENT,((android.graphics.drawable.ColorDrawable)widget.getBackground()).getColor());
+  for(int target:new int[]{R.id.widget_root,R.id.widget_logo,R.id.widget_play}) {
+   widget.findViewById(target).performClick();Intent start=Shadows.shadowOf(activity.getApplication()).getNextStartedService();assertNotNull(start);assertEquals(RadioPlaybackService.WIDGET_TOGGLE,start.getAction());assertEquals(station.id,start.getStringExtra("favoriteId"));assertNull(Shadows.shadowOf(activity.getApplication()).getNextStartedActivity());
+  }
+  widget=RadioWidgetProvider.views(activity,21,null).apply(activity.getApplicationContext(),new FrameLayout(activity.getApplicationContext()));assertEquals(activity.getString(R.string.radio_widget_choose),widget.findViewById(R.id.widget_play).getContentDescription().toString());
+  new RadioWidgetProvider().onDeleted(activity,new int[]{21});assertEquals("",RadioWidgetProvider.favoriteId(activity,21));assertEquals("b",RadioWidgetProvider.favoriteId(activity,22));
+ }
+ @Test public void replacementLogosAndRadioPlayingIndicatorUseTheCurrentStation() {
+  assertEquals(47,LocalChannelLogos.load(activity).size());assertNull(LocalChannelLogos.load(activity).find("P1"));assertNotNull(LocalChannelLogos.load(activity).find("DR P1"));
+  for(TextView text:texts(panel)) assertNotEquals("Radio Browser",text.getText().toString());
+  library.addRadio(new RadioStation("a","DR P1","https://example.com/a",""));library.addRadio(new RadioStation("b","Nova","https://example.com/b",""));panel.open(true);
+  org.robolectric.android.controller.ServiceController<RadioPlaybackService> serviceController=Robolectric.buildService(RadioPlaybackService.class).create();RadioPlaybackService service=serviceController.get();
+  androidx.media3.exoplayer.ExoPlayer original=org.robolectric.util.ReflectionHelpers.getField(service,"player");
+  java.util.concurrent.atomic.AtomicBoolean audible=new java.util.concurrent.atomic.AtomicBoolean(true);
+  androidx.media3.exoplayer.ExoPlayer fake=(androidx.media3.exoplayer.ExoPlayer)java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{androidx.media3.exoplayer.ExoPlayer.class},(proxy,method,args)->method.getName().equals("isPlaying")?audible.get():null);
+  try {
+   ReflectionHelpers.setField(service,"current",library.findRadio("a"));ReflectionHelpers.setField(service,"player",fake);
+   FavoriteListView list=ReflectionHelpers.getField(panel,"list");View first=list.getAdapter().getView(0,null,list),other=list.getAdapter().getView(1,null,list);
+   assertEquals(View.VISIBLE,first.findViewWithTag("now_playing_dot").getVisibility());assertEquals(View.INVISIBLE,other.findViewWithTag("now_playing_dot").getVisibility());
+   audible.set(false);assertEquals(View.INVISIBLE,list.getAdapter().getView(0,null,list).findViewWithTag("now_playing_dot").getVisibility());
+  } finally {ReflectionHelpers.setField(service,"player",original);serviceController.destroy();}
+ }
+ @org.robolectric.annotation.Implements(android.appwidget.AppWidgetManager.class)
+ public static class PartialWidgetManager extends org.robolectric.shadows.ShadowAppWidgetManager {
+  static android.widget.RemoteViews lastPartial;static int partialCount;
+  @org.robolectric.annotation.Implementation protected void partiallyUpdateAppWidget(int id,android.widget.RemoteViews views) {lastPartial=views;partialCount++;}
+ }
+ @Test @Config(shadows=PartialWidgetManager.class) public void playerStatusRefreshDoesNotRestartWidgetFeedback() {
+  android.appwidget.AppWidgetManager manager=android.appwidget.AppWidgetManager.getInstance(activity);
+  int id=Shadows.shadowOf(manager).createWidget(RadioWidgetProvider.class,R.layout.radio_widget);
+  PartialWidgetManager.partialCount=0;RadioWidgetProvider.showFeedback(activity,id,true);assertEquals(1,PartialWidgetManager.partialCount);
+  View host=Shadows.shadowOf(manager).getViewFor(id);PartialWidgetManager.lastPartial.reapply(activity.getApplicationContext(),host);ViewFlipper flipper=host.findViewById(R.id.widget_feedback);assertEquals(1,flipper.getDisplayedChild());
+  android.view.animation.Animation fade=flipper.getInAnimation();assertNotNull(fade);fade.setStartTime(1234);
+  RadioWidgetProvider.refresh(activity);RadioWidgetProvider.update(activity,manager,id);
+  assertEquals(1,PartialWidgetManager.partialCount);assertSame(host,Shadows.shadowOf(manager).getViewFor(id));assertEquals(1234,fade.getStartTime());assertEquals(1,flipper.getDisplayedChild());
+  Shadows.shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(1000));assertEquals(2,PartialWidgetManager.partialCount);assertFalse(RadioWidgetProvider.feedbackVisible(id));
+ }
+ @Test public void drawerHasOneFavoritesEntryWithTvAndRadioTabs() {
+  List<TextView> labels=texts(activity.getWindow().getDecorView());assertTrue(labels.stream().anyMatch(v->v.getText().toString().equals("Favoritter")));assertFalse(labels.stream().anyMatch(v->v.getText().toString().equals("TV-Favoritter")||v.getText().toString().equals("Radio-Favoritter")));
+  List<Button> menuButtons=new ArrayList<>();for(TextView label:labels) if(label instanceof Button && !(label instanceof RadioButton)) menuButtons.add((Button)label);
+  int radioIndex=-1,favoritesIndex=-1;for(int i=0;i<menuButtons.size();i++) {if(menuButtons.get(i).getText().toString().equals("Radio")) radioIndex=i;if(menuButtons.get(i).getText().toString().equals("Favoritter")) favoritesIndex=i;}assertEquals("Lokale filer",menuButtons.get(radioIndex+1).getText().toString());assertEquals(0,favoritesIndex);
+  ReflectionHelpers.callInstanceMethod(activity,"navigate",ReflectionHelpers.ClassParameter.from(boolean.class,true));
+  ReflectionHelpers.setField(activity,"store",new LibraryPersistence(){public Library load(){return new Library();}public void save(Library value){} });
+  Library library=ReflectionHelpers.getField(activity,"library");library.favorites.clear();library.radioFavorites.clear();library.addRadio(new RadioStation("one","Radio","https://example.com/radio",""));library.toggleFavorite(new Library.Entry("source",new Playlist.Channel("TV","https://example.com/tv","",Playlist.Kind.TV,null,"")));
+  ReflectionHelpers.callInstanceMethod(activity,"showFavoriteTab",ReflectionHelpers.ClassParameter.from(int.class,0));
+  Spinner choices=ReflectionHelpers.getField(activity,"favoriteCategories");assertEquals(View.VISIBLE,choices.getVisibility());assertEquals("TV",choices.getItemAtPosition(0));assertEquals("Radio",choices.getItemAtPosition(1));
+  choices.setSelection(1);Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertTrue(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));
+  choices.setSelection(0);Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertFalse(ReflectionHelpers.<Boolean>getField(activity,"radioMode"));assertTrue(ReflectionHelpers.<Boolean>getField(activity,"favoritesMode"));
+ }
+}

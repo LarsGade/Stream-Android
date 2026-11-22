@@ -1,0 +1,19 @@
+package dk.stream.android;
+import java.io.*;
+import java.util.*;
+import org.junit.Test;
+import static org.junit.Assert.*;
+public class AndroidAutoPagesTest {
+ @Test public void startupChoicesAreHomeAndFourAudioPages(){assertArrayEquals(new String[]{"Forside","Radio","Musik","Lokale filer","Cloud"},AndroidAutoPages.LABELS);assertEquals(5,AndroidAutoPages.IDS.length);}
+ @Test public void everyPageAndViewSurvivesPortableBackup()throws Exception{for(String page:AndroidAutoPages.IDS)for(boolean favorites:new boolean[]{false,true})for(boolean autoplay:new boolean[]{false,true}){Library settings=new Library();settings.androidAutoStartPage=page;settings.androidAutoFavorites=favorites;settings.androidAutoAutoPlay=autoplay;Library restored=SettingsBackup.decode(new ByteArrayInputStream(SettingsBackup.encode(settings)));assertEquals(page,restored.androidAutoStartPage);assertEquals(favorites,restored.androidAutoFavorites);assertEquals(autoplay,restored.androidAutoAutoPlay);}}
+ @Test public void missingSettingsUseHomeAndResumeEnabled()throws Exception{Library old=Library.fromJson("{\"version\":1,\"sources\":[],\"favorites\":[]}");assertEquals(AndroidAutoPages.ROOT,old.androidAutoStartPage);assertTrue(old.androidAutoFavorites);assertTrue(old.androidAutoAutoPlay);}
+ @Test public void previousPodcastPageMigratesToLocalFiles(){assertEquals(AndroidAutoPages.LOCAL,AndroidAutoPages.normalize(AndroidAutoPages.PODCAST));}
+ @Test public void unsupportedAndVideoPagesFallBackToRadio(){for(String page:new String[]{"TV","Film","Serier","unsupported"})assertEquals(AndroidAutoPages.FAVORITES,AndroidAutoPages.normalize(page));}
+ @Test public void allAndFavoritesUseDifferentCatalogNodes(){assertEquals(AndroidAutoPages.COUNTRIES,AndroidAutoPages.view(AndroidAutoPages.FAVORITES,false));for(String page:new String[]{AndroidAutoPages.MUSIC,AndroidAutoPages.LOCAL,AndroidAutoPages.CLOUD}){assertEquals(page,AndroidAutoPages.view(page,true));assertEquals(page+"-all",AndroidAutoPages.view(page,false));assertTrue(AndroidAutoPages.folder(page+"-all"));assertEquals(AndroidAutoPages.label(page),AndroidAutoPages.label(page+"-all"));}}
+ @Test public void homeRemainsAnOverviewForBothViews(){assertEquals(AndroidAutoPages.ROOT,AndroidAutoPages.view(AndroidAutoPages.ROOT,false));assertEquals(AndroidAutoPages.ROOT,AndroidAutoPages.view(AndroidAutoPages.ROOT,true));}
+ @Test public void emptyFavoritesDoNotChangeTheSelectedView(){assertEquals(AndroidAutoPages.FAVORITES,AndroidAutoPages.effective(AndroidAutoPages.FAVORITES,false));}
+ @Test public void directPageOffersOverviewWithoutMutatingContents(){List<String> original=new ArrayList<>(Arrays.asList("P1","P3"));assertEquals(Arrays.asList("P1","P3","Alle sider"),AndroidAutoPages.startItems(AndroidAutoPages.FAVORITES,original,"Alle sider"));assertEquals(Arrays.asList("P1","P3"),original);}
+ @Test public void overviewDoesNotLinkToItself(){assertEquals(Collections.singletonList("Radio"),AndroidAutoPages.startItems(AndroidAutoPages.ROOT,Collections.singletonList("Radio"),"Alle sider"));}
+ @Test public void phoneAndCarSettingsAreIndependent()throws Exception{Library settings=new Library();settings.setFavoritesStartOption(3);settings.startupFavorites=true;settings.androidAutoFavorites=false;settings.androidAutoAutoPlay=false;settings.androidAutoStartPage=AndroidAutoPages.CLOUD;Library restored=Library.fromJson(settings.toJson());assertEquals(3,restored.favoritesStartOption());assertTrue(restored.startupFavorites);assertFalse(restored.androidAutoFavorites);assertFalse(restored.androidAutoAutoPlay);assertEquals(AndroidAutoPages.CLOUD,restored.androidAutoStartPage);}
+ @Test public void playableMediaIdsAreNotBrowsablePages(){assertFalse(AndroidAutoPages.folder("radio:station"));assertFalse(AndroidAutoPages.folder(null));assertTrue(AndroidAutoPages.folder(AndroidAutoPages.START));}
+}

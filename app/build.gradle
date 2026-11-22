@@ -1,0 +1,47 @@
+plugins { id 'com.android.application' }
+def receiverId = providers.gradleProperty('castReceiverAppId').getOrElse('CC1AD845')
+if (!(receiverId ==~ /[0-9A-Fa-f]{8}/)) throw new GradleException('castReceiverAppId must be an eight-character Cast application ID')
+android {
+ buildFeatures { buildConfig true }
+ namespace 'dk.stream.android'
+ compileSdk 37
+ defaultConfig { applicationId 'dk.stream.android'; minSdk 23; targetSdk 37; versionCode 277; versionName '1.55.34'; buildConfigField 'String', 'CAST_RECEIVER_APP_ID', '"' + receiverId + '"' }
+ testOptions {
+  unitTests.includeAndroidResources = true
+  unitTests.all {
+   // Robolectric's Android 16/17 file-descriptor bridge needs JDK module access.
+   jvmArgs '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED'
+   def testHome = new File(gradle.gradleUserHomeDir, 'test-home')
+   testHome.mkdirs()
+   systemProperty 'user.home', testHome.absolutePath
+   systemProperty 'robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2'
+   ['http.proxyHost', 'http.proxyPort', 'https.proxyHost', 'https.proxyPort', 'javax.net.ssl.trustStore'].each { name ->
+    if (System.getProperty(name) != null) systemProperty name, System.getProperty(name)
+   }
+   systemProperty 'http.nonProxyHosts', 'localhost|127.*|[::1]'
+  }
+ }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+ implementation 'com.google.code.gson:gson:2.10.1'
+ implementation 'androidx.drawerlayout:drawerlayout:1.2.0'
+ implementation 'com.github.bumptech.glide:glide:4.16.0'
+ implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'
+ implementation 'com.caverock:androidsvg-aar:1.4'
+ annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+ implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+ testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+ implementation 'androidx.appcompat:appcompat:1.7.0'
+ implementation 'androidx.media3:media3-session:1.5.1'
+ implementation 'androidx.media3:media3-exoplayer:1.5.1'
+ implementation 'androidx.media3:media3-datasource-okhttp:1.5.1'
+ implementation 'androidx.media3:media3-exoplayer-hls:1.5.1'
+ implementation 'androidx.media3:media3-exoplayer-dash:1.5.1'
+ implementation 'androidx.media3:media3-ui:1.5.1'
+ implementation 'com.google.android.gms:play-services-cast-framework:22.0.0'
+ testImplementation 'junit:junit:4.13.2'
+ testImplementation 'org.robolectric:robolectric:4.17'
+ testImplementation 'org.json:json:20240303'
+ testImplementation 'net.sf.kxml:kxml2:2.3.0'
+}

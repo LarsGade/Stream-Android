@@ -1,0 +1,125 @@
+<resources>
+  <string name="cast_ended">Casting afsluttet.</string>
+  <string name="cast_failed">Kunne ikke forbinde til Cast-enheden</string>
+  <string name="app_name">Stream</string>
+  <string name="invalid_url">Indtast et gyldigt HTTP- eller HTTPS-link</string>
+  <string name="loading">Henter kanalliste …</string>
+  <string name="playback_failed">Kanalen kunne ikke afspilles. Prøv en anden kanal eller kontrollér adgangen.</string>
+  <string name="cast_stream_failed">Cast kunne ikke starte. Kontrollér streamens format og adgang fra TV\'et.</string>
+  <string name="playlist_hint">https://eksempel.dk/kanaler.m3u</string>
+  <string name="search_hint">Søg</string>
+  <string name="casting">Caster: %1$s</string>
+ <string name="xtream_login">Tilføj Xtream-login</string>
+ <string name="xtream_server">Server, fx https://tv.eksempel.dk:8080</string>
+ <string name="xtream_user">Brugernavn</string>
+ <string name="xtream_password">Adgangskode</string>
+ <string name="xtream_invalid">Angiv en gyldig HTTP/HTTPS-server, brugernavn og adgangskode.</string>
+ <string name="auth_failed">Serveren afviste adgangen (401/403). Kontrollér login, abonnement og udbyderens adgangskrav.</string>
+ <string name="http_failed">Serveren svarede med HTTP %1$d. Kontrollér adressen eller prøv igen senere.</string>
+ <string name="no_channels">Serverens svar indeholder intet understøttet indhold eller har et ugyldigt format.</string>
+ <string name="list_too_large">Kanallisten er større end 64 MB. Brug en mindre liste fra udbyderen.</string>
+ <string name="tls_failed">Serverens sikre forbindelse kunne ikke godkendes. Kontrollér serveradressen og certifikatet.</string>
+ <string name="timeout">Serveren svarede ikke i tide. Prøv igen.</string>
+ <string name="network_failed">Kunne ikke kontakte serveren. Kontrollér adressen og internetforbindelsen.</string>
+ <string name="tv">TV</string>
+ <string name="films">Film</string>
+ <string name="series">Serier</string>
+ <string name="all_groups">Alle grupper</string>
+ <string name="loading_catalog">Henter TV, film, serier og grupper …</string>
+ <string name="loading_episodes">Henter seriens afsnit …</string>
+ <string name="open_menu">Åbn menu</string>
+ <string name="library">TV, Film &amp; Serier</string>
+ <string name="streaming_title">TV, Film &amp; Serier</string>
+ <string name="favorites">Favoritter</string>
+ <string name="home">Forside</string>
+ <string name="sources">Kilder til TV, Film &amp; Serier</string>
+ <string name="start_favorites">Vis favoritter, når appen åbner</string>
+ <string name="storage_failed">Kunne ikke læse eller gemme dine lokale indstillinger. Dine gemte data er ikke overskrevet.</string>
+ <string name="select_group">Vælg gruppe</string>
+ <string name="add_favorite">Tilføj %1$s til favoritter</string>
+ <string name="remove_favorite">Fjern %1$s fra favoritter</string>
+ <string name="logo_for">Logo for %1$s</string>
+ <string name="add_m3u">Tilføj M3U</string>
+ <string name="source_name">Kildens navn (valgfrit)</string>
+ <string name="save_source">Gem og indlæs</string>
+ <string name="wait_loading">Vent, til indlæsningen er færdig.</string>
+ <string name="remove_source">Slet kilde</string>
+ <string name="remove_source_note">Vil du slette %1$s og favoritterne fra denne kilde?</string>
+ <string name="source_missing">Kilden findes ikke længere. Tilføj den igen under Kilder til TV, Film &amp; Serier.</string>
+ <string name="play_action">Afspil</string>
+ <string name="pause_action">Sæt på pause</string>
+ <string name="stop_action">Stop afspilning</string>
+ <string name="fullscreen_action">Fuldskærm</string>
+ <string name="exit_fullscreen">Afslut fuldskærm</string>
+ <string name="mute_action">Slå lyd fra</string>
+ <string name="unmute_action">Slå lyd til</string>
+ <string name="volume_failed">Lydstyrken kunne ikke ændres på denne enhed.</string>
+ <string name="playback_stopped">Afspilningen er stoppet.</string>
+ <string name="seek_back">Spol 10 sekunder tilbage</string><string name="seek_forward">Spol 10 sekunder frem</string>
+ <string name="seek_position">Afspilningsposition</string><string name="live">Live</string><string name="playback_time">%1$s / %2$s</string>
+ <string name="player_settings">Afspillerindstillinger</string><string name="playback_speed">Afspilningshastighed</string>
+ <string name="subtitles">Undertekster</string><string name="audio_track">Lydspor</string>
+ <string name="tv_guide">TV-guide</string><string name="add_epg">Tilføj EPG</string><string name="edit_epg">Redigér TV-guide</string>
+ <string name="epg_name">Navn på TV-guide</string><string name="epg_url">EPG-link (XMLTV eller XMLTV.gz)</string>
+ <string name="epg_invalid">Angiv et navn og et gyldigt HTTP/HTTPS-link.</string>
+ <string name="select_epg">TV-guide til denne kilde</string><string name="no_epg">Ingen TV-guide</string>
+ <string name="epg_loading">Henter TV-guide …</string><string name="epg_no_programme">Ingen aktuelle programoplysninger</string>
+ <string name="edit_source">Redigér kilde</string><string name="save">Gem</string><string name="delete">Slet</string>
+ <string name="delete_epg">Slet TV-guide</string><string name="delete_epg_note">Vil du slette TV-guiden? Kilder og favoritter beholdes, men mister tilknytningen til denne guide.</string>
+ <string name="update_all">Opdatér alt</string><string name="updating_all">Opdaterer kilder og TV-guides …</string>
+ <string name="update_progress">%1$d / %2$d: %3$s</string>
+ <string name="update_failed_names">Kunne ikke opdatere: %1$s. Tidligere data er beholdt.</string>
+ <string name="reset_app">Nulstil app</string><string name="yes">Ja</string><string name="no">Nej</string>
+ <string name="reset_app_note">Vil du nulstille appen? Alle gemte kilder, login, favoritter, TV-guides, indstillinger og cache slettes. Appen lukker og starter som ny, næste gang du åbner den.</string>
+ <string name="reset_failed">Appen kunne ikke nulstilles. Prøv igen.</string>
+ <plurals name="updated_sources"><item quantity="one">%1$d kilde opdateret</item><item quantity="other">%1$d kilder opdateret</item></plurals>
+ <plurals name="updated_guides"><item quantity="one">%1$d TV-guide opdateret</item><item quantity="other">%1$d TV-guides opdateret</item></plurals>
+ <plurals name="update_failures"><item quantity="one">%1$d opdatering mislykkedes</item><item quantity="other">%1$d opdateringer mislykkedes</item></plurals>
+ <string name="epg_fetch_failed">Kunne ikke hente %1$s. Tidligere programoplysninger beholdes, hvis de findes.</string>
+ <string name="developer_credit">Udviklet af Lars Gade</string>
+ <string name="remove_from_favorites">Fjern fra favoritter</string>
+ <string name="auto_play_last">Afspil automatisk seneste</string>
+ <string name="mini_player">Vis mini-afspiller</string>
+ <string name="choose_source">Vælg kilde</string>
+ <string name="radio">Radio</string>
+ <string name="radio_loading">Henter danske radiostationer …</string>
+ <string name="radio_failed">Kunne ikke hente radiostationer. Prøv igen.</string>
+ <string name="radio_empty">Ingen stationer fundet</string>
+ <string name="radio_favorites_empty">Ingen radiofavoritter</string>
+ <string name="rename_radio">Omdøb</string>
+ <string name="refresh_radio">Opdatér radiostationer</string>
+ <string name="radio_widget">Stream radio</string>
+ <string name="radio_widget_description">Afspil en radiostation fra favoritter</string>
+ <string name="radio_widget_choose">Vælg radiostation fra favoritter</string>
+ <string name="radio_start">Afspil</string>
+ <string name="radio_stop">Stop radio</string>
+ <string name="radio_live">Live</string>
+ <string name="radio_error">Radiostationen kunne ikke afspilles. Prøv igen eller vælg en anden station.</string>
+ <string name="now_playing">Afspilles nu</string>
+ <string name="car_danish_radio">Danske radiostationer</string>
+ <string name="local_files">Lokale filer</string>
+ <string name="pcloud">Cloud</string>
+ <string name="images">Billeder</string>
+ <string name="local_source_folder">Kildemappe til lokale filer</string>
+ <string name="pcloud_account">Cloud-konto</string>
+ <string name="import_export">Importér/Eksportér</string>
+ <string name="settings">Indstillinger</string>
+ <string name="tv_guide_sources">Kilder til TV-Guide</string>
+ <string name="radio_widget_wide">Stream radio 2 × 1</string>
+ <string name="radio_widget_wide_description">Stationslogo og play/stop på mørkegrå baggrund</string>
+<string name="reset_history">Nulstil lyttede/sete</string>
+ <string name="home_buttons">Forsideknapper</string>
+ <string name="daily_guide_update">Opdatér TV-Guide hver dag</string>
+ <string name="previous_action">Forrige</string>
+ <string name="next_action">Næste</string>
+<string name="tv_backup_lists">TV backup-lister</string><string name="tv_backup_next">Skift til næste TV-backup med samme kanalnavn</string> <string name="record_tv">Optag TV</string>
+ <string name="stop_recording">Stop optagelse</string>
+ <string name="android_auto">Android Auto</string>
+ <string name="radio_widget_queue">Stream radio 4 × 1</string>
+ <string name="radio_widget_queue_description">Valgte radiofavoritter med kanallogo, forrige, play/stop og næste</string>
+ <string name="radio_widget_queue_choose">Vælg radiokanaler fra favoritter</string>
+ <string name="radio_widget_previous">Forrige valgte radiokanal</string>
+ <string name="radio_widget_next">Næste valgte radiokanal</string>
+ <string name="music_library">Musik</string>
+ <string name="notification_files">Musik og filer</string>
+</resources>
