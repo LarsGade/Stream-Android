@@ -38,7 +38,7 @@ public final class MainActivity extends AppCompatActivity {
  private final Map<String,Long> epgAttempted=new HashMap<>();
  private boolean updatingAll,radioMode,favoritesPage,choosingFavoriteTab;
  private ImageButton headerMenu;private LinearLayout headerOutputs;private FrameLayout headerBrandSlot;private MediaRouteButton headerCast;
- private boolean pageShortcutLaunch;private String destination="";private LinearLayout pageRoot,destinationHeader;private MusicSearchField destinationSearch;private TextView destinationTitle;private FavoriteViewSwitch destinationFavorites;
+ private PageFooter pageFooter;private boolean pageShortcutLaunch;private String destination="";private LinearLayout pageRoot,destinationHeader;private MusicSearchField destinationSearch;private TextView destinationTitle;private FavoriteViewSwitch destinationFavorites;
  private FavoriteHub favoriteHub;private boolean favoriteHubMode;
  private Spinner startupViewChoice;private boolean refreshingStartup;private Spinner startupPageChoice;private java.util.List<String> startupPageNames=new java.util.ArrayList<>();
  private Spinner favoriteCategories;
@@ -252,6 +252,7 @@ public final class MainActivity extends AppCompatActivity {
    public void toggle(){togglePlaybackState();}
    public void open(){if(LocalAudioService.current()!=null)syncLocalPlayback();enterFullscreen();}
   }),new LinearLayout.LayoutParams(-1,-2));
+  pageFooter=new PageFooter(this,this::showFavoritesHome,()->drawer.openDrawer(androidx.core.view.GravityCompat.START));root.addView(pageFooter,new LinearLayout.LayoutParams(-1,dp(48)));
   adapter=new ChannelAdapter();list.setAdapter(adapter);
   list.setFavoriteListener(new FavoriteListView.Listener() {
    public boolean enabled() {return !loading&&!updatingAll&&list.isEnabled();}
@@ -445,7 +446,7 @@ public final class MainActivity extends AppCompatActivity {
   int position=favoriteCategoryIds.indexOf(currentFavoriteTab);if(position>=0&&favoriteCategories.getSelectedItemPosition()!=position)favoriteCategories.setSelection(position);
   favoriteCategories.setVisibility(favoritesPage&&!available.isEmpty()?View.VISIBLE:View.GONE);choosingFavoriteTab=false;
  }
- private void updateHeaderOutputs(){if(headerMenu!=null&&!destination.isEmpty())headerMenu.setVisibility(View.INVISIBLE);if(headerOutputs==null)return;boolean home=atFavoritesHome();headerOutputs.setVisibility(home?View.GONE:View.VISIBLE);FrameLayout.LayoutParams position=(FrameLayout.LayoutParams)headerBrandSlot.getLayoutParams();int margin=dp(home?48:80);if(position.leftMargin!=margin||position.rightMargin!=margin){position.leftMargin=margin;position.rightMargin=margin;headerBrandSlot.setLayoutParams(position);}}
+ private void updateHeaderOutputs(){if(pageFooter!=null)pageFooter.setOnHome(atFavoritesHome());if(headerMenu!=null&&!destination.isEmpty())headerMenu.setVisibility(View.INVISIBLE);if(headerOutputs==null)return;boolean home=atFavoritesHome();headerOutputs.setVisibility(home?View.GONE:View.VISIBLE);FrameLayout.LayoutParams position=(FrameLayout.LayoutParams)headerBrandSlot.getLayoutParams();int margin=dp(home?48:80);if(position.leftMargin!=margin||position.rightMargin!=margin){position.leftMargin=margin;position.rightMargin=margin;headerBrandSlot.setLayoutParams(position);}}
  private boolean atFavoritesHome(){return favoriteHubMode&&favoriteHub!=null&&favoriteHub.isHome();}
  private void showFavoritesHome(){if(recordingBlocked())return;
   minimizeVideo();drawer.closeDrawer(androidx.core.view.GravityCompat.START);favoritesPage=true;favoritesMode=true;radioMode=false;localMode=false;pcloudMode=false;favoriteHubMode=true;

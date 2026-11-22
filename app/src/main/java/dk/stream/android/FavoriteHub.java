@@ -12,13 +12,12 @@ import java.util.concurrent.*;
 final class FavoriteHub extends LinearLayout {
  interface Actions {default void searchCleared(){}Library library();boolean save(Runnable change);void play(FavoriteLists.Item item,List<LocalMedia> queue);boolean playing(FavoriteLists.Item item);void navigation(boolean back);void openMenu();default void openMusic(){}default void home(){}default void openPage(String name){}default String programme(Library.Entry entry){return "";}}
  private final RecursiveMediaSearch treeSearch;
- private final ImageButton back,homeMenu;private final Actions actions;private final LinearLayout home,body,navigation;private final TextView title;private final RadioGroup kind;private int selectedKind;private final EditText search;private final ListView list;
+ private final ImageButton back;private final Actions actions;private final LinearLayout home,body,navigation;private final TextView title;private final RadioGroup kind;private int selectedKind;private final EditText search;private final ListView list;
  private final ArrayList<FavoriteLists.Item> visible=new ArrayList<>();private final ArrayDeque<LocalMedia> folders=new ArrayDeque<>();private final List<LocalMedia> children=new ArrayList<>();
  private final ExecutorService worker=Executors.newSingleThreadExecutor();private final Adapter adapter=new Adapter();private String category="";private int generation;private boolean closed,headingManaged;
  private final Runnable tick=new Runnable(){public void run(){if(!closed){adapter.notifyDataSetChanged();postDelayed(this,1000);}}};
  FavoriteHub(Context context,Actions actions){super(context);this.actions=actions;treeSearch=new RecursiveMediaSearch(context,this::refresh);setOrientation(VERTICAL);
   home=new FavoriteHomeLayout(context);home.setPadding(0,dp(12),0,0);addView(home,new LayoutParams(-1,0,1));
-  homeMenu=new ImageButton(context);homeMenu.setImageResource(R.drawable.ic_menu);homeMenu.setImageTintList(android.content.res.ColorStateList.valueOf(0xFF252525));homeMenu.setContentDescription(context.getString(R.string.open_menu));homeMenu.setBackgroundColor(Color.TRANSPARENT);homeMenu.setPadding(dp(12),dp(12),dp(12),dp(12));LayoutParams menuPosition=new LayoutParams(dp(48),dp(48));menuPosition.gravity=Gravity.CENTER_HORIZONTAL;addView(homeMenu,menuPosition);homeMenu.setOnClickListener(view->actions.openMenu());
   rebuildHome();
   body=new LinearLayout(context);body.setOrientation(VERTICAL);addView(body,new LayoutParams(-1,-1));back=new ImageButton(context);back.setImageResource(R.drawable.ic_back);back.setContentDescription(UiText.text("Tilbage"));back.setBackgroundColor(Color.TRANSPARENT);navigation=new LinearLayout(context);navigation.setGravity(Gravity.CENTER_VERTICAL);navigation.setPadding(0,dp(8),0,dp(8));body.addView(navigation,new LayoutParams(-1,-2));navigation.addView(back,new LayoutParams(dp(48),dp(48)));back.setOnClickListener(view->{if(!folders.isEmpty())back();else actions.home();});
   title=text("",28);title.setTypeface(null,Typeface.BOLD);title.setCompoundDrawablePadding(MediaListStyle.iconGap(title));title.setMaxLines(2);title.setEllipsize(android.text.TextUtils.TruncateAt.END);navigation.addView(title,new LayoutParams(0,-2,1));
@@ -31,8 +30,8 @@ final class FavoriteHub extends LinearLayout {
  private int dp(int size){return Math.round(size*getResources().getDisplayMetrics().density);}
  private TextView text(String label,int size){TextView view=new TextView(getContext());view.setText(label);view.setTextColor(Color.WHITE);view.setTextSize(size);return view;}
  void selectStreamingKind(int value){if(value>=0&&value<kind.getChildCount())kind.check(kind.getChildAt(value).getId());}
- void showHome(){treeSearch.clear();rebuildHome();generation++;category="";folders.clear();home.setVisibility(VISIBLE);homeMenu.setVisibility(VISIBLE);body.setVisibility(GONE);actions.navigation(false);}
- void showList(String name){generation++;category=name;folders.clear();home.setVisibility(GONE);homeMenu.setVisibility(GONE);body.setVisibility(VISIBLE);search.setText("");refresh();}
+ void showHome(){treeSearch.clear();rebuildHome();generation++;category="";folders.clear();home.setVisibility(VISIBLE);body.setVisibility(GONE);actions.navigation(false);}
+ void showList(String name){generation++;category=name;folders.clear();home.setVisibility(GONE);body.setVisibility(VISIBLE);search.setText("");refresh();}
  int tvListIndex(){return category.matches("TV [234]")?Integer.parseInt(category.substring(3))-1:category.equals("Streaming")&&selectedKind==0?0:-1;}
  void showTvList(int index){selectStreamingKind(0);showList(index==0?"Streaming":"TV "+(index+1));}
  boolean canBack(){return !category.isEmpty();}
