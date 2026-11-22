@@ -36,5 +36,7 @@
  <activity android:name=".RadioWidgetConfigureActivity" android:exported="true"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/></intent-filter></activity>
  <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.downloads" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/download_paths"/></provider>
  <provider tools:ignore="ExportedContentProvider" android:name=".CarArtworkProvider" android:authorities="${applicationId}.carart" android:exported="true" android:grantUriPermissions="true"/>
+ <activity android:name=".PageWidgetConfigureActivity" android:exported="true"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/></intent-filter></activity>
+ <receiver android:name=".PageWidgetProvider" android:exported="false" android:label="@string/page_widget"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/page_widget_info"/></receiver>
  </application>
 </manifest>

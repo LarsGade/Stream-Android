@@ -150,4 +150,7 @@
   <string name="music_library">"Music"</string>
   <string name="notification_files">"Music and files"</string>
  <string name="podcast">Podcast</string>
+ <string name="page_widget">Stream page 4 × 1</string>
+ <string name="page_widget_choose">Choose a home page</string>
+ <string name="page_widget_description">Open a selected page directly in Stream</string>
 </resources>
