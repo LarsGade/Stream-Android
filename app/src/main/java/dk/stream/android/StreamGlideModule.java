@@ -20,6 +20,7 @@ public final class StreamGlideModule extends AppGlideModule {
  }
  @Override public void registerComponents(Context context,Glide glide,Registry registry) {
   OkHttpClient client=new OkHttpClient.Builder().connectTimeout(15,TimeUnit.SECONDS).readTimeout(20,TimeUnit.SECONDS).callTimeout(30,TimeUnit.SECONDS).build();
+  registry.prepend(PictureThumbnails.Preview.class,Bitmap.class,new PictureThumbnails.Factory(context));
   registry.prepend(LocalMedia.class,InputStream.class,new EmbeddedArtworkLoader.Factory(context));
   registry.prepend(android.net.Uri.class,InputStream.class,new PcloudImageLoader.Factory(context));
   registry.replace(GlideUrl.class,InputStream.class,new OkHttpUrlLoader.Factory(client));

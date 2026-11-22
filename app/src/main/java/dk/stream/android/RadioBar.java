@@ -51,6 +51,7 @@ public final class RadioBar extends LinearLayout {
   if(same&&artwork.getDrawable()!=null)return;
   com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageResource(fallback);
   if(model==null||model instanceof Integer||model instanceof String&&((String)model).isEmpty())return;
+  if(fallback==R.drawable.ic_image){PictureThumbnails.load(artwork,model.toString(),160);return;}
   com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).placeholder(fallback).error(fallback).override(160,160).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).into(artwork);
  }
  private void transport(){
