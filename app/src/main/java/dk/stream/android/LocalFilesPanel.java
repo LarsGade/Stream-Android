@@ -11,7 +11,8 @@ import java.util.concurrent.*;
 @android.annotation.SuppressLint("ViewConstructor")
 @androidx.media3.common.util.UnstableApi
 public final class LocalFilesPanel extends LinearLayout {
- public interface Actions {Library library();boolean save(Runnable change);void pickFiles();void pickFolder();void play(LocalMedia entry);default boolean playing(LocalMedia entry) {return LocalAudioService.playing(entry.uri)||RadioPlaybackService.playingFile(entry.uri);}default void changeFolder(LocalMedia entry) {pickFolder();}default void navigationChanged(boolean inside) {}}
+ public interface Actions {default void searchCleared(){}Library library();boolean save(Runnable change);void pickFiles();void pickFolder();void play(LocalMedia entry);default boolean playing(LocalMedia entry) {return LocalAudioService.playing(entry.uri)||RadioPlaybackService.playingFile(entry.uri);}default void changeFolder(LocalMedia entry) {pickFolder();}default void navigationChanged(boolean inside) {}}
+ private final RecursiveMediaSearch treeSearch;
  private final Actions actions;
  private final EditText search;
  private final ArrayList<LocalMedia> entries=new ArrayList<>();
@@ -27,7 +28,7 @@ public final class LocalFilesPanel extends LinearLayout {
  private int generation;
  private Future<?> folderTask;
  public LocalFilesPanel(Context context,Actions actions) {
-  super(context);this.actions=actions;setOrientation(VERTICAL);
+  super(context);this.actions=actions;treeSearch=new RecursiveMediaSearch(context,this::filter);setOrientation(VERTICAL);
   title=new TextView(context);title.setText(R.string.local_files);title.setTextColor(Color.WHITE);title.setTextSize(20);title.setTypeface(null,android.graphics.Typeface.BOLD);addView(title);
   search=new ClearableSearchEditText(context);search.setSingleLine();search.setHint(R.string.search_hint);addView(search);
   search.addTextChangedListener(new android.text.TextWatcher() {public void beforeTextChanged(CharSequence value,int start,int count,int after) {}public void onTextChanged(CharSequence value,int start,int before,int count) {filter();}public void afterTextChanged(android.text.Editable value) {}});
@@ -37,7 +38,7 @@ public final class LocalFilesPanel extends LinearLayout {
   path=new TextView(context);path.setTextColor(Color.WHITE);path.setTextSize(18);path.setTypeface(null,android.graphics.Typeface.BOLD);android.graphics.drawable.Drawable folderIcon=context.getDrawable(R.drawable.ic_folder);int folderSize=Math.round(24*getResources().getDisplayMetrics().density);folderIcon.setBounds(0,0,folderSize,folderSize);path.setCompoundDrawables(folderIcon,null,null,null);path.setCompoundDrawablePadding(MediaListStyle.iconGap(path));path.setMaxLines(2);path.setEllipsize(android.text.TextUtils.TruncateAt.END);folderNavigation.addView(path,new LayoutParams(0,-2,1));
   message=new TextView(context);message.setTextColor(Color.LTGRAY);message.setVisibility(GONE);addView(message);
   list=new ListView(context);MediaListStyle.apply(list);addView(list,new LayoutParams(-1,0,1));list.setAdapter(adapter);
-  list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {search.setText("");parents.addLast(entry);loadFolder();}else actions.play(entry);});
+  list.setOnItemClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);if(entry.folder) {search.setText("");actions.searchCleared();parents.addLast(entry);loadFolder();}else actions.play(entry);});
   list.setOnItemLongClickListener((p,v,position,id)->{LocalMedia entry=visible.get(position);PopupMenu menu=new StablePopupMenu(context,v);MediaDownloads.add(menu,getContext(),FavoriteLists.of(entry));FavoritePicker.podcast(menu,actions.library(),actions::save,FavoriteLists.of(entry),this::reload);
    menu.getMenu().add(UiText.text(actions.library().isLocalFavorite(entry.uri)?"Fjern fra favoritter":"Tilføj til favoritter")).setOnMenuItemClickListener(item->{if(actions.library().isLocalFavorite(entry.uri)){actions.save(()->FavoriteLists.remove(actions.library(),FavoriteLists.of(entry)));reload();}else FavoritePicker.show(getContext(),actions.library(),actions::save,FavoriteLists.of(entry),this::reload);return true;});
    menu.show();return true;});
@@ -45,14 +46,14 @@ public final class LocalFilesPanel extends LinearLayout {
  public void open(boolean favorites) {open(favorites,false);}
  public void open(boolean favorites,boolean cloudFavorites) {this.cloudFavorites=cloudFavorites;this.favorites=favorites;parents.clear();search.setText("");if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder) {parents.add(entry);break;}reload();}
  public boolean canGoBack(){return favorites?!parents.isEmpty():parents.size()>1;}
- public boolean back() {if(!canGoBack())return false;parents.removeLast();search.setText("");reload();return true;}
+ public boolean back() {if(!canGoBack())return false;parents.removeLast();search.setText("");actions.searchCleared();reload();return true;}
  public List<LocalMedia> playbackEntries() {return new ArrayList<>(visible);}
  public void playbackChanged() {adapter.notifyDataSetChanged();}
  public void sourceChanged() {open(false);}
  public void reload() {title.setVisibility(headingManaged||favorites?GONE:VISIBLE);actions.navigationChanged(canGoBack());up.setVisibility(canGoBack()?VISIBLE:GONE);if(parents.isEmpty()) {if(folderTask!=null) folderTask.cancel(true);generation++;path.setText("");path.setVisibility(GONE);List<LocalMedia> roots=new ArrayList<>();if(!favorites) for(LocalMedia entry:actions.library().localFiles) if(entry.folder){roots.add(entry);break;}show(favorites?actions.library().sourceFavorites(cloudFavorites):roots);showMessage("");}else loadFolder();}
  private void showMessage(String text) {message.setText(UiText.text(text));message.setVisibility(text.isEmpty()?GONE:VISIBLE);}
  private void show(List<LocalMedia> result) {entries.clear();entries.addAll(result);Collections.sort(entries,NaturalNameOrder.MEDIA);filter();}
- private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);for(LocalMedia entry:entries) if(entry.displayFileName().toLowerCase(Locale.ROOT).contains(query)) visible.add(entry);path.setVisibility(query.isEmpty()&&canGoBack()?VISIBLE:GONE);adapter.notifyDataSetChanged();}
+ private void filter() {visible.clear();String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);if(query.isEmpty()){treeSearch.clear();visible.addAll(entries);}else visible.addAll(treeSearch.search(query,new ArrayList<>(favorites?actions.library().sourceFavorites(cloudFavorites):actions.library().localFiles),actions.library().pcloud));path.setVisibility(query.isEmpty()&&canGoBack()?VISIBLE:GONE);adapter.notifyDataSetChanged();}
  private void loadFolder() {
   actions.navigationChanged(canGoBack());  int request=++generation;LocalMedia folder=parents.peekLast();path.setText(folder.name);path.setVisibility(canGoBack()?VISIBLE:GONE);up.setVisibility(canGoBack()?VISIBLE:GONE);showMessage("");show(Collections.emptyList());
   if(folderTask!=null) folderTask.cancel(true);folderTask=worker.submit(()->{try {List<LocalMedia> entries;
@@ -61,7 +62,7 @@ public final class LocalFilesPanel extends LinearLayout {
  }
  public void setSearchQuery(String value){search.setText(value);}
  public void setHeadingManaged(boolean value){headingManaged=value;title.setVisibility(value||favorites?GONE:VISIBLE);search.setVisibility(value?GONE:VISIBLE);}
- public void close() {closed=true;if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}
+ public void close() {closed=true;treeSearch.close();if(folderTask!=null) folderTask.cancel(true);generation++;worker.shutdownNow();}
  private final class Adapter extends BaseAdapter {
   public int getCount(){return visible.size();}public LocalMedia getItem(int p){return visible.get(p);}public long getItemId(int p){return p;}
   public View getView(int p,View recycled,ViewGroup parent) {

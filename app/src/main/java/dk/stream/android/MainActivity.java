@@ -208,6 +208,7 @@ public final class MainActivity extends AppCompatActivity {
   radioPanel=new RadioPanel(this,()->library,this::changeLibrary,()->{requestNotificationPermission();if(selected!=null) stopPlaybackState();});radioPanel.setVisibility(View.GONE);root.addView(radioPanel,new LinearLayout.LayoutParams(-1,0,1));
   radioPanel.setBackStateListener(inside->{if(radioMode)localBack.setEnabled(inside);});
   localPanel=new LocalFilesPanel(this,new LocalFilesPanel.Actions() {
+   public void searchCleared(){destinationSearch.input.setText("");}
    public Library library() {return library;}
    public boolean save(Runnable change) {return changeLibrary(change);}
    public void pickFiles() {pickLocal(false);}
@@ -218,9 +219,11 @@ public final class MainActivity extends AppCompatActivity {
    public void navigationChanged(boolean inside) {localBack.setEnabled(localMode&&inside);}
   });localPanel.setVisibility(View.GONE);root.addView(localPanel,new LinearLayout.LayoutParams(-1,0,1));
   pcloudPanel=new PcloudPanel(this,new PcloudPanel.Actions(){
+   public void searchCleared(){destinationSearch.input.setText("");}
    public Library library(){return library;}public boolean save(Runnable mutation){return changeLibrary(mutation);}public void play(LocalMedia entry,List<LocalMedia> queue){playLocal(entry,0,queue);}public boolean playing(LocalMedia entry){return isFilePlaying(entry);}public void navigationChanged(boolean inside){if(pcloudMode)localBack.setEnabled(inside);}
   });pcloudPanel.setVisibility(View.GONE);root.addView(pcloudPanel,new LinearLayout.LayoutParams(-1,0,1));
   favoriteHub=new FavoriteHub(this,new FavoriteHub.Actions(){
+   public void searchCleared(){destinationSearch.input.setText("");}
    public Library library(){return library;}public boolean save(Runnable change){return changeLibrary(change);}
    public void navigation(boolean back){if(favoriteHubMode){localBack.setEnabled(back);headerMenu.setVisibility(View.INVISIBLE);updateHeaderOutputs();}}
    public void openMenu(){drawer.openDrawer(androidx.core.view.GravityCompat.START);}
@@ -460,7 +463,7 @@ public final class MainActivity extends AppCompatActivity {
   else if(name.equals("Radio")){openRadio(false);radioPanel.open(saved);}
   else if(name.equals("Lokale filer")){openLocal(false);if(saved)localPanel.open(true,false);}
   else if(name.equals("Cloud")){if(saved){openLocal(false);localPanel.open(true,true);}else openPcloud();}else return;
-  destination=name;destinationSearch.input.setText("");if(kind>=0&&!saved)moveDestinationFilters(true);destinationTitle.setText(UiText.text(name));FavoriteHeading.show(destinationTitle,saved);destinationFavorites.setFavorites(saved);destinationFavorites.setVisibility(name.equals("Podcast")?View.GONE:View.VISIBLE);((LinearLayout.LayoutParams)destinationFavorites.getLayoutParams()).topMargin=dp(8);destinationHeader.setVisibility(View.VISIBLE);localPanel.setHeadingManaged(true);pcloudPanel.setHeadingManaged(true);radioPanel.setHeadingManaged(true);favoriteHub.setHeadingManaged(true);localBack.setEnabled(true);headerMenu.setVisibility(View.INVISIBLE);pageTitle.setVisibility(View.GONE);if(kind>=0)sections.setVisibility(View.GONE);updateHeaderOutputs();filter();
+  destination=name;destinationSearch.input.setText("");if(kind>=0&&!saved)moveDestinationFilters(true);destinationTitle.setText(UiText.text(name));FavoriteHeading.show(destinationTitle,saved&&!name.equals("Podcast"));destinationFavorites.setFavorites(saved);destinationFavorites.setVisibility(name.equals("Podcast")?View.GONE:View.VISIBLE);((LinearLayout.LayoutParams)destinationFavorites.getLayoutParams()).topMargin=dp(8);destinationHeader.setVisibility(View.VISIBLE);localPanel.setHeadingManaged(true);pcloudPanel.setHeadingManaged(true);radioPanel.setHeadingManaged(true);favoriteHub.setHeadingManaged(true);localBack.setEnabled(true);headerMenu.setVisibility(View.INVISIBLE);pageTitle.setVisibility(View.GONE);if(kind>=0)sections.setVisibility(View.GONE);updateHeaderOutputs();filter();
  }
  private void openMusic(){if(recordingBlocked())return;drawer.closeDrawer(androidx.core.view.GravityCompat.START);startActivity(new android.content.Intent(this,MusicActivity.class));}
  private void showFavoriteTab(int tab){if(tab==6){showFavoritesHome();return;}openDestination(tab==7?"Cloud":tab==1?"Radio":tab==2?"Lokale filer":tab==3?"Musik":tab==4?"Film":tab==5?"Serier":new String[]{"TV","Film","Serier"}[library.favoritesStartKind]);}
