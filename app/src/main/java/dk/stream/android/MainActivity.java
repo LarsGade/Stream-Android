@@ -324,7 +324,7 @@ public final class MainActivity extends AppCompatActivity {
   button(R.string.tv_guide_sources,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showGuides();});
   button(R.string.local_source_folder,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showLocalSourceOptions();});
   button(R.string.refresh_radio,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);radioPanel.refreshStations();});
-  button(R.string.pcloud_account,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
+  button(R.string.pcloud,sourceContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showPcloudAccount();});
   button(R.string.home_buttons,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showHomeButtons();});
   button(R.string.tv_backup_lists,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);showTvBackupLists();});
   button(R.string.reset_history,settingsContent,()->{drawer.closeDrawer(androidx.core.view.GravityCompat.START);PlaybackHistory.clear(this);PlaybackTracker.resetPlayers();CastPlayback.resetProgress(this);resumePosition=0;changeLibrary(()->library.lastPlayedPosition=0);localPanel.playbackChanged();pcloudPanel.playbackChanged();favoriteHub.refresh();adapter.notifyDataSetChanged();UiText.toast(this,"Lyttede/sete er nulstillet.",Toast.LENGTH_SHORT).show();});

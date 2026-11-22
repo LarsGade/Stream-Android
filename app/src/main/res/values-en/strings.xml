@@ -126,7 +126,7 @@
   <string name="pcloud">"Cloud"</string>
   <string name="images">"Pictures"</string>
   <string name="local_source_folder">"Local files source folder"</string>
-  <string name="pcloud_account">"Cloud account"</string>
+  <string name="pcloud_account">"Pcloud account"</string>
   <string name="import_export">"Import/Export"</string>
   <string name="settings">"Settings"</string>
   <string name="tv_guide_sources">"TV guide sources"</string>
