@@ -155,4 +155,6 @@
  <string name="page_widget_description">Open a selected page directly in Stream</string>
  <string name="keep_screen_on_fullscreen">Keep screen on in fullscreen player</string>
  <string name="confirm_reset_history">Are you sure you want to reset all listened/watched markers and saved playback positions?</string>
+ <string name="seek_back_10">Rewind 10 seconds</string>
+ <string name="seek_forward_10">Forward 10 seconds</string>
 </resources>
