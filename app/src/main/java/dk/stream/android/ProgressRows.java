@@ -7,7 +7,7 @@ import android.widget.FrameLayout;
 final class ProgressRows {
  private static final int LINE_ID=View.generateViewId();
  static View wrap(View row,String key,boolean eligible){FrameLayout frame=new FrameLayout(row.getContext());ViewGroup.LayoutParams original=row.getLayoutParams();if(original!=null)frame.setLayoutParams(original);int height=original==null?ViewGroup.LayoutParams.WRAP_CONTENT:original.height;frame.addView(row,new FrameLayout.LayoutParams(-1,height));Line line=new Line(row.getContext());line.setId(LINE_ID);frame.addView(line,new FrameLayout.LayoutParams(-1,Math.max(1,Math.round(2*row.getResources().getDisplayMetrics().density)),Gravity.BOTTOM));frame.setTag(row.getTag());bind(frame,key,eligible);return frame;}
- static void bind(View row,String key,boolean eligible){Line line=row.findViewById(LINE_ID);if(line!=null){line.key=key;line.eligible=eligible&&!SaavnMusic.is(key);line.dot=row.findViewById(NowPlayingIndicator.ID);line.updateDot();line.removeCallbacks(line.tick);if(line.eligible&&line.isAttachedToWindow())line.post(line.tick);line.invalidate();}}
+ static void bind(View row,String key,boolean eligible){Line line=row.findViewById(LINE_ID);if(line!=null){line.key=key;line.eligible=PlaybackStatus.historyAllowed(key,eligible);line.dot=row.findViewById(NowPlayingIndicator.ID);line.updateDot();line.removeCallbacks(line.tick);if(line.eligible&&line.isAttachedToWindow())line.post(line.tick);line.invalidate();}}
  private static final class Line extends View {
   String key="";boolean eligible;View dot;private final Paint paint=new Paint();
   private final Runnable tick=new Runnable(){public void run(){updateDot();invalidate();postDelayed(this,1000);}};
