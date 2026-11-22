@@ -404,5 +404,9 @@
   "Automatisk": "Automatic",
   "Til": "On",
   "Sprog/Language": "Sprog/Language",
-  "Pcloud-konto": "Pcloud account"
+  "Pcloud-konto": "Pcloud account",
+  "Tilføj album til favoritter": "Add album to favorites",
+  "Download album": "Download album",
+  "Albummet er tilføjet til favoritter.": "Album added to favorites.",
+  "Albummet kunne ikke hentes. Prøv igen.": "The album could not be loaded. Try again."
 }
