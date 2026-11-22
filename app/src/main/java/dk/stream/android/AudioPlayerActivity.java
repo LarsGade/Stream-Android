@@ -13,7 +13,7 @@ import com.google.android.gms.cast.framework.media.RemoteMediaClient;
 public final class AudioPlayerActivity extends AppCompatActivity {
  @Override public boolean dispatchKeyEvent(android.view.KeyEvent event){return CastPlayback.volumeKey(this,event)||super.dispatchKeyEvent(event);}
  private TextView title,artist,time;
- private ImageView artwork;private Object artworkModel;
+ private ImageView artwork;private final PlaybackCoverState coverState=new PlaybackCoverState();
  private SeekBar progress;
  private ImageButton toggle,previous,next,stop;
  private RadioStation radioStation;
@@ -75,17 +75,18 @@ public final class AudioPlayerActivity extends AppCompatActivity {
   }else if(filePlayback()&&player!=null){MediaMetadata metadata=player.getMediaMetadata();if(metadata.artworkData!=null&&metadata.artworkData.length>0)model=metadata.artworkData;else if(metadata.artworkUri!=null)model=metadata.artworkUri;}
   else {RadioStation station=radioStation;if(station!=null)model=PlaybackArtwork.radioModel(this,station);}
   String localCover=LocalFileArtwork.asset(local?LocalAudioService.current():RadioPlaybackService.selectedFile());if(remote==null&&localCover!=null)model=localCover;
-  int fallback=remote!=null?(CastPlayback.image(this)?R.drawable.ic_image:CastPlayback.audio(this)?R.drawable.ic_music_note:R.drawable.ic_video):MediaFallback.icon(local?LocalAudioService.current():RadioPlaybackService.selectedFile());if(model==null)model=fallback;
+  String mediaKey=remote!=null?CastPlayback.historyKey(this):local&&LocalAudioService.current()!=null?LocalAudioService.current().uri:RadioPlaybackService.selectedFile()!=null?RadioPlaybackService.selectedFile().uri:radioStation!=null?"radio:"+radioStation.id:"";if(SaavnMusic.is(mediaKey))model=SaavnMusic.cover(mediaKey);
+  int fallback=remote!=null?(CastPlayback.image(this)?R.drawable.ic_image:CastPlayback.audio(this)?R.drawable.ic_music_note:R.drawable.ic_video):MediaFallback.icon(local?LocalAudioService.current():RadioPlaybackService.selectedFile());
   artwork.setContentDescription(UiText.text("Billede til "+title.getText()));
-  if(java.util.Objects.equals(model,artworkModel))return;
-  artworkModel=model;com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(model==null?android.view.View.GONE:android.view.View.VISIBLE);if(model==null)return;
-  com.bumptech.glide.Glide.with(this).load(model).placeholder(fallback).error(fallback).override(512,512).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
+  if(!coverState.update(mediaKey,model,fallback))return;
+  model=coverState.model();artwork.setVisibility(android.view.View.VISIBLE);if(model==null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageResource(fallback);return;}
+  com.bumptech.glide.Glide.with(this).load(model).placeholder((android.graphics.drawable.Drawable)null).error(fallback).override(512,512).fitCenter().dontAnimate().listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>(){
    public boolean onLoadFailed(com.bumptech.glide.load.engine.GlideException failure,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,boolean first){artwork.setVisibility(android.view.View.VISIBLE);return false;}
    public boolean onResourceReady(android.graphics.drawable.Drawable image,Object requested,com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,com.bumptech.glide.load.DataSource source,boolean first){artwork.setVisibility(android.view.View.VISIBLE);return false;}
   }).into(artwork);
  }
- @Override protected void onNewIntent(android.content.Intent intent){super.onNewIntent(intent);setIntent(intent);radioStation=null;radioCastInfo=null;local=intent.getBooleanExtra("local",false);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}artworkModel=null;refresh();}
+ @Override protected void onNewIntent(android.content.Intent intent){super.onNewIntent(intent);setIntent(intent);radioStation=null;radioCastInfo=null;local=intent.getBooleanExtra("local",false);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}coverState.clear();refresh();}
  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7301&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)castButton.performClick();}
- @Override protected void onStart(){super.onStart();artworkModel=null;handler.post(tick);}
- @Override protected void onStop(){handler.removeCallbacks(tick);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}artworkModel=null;super.onStop();}
+ @Override protected void onStart(){super.onStart();coverState.clear();handler.post(tick);}
+ @Override protected void onStop(){handler.removeCallbacks(tick);if(artwork!=null){com.bumptech.glide.Glide.with(this).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(android.view.View.GONE);}coverState.clear();super.onStop();}
 }

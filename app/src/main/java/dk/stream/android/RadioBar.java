@@ -11,7 +11,7 @@ public final class RadioBar extends LinearLayout {
  private long progressPosition,progressDuration;
  public interface VideoActions {default FavoriteLists.Item downloadItem(){return null;}default long position(){return 0;}default long duration(){return 0;}default Object artwork(){return null;}String title();boolean playing();void toggle();void open();default boolean needsLive(){return false;}default void goLive(){}default boolean liveChannel(){return false;}default boolean liveNow(){return false;}}
  private final TextView name;
- private final ImageView artwork;private Object artworkModel;private int artworkFallback;
+ private final ImageView artwork;private final PlaybackCoverState coverState=new PlaybackCoverState();
  private final ImageButton toggle;
  private final Runnable beforePlay;
  private final VideoActions video;
@@ -39,20 +39,19 @@ public final class RadioBar extends LinearLayout {
   else {RadioStation station=RadioPlaybackService.selectedStation();if(station!=null){title=station.displayName();running=RadioPlaybackService.playing(station.id);isLive=RadioPlaybackService.needsLive();liveChannel=true;liveNow=RadioPlaybackService.audioPlayer()!=null&&RadioPlaybackService.audioPlayer().isPlaying()&&!isLive;image=PlaybackArtwork.radioModel(getContext(),station);}}
   String localCover=LocalFileArtwork.asset(LocalAudioService.current());if(localCover!=null&&!CastPlayback.hasMedia(getContext()))image=localCover;
   int fallback=R.drawable.ic_music_note;if(CastPlayback.hasMedia(getContext()))fallback=CastPlayback.image(getContext())?R.drawable.ic_image:CastPlayback.audio(getContext())?R.drawable.ic_music_note:R.drawable.ic_video;else if(LocalAudioService.current()!=null)fallback=MediaFallback.icon(LocalAudioService.current());else if(RadioPlaybackService.selectedFile()!=null)fallback=MediaFallback.icon(RadioPlaybackService.selectedFile());else if(video!=null&&!video.title().isEmpty()&&RadioPlaybackService.selectedStation()==null)fallback=R.drawable.ic_video;
-  updateArtwork(image,title,fallback);
+  String mediaKey=CastPlayback.hasMedia(getContext())?CastPlayback.historyKey(getContext()):LocalAudioService.current()!=null?LocalAudioService.current().uri:RadioPlaybackService.selectedFile()!=null?RadioPlaybackService.selectedFile().uri:RadioPlaybackService.selectedStation()!=null?"radio:"+RadioPlaybackService.selectedStation().id:title;if(SaavnMusic.is(mediaKey))image=SaavnMusic.cover(mediaKey);
+  updateArtwork(image,title,fallback,mediaKey);
   setVisibility(title.isEmpty()?GONE:VISIBLE);name.setText(title);toggle.setImageResource(CastPlayback.image(getContext())?R.drawable.ic_image:running?(liveChannel?R.drawable.ic_stop:R.drawable.ic_pause):R.drawable.ic_play);toggle.setContentDescription(UiText.text(CastPlayback.image(getContext())?"Vis billede":running?(liveChannel?"Stop":"Pause"):"Afspil"));toggle.setEnabled(!title.isEmpty());invalidate();
  }
  @Override protected void onMeasure(int widthSpec,int heightSpec){super.onMeasure(widthSpec,View.MeasureSpec.makeMeasureSpec(MediaRowHeight.pixels(name),View.MeasureSpec.EXACTLY));}
  @Override protected void onDraw(android.graphics.Canvas canvas){super.onDraw(canvas);android.graphics.Paint paint=new android.graphics.Paint();paint.setColor(Color.WHITE);canvas.drawRect(0,0,getWidth(),getPaddingTop(),paint);if(progressDuration>0){int height=Math.max(1,Math.round(2*getResources().getDisplayMetrics().density));paint.setColor(0xFF343434);canvas.drawRect(0,getHeight()-height,getWidth(),getHeight(),paint);paint.setColor(0xFF3686FF);canvas.drawRect(0,getHeight()-height,(float)(getWidth()*Math.max(0,Math.min(1,progressPosition/(double)progressDuration))),getHeight(),paint);}}
- private void updateArtwork(Object model,String title,int fallback){
-  artwork.setContentDescription(UiText.text("Billede til "+title));boolean same=java.util.Objects.equals(model,artworkModel)&&artworkFallback==fallback;artworkModel=model;artworkFallback=fallback;
-  if(title.isEmpty()){com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setVisibility(GONE);artworkModel=null;artworkFallback=0;return;}
-  artwork.setVisibility(VISIBLE);
-  if(same&&artwork.getDrawable()!=null)return;
-  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageResource(fallback);
-  if(model==null||model instanceof Integer||model instanceof String&&((String)model).isEmpty())return;
+ private void updateArtwork(Object model,String title,int fallback,String mediaKey){
+  artwork.setContentDescription(UiText.text("Billede til "+title));
+  if(title.isEmpty()){com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setVisibility(GONE);coverState.clear();return;}
+  artwork.setVisibility(VISIBLE);if(!coverState.update(mediaKey,model,fallback))return;model=coverState.model();
+  if(model==null){com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageResource(fallback);return;}
   if(fallback==R.drawable.ic_image){PictureThumbnails.load(artwork,model.toString(),160);return;}
-  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).placeholder(fallback).error(fallback).override(160,160).fitCenter().diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE).skipMemoryCache(true).into(artwork);
+  com.bumptech.glide.Glide.with(getContext().getApplicationContext()).load(model).placeholder((android.graphics.drawable.Drawable)null).error(fallback).override(160,160).fitCenter().dontAnimate().into(artwork);
  }
  private void transport(){
   if(CastPlayback.image(getContext())){open();return;}
@@ -73,5 +72,5 @@ public final class RadioBar extends LinearLayout {
   getContext().startActivity(new Intent(getContext(),AudioPlayerActivity.class).putExtra("local",file!=null));
  }
  @Override protected void onAttachedToWindow(){super.onAttachedToWindow();removeCallbacks(tick);post(tick);}
- @Override protected void onDetachedFromWindow(){removeCallbacks(tick);com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(GONE);artworkModel=null;super.onDetachedFromWindow();}
+ @Override protected void onDetachedFromWindow(){removeCallbacks(tick);com.bumptech.glide.Glide.with(getContext().getApplicationContext()).clear(artwork);artwork.setImageDrawable(null);artwork.setVisibility(GONE);coverState.clear();super.onDetachedFromWindow();}
 }
